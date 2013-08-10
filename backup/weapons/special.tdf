@@ -1,0 +1,399 @@
+[SMassDriver]
+	{
+	name=Mass Driver Splinters;
+	RGBcolor=1 .7 .2;
+	weaponType=LaserCannon;
+	thickness=.5;
+	intensity=1;
+	noselfdamage=1;
+	duration=.02;
+
+	soundstart=weapons\klightfire;
+	soundhit=weapons\klighthit;
+
+	turret=1;
+	range=800;
+	weaponvelocity=600;
+	FallOffRate=.05;
+
+	reloadtime=.25;
+	accuracy=500;
+
+	areaofeffect=8;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=3000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	//explosiongenerator=custom:corruption_shot1;
+
+	interceptedbyshieldtype=1; //kinetic
+	[DAMAGE]
+	{
+		default=30;
+	}
+}
+
+
+[DroneMarker]
+	{
+	name=Drone Launch Control;
+	weaponType=Melee;
+
+	turret=1;
+	range=1600;
+	reloadtime=8;
+	projectiles=0;
+
+	areaofeffect=8;
+
+	tolerance=3000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	//explosiongenerator=custom:corruption_shot1;
+
+	interceptedbyshieldtype=0; //imaginary
+	[DAMAGE]
+	{
+		default=.0001;
+	}
+}
+
+[SAntimatterBeamPrimer]
+	{
+	name=Antimatter Beam;
+	RGBcolor=1 1 1;
+	weaponType=BeamLaser;
+	largeBeamLaser=1;
+	thickness=30;
+	intensity=1;
+	noselfdamage=1;
+	beamburst=1;
+	beamttl=4;
+	beamdecay=.7;
+	laserflaresize=4;
+	projectiles=0;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=1;
+	range=850;
+
+	reloadtime=10;
+
+	areaofeffect=24;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:antimatter;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=200;
+	}
+}
+
+[SAntimatterBeam]
+	{
+	name=Antimatter Beam;
+	RGBcolor=1 1 1;
+	weaponType=BeamLaser;
+	largeBeamLaser=1;
+	thickness=30;
+	intensity=1;
+	noselfdamage=1;
+	beamburst=1;
+	beamttl=4;
+	beamdecay=.7;
+	laserflaresize=4;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=1;
+	range=700;
+
+	reloadtime=10;
+
+	areaofeffect=24;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:antimatter;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=200;
+	}
+}
+
+[EclipseAntimatterBeamPrimer]
+	{
+	name=Antimatter Beam;
+	RGBcolor=1 1 1;
+	weaponType=BeamLaser;
+	largeBeamLaser=1;
+	thickness=18;
+	intensity=1;
+	noselfdamage=1;
+	beamburst=1;
+	beamttl=4;
+	beamdecay=.7;
+	laserflaresize=4;
+	projectiles=0;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=1;
+	range=1000;
+
+	reloadtime=10;
+
+	areaofeffect=24;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:antimatter;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=65;
+	}
+}
+
+[EclipseAntimatterBeam]
+	{
+	name=Antimatter Beam;
+	RGBcolor=1 1 1;
+	weaponType=BeamLaser;
+	largeBeamLaser=1;
+	thickness=18;
+	intensity=1;
+	noselfdamage=1;
+	beamburst=1;
+	beamttl=4;
+	beamdecay=.7;
+	laserflaresize=4;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=1;
+	range=1000;
+
+	reloadtime=10;
+
+	areaofeffect=24;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:antimatter;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=65;
+	}
+}
+
+[MegaLaserPrimer]
+	{
+	name=Megalaser;
+	RGBcolor=0.4 0.7 1;
+	weaponType=BeamLaser;
+	largeBeamLaser=1;
+	thickness=18;
+	intensity=1;
+	noselfdamage=1;
+	beamburst=1;
+	beamttl=4;
+	beamdecay=.7;
+	laserflaresize=4;
+	projectiles=0;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=0;
+	range=1800;
+
+	reloadtime=30;
+
+	areaofeffect=24;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+	noExplode = true;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:antimatter;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=200;
+	}
+}
+
+[EclipseAntimatterBeam]
+	{
+	name=Antimatter Beam;
+	RGBcolor=0.4 0.7 1;
+	weaponType=BeamLaser;
+	largeBeamLaser=1;
+	thickness=18;
+	intensity=1;
+	noselfdamage=1;
+	beamburst=1;
+	beamttl=4;
+	beamdecay=.7;
+	laserflaresize=4;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=0;
+	range=1800;
+
+	reloadtime=10;
+
+	areaofeffect=24;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+	noExplode = true;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:antimatter;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=300;
+	}
+}
+
+[ImperatorDeath]
+	{
+	name=Imperator Explosion;
+	weaponType=Melee;
+	noselfdamage=1;
+	model=torpedo.s3o;
+	//smoketrail=1;
+
+	//soundstart=mlightfire;
+	//soundhit=deathhuge;
+	burnblow=1;
+
+	turret=1;
+	range=50;
+	weaponvelocity=100;
+	startvelocity=100;
+	weaponacceleration=100;
+	flighttime=2;
+	targetBorder=1;
+
+	reloadtime=2;
+	guided=1;
+	tracks=1;
+	turnrate=220000;
+
+	//fixedLauncher=1;
+
+	areaofeffect=600;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=53000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosionSpeed=60;
+
+	explosiongenerator=custom:death_huge;
+	//cegTag=trail_missile;
+
+	interceptedbyshieldtype=2; //missile
+	[DAMAGE]
+	{
+		default=50000;
+	}
+}
+

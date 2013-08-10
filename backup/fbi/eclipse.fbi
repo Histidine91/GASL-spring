@@ -1,0 +1,188 @@
+[UNITINFO]
+{
+	Name=Eclipse;
+	Unitname=eclipse;
+	Description=Heavy assault battlecruiser;
+
+	// Required Tags
+	power=6000;
+	mass=10000;
+	icontype=comet;
+	Category=LARGE STRONG TARGET ANY;
+	FootprintX=8;
+	FootprintZ=8;
+	MaxDamage=56000;
+	autoheal=20;
+	idleTime=0;
+	idleAutoHeal=0;
+	ObjectName=eclipse.s3o;
+	Side=ALL;
+	SoundCategory=CARRIER;
+	collisionVolumeScales=160 72 400;
+	collisionVolumeOffset=-60 0 150;
+	collisionVolumeType=Box;
+	collide=0;
+
+	// Movement
+	canFly=1;
+	HoverAttack=1;
+	AirHoverFactor=0;
+	AirStrafe=0;
+	cruiseAlt=65;
+	BrakeRate=.5;
+	Acceleration=.04;
+	CanMove=1;
+	MaxVelocity=1.2;
+	TurnRate=185;
+
+	// Airplane Moventment
+
+	// Buildings
+
+	// Construction
+	ShowNanoFrame=0;
+	LevelGround=0;
+
+	// Abilities
+	CanAttack=1;
+	CanStop=1;
+	//CanDgun=1;
+	SelfDestructCountdown=10;
+
+	// Sight/Radar
+	RadarDistance=1800;
+	SightDistance=900;
+	noChaseCategory=NOCHASE;
+	stealth=1;
+
+	// Weapons
+	Weapon1=EclipseAMBeamPrimer;
+	OnlyTargetCategory1=WEAK STRONG;
+	WeaponMainDir1=0 0 1;
+	MaxAngleDif1=120;
+	BadTargetCategory1=WEAK SMALL;
+
+	Weapon2=EclipseAMBeam;
+	OnlyTargetCategory2=VOID;
+
+	Weapon3=MegaLaserPrimer;
+	WeaponMainDir3=0 0 1;
+	MaxAngleDif3=10;
+	//OnlyTargetCategory3=TARGET;
+	//BadTargetCategory3=SMALL WEAK;
+
+	Weapon4=GEclipse;
+	OnlyTargetCategory4=LARGE;
+	BadTargetCategory4=WEAK;
+
+	Weapon5=KMedium;
+	OnlyTargetCategory5=TARGET;
+	WeaponMainDir5=-0.5 0 -0.7;
+	MaxAngleDif5=180;
+	BadTargetCategory5=LARGE;
+
+	Weapon6=KMedium;
+	OnlyTargetCategory6=TARGET;
+	WeaponMainDir6=0.5 0 -0.7;
+	MaxAngleDif6=180;
+	BadTargetCategory6=LARGE;
+
+	Weapon7=KMedium;
+	OnlyTargetCategory7=TARGET;
+	//WeaponMainDir7=-1 0 0;
+	//MaxAngleDif7=180;
+	BadTargetCategory7=LARGE;
+
+	Weapon8=KMedium;
+	OnlyTargetCategory8=TARGET;
+	//WeaponMainDir8=1 0 0;
+	//MaxAngleDif8=180;
+	BadTargetCategory8=LARGE;
+
+	Weapon9=KMedium;
+	OnlyTargetCategory9=TARGET;
+	WeaponMainDir9=-0.2 0 1;
+	MaxAngleDif9=180;
+	BadTargetCategory9=LARGE;
+
+	Weapon10=KMedium;
+	OnlyTargetCategory10=TARGET;
+	WeaponMainDir10=0.2 0 1;
+	MaxAngleDif10=180;
+	BadTargetCategory10=LARGE;
+
+	Weapon11=LPointDefenseM;
+	OnlyTargetCategory11=TINY;
+	WeaponMainDir11=0 0 -1;
+	MaxAngleDif11=210;
+
+	Weapon12=LPointDefenseM;
+	OnlyTargetCategory12=TINY;
+
+	Weapon13=LPointDefenseM;
+	OnlyTargetCategory13=TINY;
+
+	Weapon14=LPointDefenseM;
+	OnlyTargetCategory14=TINY;
+	OnlyTargetCategory14=TINY;
+	WeaponMainDir14=0 0 1;
+	MaxAngleDif14=210;
+
+	Weapon15=GFlakEclipse;
+	BadTargetCategory15=LARGE;
+
+	Weapon16=PHeavy;
+	OnlyTargetCategory16=TARGET;
+	WeaponMainDir16=-0.2 0 0.8;
+	MaxAngleDif16=90;
+	BadTargetCategory16=SMALL TINY;
+
+	Weapon17=PHeavy;
+	OnlyTargetCategory17=TARGET;
+	WeaponMainDir17=0.2 0 0.8;
+	MaxAngleDif17=90;
+	BadTargetCategory17=SMALL TINY;
+
+	Weapon18=TEclipse;
+	OnlyTargetCategory18=LARGE;
+
+	Weapon19=MEclipse;
+	OnlyTargetCategory19=TARGET;
+
+	Weapon20=MEclipse;
+	OnlyTargetCategory20=TARGET;
+
+	Weapon21=MegaLaser;
+	OnlyTargetCategory21=VOID;
+
+	ExplodeAs=RetroDeathHuge;
+	SelfDestructAs=RetroDeathHuge;
+
+	// Misc
+	SmoothAnim=0;
+	Script=eclipse.lua;
+	damageModifier=0.2;
+
+	[SFXTypes]
+	{
+		explosiongenerator0 = custom:death_med;
+		explosiongenerator1 = custom:death_large;
+		explosiongenerator2 = custom:death_multimed;
+		explosiongenerator3 = custom:teleport;
+		explosiongenerator4 = custom:muzzlekinetic;
+		explosiongenerator5 = custom:muzzlemassdriver;
+		explosiongenerator6 = custom:charge_graser;
+		explosiongenerator7 = custom:sparks;
+		explosiongenerator8 = custom:charge_antimatter;
+	}
+	
+	[customParams] {
+		type=large;
+		cost=8500;
+		buildtime=90;
+		nobuild=true;
+		luascript=true;
+		occupationStrength=2;
+		//minelayer=1.0;
+	}
+}

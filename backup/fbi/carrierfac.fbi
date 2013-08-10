@@ -1,0 +1,53 @@
+[UNITINFO]
+{
+	Name=Fleet Carrier (fac);
+	Unitname=carrierfactory;
+	Description=Field production and maintenance ship;
+
+	// Required Tags
+	power=0;
+	mass=0;
+	Category=FAKE;
+	FootprintX=1;
+	FootprintZ=1;
+	MaxDamage=25000;
+	idleTime=0;
+	idleAutoHeal=0;
+	ObjectName=torpedo.s3o;
+	Side=ALL;
+	SoundCategory=CARRIER;
+	collide=0;
+
+	// Movement
+	MaxVelocity=0;
+
+	// Airplane Movement
+
+	// Buildings
+
+	// Construction
+	ShowNanoFrame=0;
+	LevelGround=0;
+	ShowNanoSpray=0;
+	yardmap=c;
+
+	// Abilities
+	CanAttack=1;
+	builder=1;
+	CanStop=1;
+	SelfDestructCountdown=6;
+	workerTime=1;
+
+	// Sight/Radar
+	stealth=1;
+
+	// Weapons
+
+	// Misc
+	SmoothAnim=0;
+	script=factory.lua;
+
+	[customParams] {
+		type=fac;
+	}
+}

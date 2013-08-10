@@ -1,0 +1,26 @@
+whole thing is a stackpanel, in a scrollpanel, in a window
+nest stackpanels in stackpanels in stackpanels?
+
+Ship stats
+    Ship pic    Ship Name
+                Ship description?
+    HP      Shield    Energy
+    Speed   Combat speed
+    Armor   Maneuverability
+Weapons                     scrollpanel
+    For each weapon:
+        Tooltip = weapon desc
+        Name
+        Damage
+        Crit chance
+        Reload time
+        Range
+        Damage type
+        Armor penetration
+Pilot info
+    Pilot pic   Pilot name
+                Pilot affiliation
+    Suppression     Morale  Spirit
+    
+    
+    

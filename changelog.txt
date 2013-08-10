@@ -1,0 +1,101 @@
+== WIP 11 KRE -> WIP 12 KRE ==
+- STATIC D-FENZ. The new Spectre minelayer frigate can deploy gunstars, small gun platforms that come in kinetic and torpedo flavors.
+- New ship: Meteor, a fast anti-fighter frigate armed with lasers and missiles.
+- New ship: Iris, a small surveillance probe that doubles as a gravidar decoy.
+- New IR sensor system, using Spring radar. Units that move or fire high energy weapons (particularly plasma and gravitrics) will show up as radar dots. Some units (notably Wraith and Warhammer) will not reveal themselves when moving. IR sensors (radar) are fitted to carriers, starbases and probes.
+- Starbases cost 50% more, increased HP (10k -> 16k) and firepower.
+- Grav flak ROF halved, damage doubled (to make it less effective as point defense)
+- Dagger HP reduced (800 to 650)
+- Reduced Sword missile damage (120 to 105)
+- EMP missiles progressively slow enemy firing and movement speed instead of completely disabling only at 100%
+- All ships have death explosions. Keep your Daggers and Swords spaced out if you don't want them chain-popping.
+- Big ships now have to wait 10 s to start self-repairing (from 5).
+- Warhammer faster (1.6 to 2.2), cost reduced (1200 to 950).
+- Comet HP increased (15k to 16k)
+- Drones no longer do double damage against large ships.
+- Eclipse costs more, megalaser reload doubled.
+
+Defenders of the Galaxy changes:
+- Fixed Queen anger increasing too fast due to player starbases being counted as well as chicken ones.
+- Reduced queen damage reduction at higher difficulties.
+- Difficulty should scale better with playercount.
+
+
+== WIP 9 KRE -> WIP 11 KRE ==
+Engine desyncs fixed. Much thanks to Kloot, Auswaschbar, imbaczek, and KDR_11k for their help in resolving the problem.
+Also fixed an embarassing bug with the perk system. Whoops.
+
+Game changes:
+- Comet occupation strength increased to 1
+- EMP missiles back up to 2x damage (from 1.75x)
+- Mass driver splinters don't hit tiny units (torpedoes and drones). Radius reduced (300 to 225).
+- Added Cloak Fire State widget.
+- Added Formations widget.
+
+- Experimental new ship: Eclipse, a battlecruiser with lots of weapons including a very powerful superlaser. Needs to be enabled in modoptions.
+
+Defenders of the Galaxy changes:
+-Shuffled spawn lists. In particular, Wraiths and Warhammers are listed as defenders, and thus won't be visible in the attack wave notification.
+-Added an option to respawn "burrows" (starbases) when they are killed. Not recommended for higher difficulty levels.
+-The queen is now an all-new ship (the Eclipse) instead of a regular carrier
+-Added Suicidal difficulty level
+-Small ships now have a teleport CEG when spawned
+
+== WIP 8 KRE -> WIP 9 KRE ==
+Fixed bugs pertaining to switch to luadefs (by reverting to FBI).
+Unfortunately, I seem unable to resolve sync errors. See if you get them.
+
+== WIP 7 -> WIP 8 KRE ==
+Third-party version by KingRaptor
+
+- Added Defenders of the Galaxy (aka chicken) game mode. Protect your planets from the space invaders and destroy the carrier when it warps in.
+- The number of selectable perks is now a mod option.
+- Removed the formation gadget; it had no particularly useful functionality that I could discern and it was blocking CustomFormations.
+- Fixed Imperator turret building (thanks to KDR for identifying the problem).
+- Public Support now gives 1 planet (occupied by capship) worth of base income (instead of a flat +20/s), increases Starbase output by 20% (which is +5 with normal settings). The extra income isn't visible, but it's there. 
+- EMP Missiles now only does 1.75x as much EMP damage as normal damage (previously it was 2x normal damage).
+- Added Land Fly widget by Evil4Zerggin (only really affects /give and start of game).
+- Renamed Bomber Control Ship to Chu-ke Nu
+- Fixed drone script errors
+- Fixed longbow description to note the mag-shield.
+
+== WIP 6 -> WIP 7 ==
+Changes I remember:
+- Added Imperator flagship. The thing has hardpoints you have to buy turrets for, without those it's harmless. There was a lot of code involved in getting this thing to work since Spring didn't really cooperate... If the hitbox of the control tower moves around too much I'll have to move the center around, that seems to be a new issue in 77b4.
+- Increased small ship HP. I figured the cost difference between small and large ships isn't enough to warrant such huge HP differences and with so much AOE stuff flying around the small ships didn't see much usage in the games I saw (outside of longbow, drone and wraith spam)
+- Drones have more HP but move slower, makes it more feasible to fight them without point defenses.
+- Carriers now show their repair radius and can set a rally point.
+- Repair rates increased.
+- A team will now lose if it goes one minute without any planets (the first minute of the game does not count), this is a mod option and can be disabled.
+- Income can be adjusted in the mod options.
+- Planet income is shown along with a display of which unit effects it, should make it easier to understand.
+- Total income is displayed on the GUI now.
+- The perk "EMP missiles" no longer hurts allies.
+
+== WIP 5 -> WIP 6 ==
+Should be just some tiny updates so it'll work with the final version of 77b1 again, if that gets a release soon the bump will probably help a bit too.
+
+== WIP 4 -> WIP 5 ==
+Lots of changes, I don't remember all of them but I did nerf plasma weapons vs big targets (less damage boost) and added torpedoes to big ships that do quite a lot of damage but can be shot down (big ships only use them on other big ships, the new torp bombers can shoot at anything). I think the torpedoes have a detonation distance that prevents them from hitting small ships with full force even when fired at them but on big ships they do the full damage (and the antimatter warheads work well vs small ships too).
+
+Oh and I did nerf the advanced automation perk for global builds (only a 15% build time reduction instead of 50%, build times on carriers remain halved) since I figure that in the late game the buildtime for those large things is the bottleneck and a player who can spit them out faster would have a big advantage. The Comet had its lasers replaced with kinetic weapons as the lasers were too good at intercepting torpedoes.
+
+== WIP 3 -> WIP 4 ==
+Not sure what changed, I remember making gravs no longer shoot at fighters and adding a drone launcher ship.
+
+== WIP 2 -> WIP 3 ==
+Just an econ rebalance, planets now produce only 5 per second, carriers boost it to 20 and starbases to 25. This means you can't just keep pushing with your carrier early on since you'll lose a lot of income.
+
+== WIP 1 -> WIP 2 ==
+- Ranges and speeds reduced (including the capture range around a planet) to make the map act larger.
+- Buildtimes on large ships reduced, some cost adjustments as well.
+- Small ships leave trails now that are color coded to their main weapon type.
+- Units now move into a formation when given a move or fight order (collide=0 -> all units move into the space of one unit, being vulnerable to AOE damage). You may notice large ships and Warhammers moving short of the place you clicked, they're pretty far back in the formation and positions aren't adjusting to fewer units yet.
+- Secondary weapons on small ships now have the same firearc as the main gun so the units will turn towards a target automatically instead of requiring micro to make sure the main gun fires.
+- Muzzleflares for kinetic weapons added, effect changes if the massdrivers perk is used.
+- Queues are now linked lists instead of tables so they will properly maintain their order.
+- New perk: Inventive. A ship will get extra HP if it was built later in the game (currently 3% per minute).
+- New perk: EMP missiles. Your missiles do paralysis damage to enemies in a certain radius.
+
+== WIP 1 ==
+-Initial release

@@ -1,0 +1,2 @@
+minelayer.s3o: Artistic License 2.0
+Source files available at http://planet-wars.eu/ModelBase/ModelDetail.aspx?ModelID=124

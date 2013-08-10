@@ -1,0 +1,845 @@
+//linear constant=65536
+
+piece hullmain, head, hulll, hullr, hullaft, nosel, noser, platel, plater;
+piece amturretbase, amturret, amflare, grav, dronel, droner, megalaser, bay0, bay1;
+
+piece kturret_fore_l, ksleeve_fore_l, kbarrel1_fore_l, kbarrel2_fore_l, kflare1_fore_l, kflare2_fore_l;
+piece kturret_fore_r, ksleeve_fore_r, kbarrel1_fore_r, kbarrel2_fore_r, kflare1_fore_r, kflare2_fore_r;
+piece kturret_mid_l, ksleeve_mid_l, kbarrel1_mid_l, kbarrel2_mid_l, kflare1_mid_l, kflare2_mid_l;
+piece kturret_mid_r, ksleeve_mid_r, kbarrel1_mid_r, kbarrel2_mid_r, kflare1_mid_r, kflare2_mid_r;
+piece kturret_aft_l, ksleeve_aft_l, kbarrel1_aft_l, kbarrel2_aft_l, kflare1_aft_l, kflare2_aft_l;
+piece kturret_aft_r, ksleeve_aft_r, kbarrel1_aft_r, kbarrel2_aft_r, kflare1_aft_r, kflare2_aft_r;
+
+piece lturret_fore, lsleeve_fore, lbarrel_fore, lflare_fore;
+piece lturret_mid_l, lsleeve_mid_l, lbarrel_mid_l, lflare_mid_l;
+piece lturret_mid_r, lsleeve_mid_r, lbarrel_mid_r, lflare_mid_r;
+piece lturret_aft, lsleeve_aft, lbarrel_aft, lflare_aft;
+
+piece pturret_l, psleeve_l, pbarrel_l, pflare_l;
+piece pturret_r, psleeve_r, pbarrel_r, pflare_r;
+
+piece mturret_l, msleeve_l, mpod1_l, mpod2_l, mflare1_l, mflare2_l;
+piece mturret_r, msleeve_r, mpod1_r, mpod2_r, mflare1_r, mflare2_r;
+
+piece torp1, torp2, torp3, torp4, torp5, torp6;
+
+static-var damageFX, muzzleFX, sparkFX;
+static-var firingAM, firingMegaLaser;
+static-var gun1, gun2, gun3, gun4, gun5, gun6, miss1, miss2;
+static-var minhealth_am, minhealth_grav, minhealth_kinetic_front1, minhealth_kinetic_front2, minhealth_kinetic_mid1, minhealth_kinetic_mid2,
+minhealth_kinetic_rear1, minhealth_kinetic_rear2, minhealth_laser_front, minhealth_laser_mid1, minhealth_laser_mid2, minhealth_laser_rear,
+minhealth_plasma1, minhealth_plasma2, minhealth_torpedo, minhealth_drone, minhealth_missile1, minhealth_missile2; 
+
+#include "THIS.h"
+
+SetMinHealth()	{
+	minhealth_am = 50 + rand(-5, 5);
+	minhealth_grav = 25 + rand(-5, 5);
+	minhealth_kinetic_front1 = 65 + rand(-5, 5);
+	minhealth_kinetic_front2 = 65 + rand(-5, 5);
+	minhealth_kinetic_mid1 = 25 + rand(-5, 5);
+	minhealth_kinetic_mid2 = 25 + rand(-5, 5);
+	minhealth_kinetic_rear1 = 45 + rand(-5, 5);
+	minhealth_kinetic_rear2 = 45 + rand(-5, 5);
+	minhealth_laser_front = 55 + rand(-5, 5);
+	minhealth_laser_mid1 = 70 + rand(-5, 5);
+	minhealth_laser_mid2 = 70 + rand(-5, 5);
+	minhealth_laser_rear = 60 + rand(-5, 5);
+	minhealth_plasma1 = 45 + rand(-5, 5);
+	minhealth_plasma2 = 45 + rand(-5, 5);
+	minhealth_torpedo = 20 + rand(-5, 5);
+	minhealth_drone = 65 + rand(-5, 5);
+	minhealth_missile1 = 50 + rand(-5, 5);
+	minhealth_missile2 = 50 + rand(-5, 5);
+}
+  
+NoMinHealth()	{
+	minhealth_am = 0;
+	minhealth_grav = 0;
+	minhealth_kinetic_front1 = 0;
+	minhealth_kinetic_front2 = 0;
+	minhealth_kinetic_mid1 = 0;
+	minhealth_kinetic_mid2 = 0;
+	minhealth_kinetic_rear1 = 0;
+	minhealth_kinetic_rear2 = 0;
+	minhealth_laser_front = 0;
+	minhealth_laser_mid1 = 0;
+	minhealth_laser_mid2 = 0;
+	minhealth_laser_rear = 0;
+	minhealth_plasma1 = 0;
+	minhealth_plasma2 = 0;
+	minhealth_torpedo = 0;
+	minhealth_drone = 0;
+	minhealth_missile1 = 0;
+	minhealth_missile2 = 0;
+}
+
+HideExtraGuns()	{
+	hide grav;
+	hide mturret_l;
+	hide msleeve_l;
+	hide mpod1_l;
+	hide mpod2_l;
+	hide mturret_r;
+	hide msleeve_r;
+	hide mpod1_r;
+	hide mpod2_r;	
+	hide lturret_fore;
+	hide lsleeve_fore;
+	hide lbarrel_fore;
+}
+
+ShowExtraGuns()	{
+	show grav;
+	show mturret_l;
+	show msleeve_l;
+	show mpod1_l;
+	show mpod2_l;
+	show mturret_r;
+	show msleeve_r;
+	show mpod1_r;
+	show mpod2_r;
+	show lturret_fore;
+	show lsleeve_fore;
+	show lbarrel_fore;
+}
+
+TurnPieceInit()	{
+	turn pturret_l to y-axis <180> now;
+	turn pturret_r to y-axis <180> now;
+	turn kturret_aft_l to y-axis <180> now;
+	turn kturret_aft_r to y-axis <180> now;
+	turn lturret_aft to y-axis <180> now;
+	
+	turn dronel to y-axis <90> now;
+	turn droner to y-axis <-90> now;
+	turn bay0 to y-axis <90> now;
+	turn bay1 to y-axis <-90> now;
+	
+	turn torp1 to y-axis <-90> now;
+	turn torp2 to y-axis <90> now;
+	turn torp3 to y-axis <-90> now;
+	turn torp4 to y-axis <90> now;
+	turn torp5 to y-axis <-90> now;
+	turn torp6 to y-axis <90> now;
+}
+
+DroneSpawnLoop()	{
+	sleep 1500;
+	while(1) {
+		while((get HEALTH) < minhealth_drone)	{
+			emit-sfx sparkFX from dronel;
+			emit-sfx sparkFX from droner;
+			sleep 500;
+		}
+		call-script lua_LaunchDroneWeapon(get TARGET_ID(1),DRONE_K, dronel, 0);
+		call-script lua_LaunchDroneWeapon(get TARGET_ID(1),DRONE_K, droner, 0);
+	sleep 15000;
+	}
+}
+
+SetWeaponPerks()	{
+	if (get PERK_BETTER_KINETICS) {
+		get WEAPON_SPRAY(-5,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-5,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-6,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-6,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-7,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-7,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-8,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-8,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-9,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-9,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-10,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-10,KMEDIUM_ROF_BOOST);
+	}
+	if (get PERK_BETTER_GRAV) {
+		get WEAPON_RANGE(-4, GSTANDARD_RANGE_BOOST);
+		get WEAPON_RANGE(-15, GFLAK_RANGE_BOOST);
+	}
+	if 	(!get PERK_MORE_GUNS) {
+		call-script HideExtraGuns();
+	}
+}
+	
+Create() {
+	gun1 = 0;
+	gun2 = 0;
+	gun3 = 0;
+	gun4 = 0;
+	gun5 = 0;
+	gun6 = 0;
+	miss1 = 0;
+	miss2 = 0;
+	sparkFX = 1031;
+	fireStealthTime = 3000;
+	
+	start-script TurnPieceInit();
+	call-script SetMinHealth();
+	call-script NoMinHealth();
+	sleep 30; //to let the MoveCtrl move it
+	emit-sfx 1027 from hullmain;
+	emit-sfx 1027 from hullaft;
+	emit-sfx 1027 from megalaser;
+	start-script SetWeaponPerks();
+	start-script DroneSpawnLoop();
+}
+
+Killed() {
+	emit-sfx 1025 from head;
+	sleep 700;
+	
+	move hullaft to z-axis [-90] speed [16];
+	move platel to x-axis [-90] speed [15];
+	move plater to x-axis [90] speed [15];
+	emit-sfx 1026 from hullaft;
+	sleep 1000;
+	
+	move hulll to x-axis [-90] speed [16];
+	move hullr to x-axis [90] speed [16];
+	spin hulll around z-axis speed <20>;
+	spin hullr around z-axis speed <13>;
+	sleep 1800;
+	hide hullaft;
+	//ExplodeAftPieces()
+	//Explode(plateLeft)
+	//Explode(plateRight)
+	
+	emit-sfx 1026 from hullmain;
+	sleep 250;
+	emit-sfx 1025 from hulll;
+	emit-sfx 1025 from hullr;
+	sleep 200;
+	emit-sfx 1024 from nosel;
+	emit-sfx 1024 from noser;
+	sleep 1000;
+	
+	hide nosel;
+	hide noser;
+	//ExplodeNosePieces()
+	emit-sfx 1024 from hullmain;
+	emit-sfx 1025 from hulll;
+	emit-sfx 1025 from hullr;
+	sleep 1100;
+	hide hulll;
+	hide hullr;
+	//ExplodeSidePieces()
+	emit-sfx 1026 from hullmain;
+	sleep 700;
+}
+
+StartMoving() {
+	set STEALTH to 0;
+	isMoving = 1;
+}
+
+StopMoving() {
+	start-script RestoreStealth();
+	isMoving = 0;
+}
+
+NewPerk(p) {
+	if (p == PERK_BETTER_KINETICS) {
+		get WEAPON_SPRAY(-5,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-5,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-6,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-6,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-7,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-7,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-8,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-8,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-9,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-9,KMEDIUM_ROF_BOOST);
+		get WEAPON_SPRAY(-10,KMEDIUM_SPRAY_BOOST);
+		get WEAPON_RELOADTIME(-10,KMEDIUM_ROF_BOOST);
+	}
+	if (p == PERK_BETTER_GRAV) {
+		get WEAPON_RANGE(-4, GSTANDARD_RANGE_BOOST);
+		get WEAPON_RANGE(-15, GFLAK_RANGE_BOOST);
+	}
+	if (p == PERK_MORE_GUNS) {
+		call-script ShowExtraGuns();
+	}
+}
+
+#define KTURRETAIM <180>
+#define KBARRELAIM <120>
+#define PTURRETAIM <60>
+#define PBARRELAIM <40>
+#define MTURRETAIM <120>
+#define MBARRELAIM <80>
+
+#define SIG_AMBeam 512
+#define SIG_MegaLaser 1024
+
+#define muzzleFX 1028 + get PERK_BETTER_KINETICS
+
+FireAMBeam()	{
+	signal SIG_AMBeam;
+	set-signal-mask SIG_AMBeam;
+	var i;
+	firingAM=1;
+	for (i=0;i<90; ++i) {
+		set CEG_DAMAGE to i;
+		emit-sfx 1030 from amflare;
+		sleep 30;
+	}
+	for (i=0;i<150;++i) {
+		sleep 30;
+		emit-sfx 2049 from amflare;
+	}
+	start-script RestoreStealth();
+	firingAM=0;
+}
+
+FireMegaLaser()	{
+	signal SIG_MegaLaser;
+	set-signal-mask SIG_MegaLaser;
+	var i;
+	firingMegaLaser=1;
+	
+	//open nose
+	move nosel to x-axis [-20] speed [20];
+	move noser to x-axis [20] speed [20];
+	wait-for-move nosel along x-axis;
+	wait-for-move noser along x-axis;
+	sleep 500;
+	
+	//charge
+	for (i=0;i<180; ++i) {
+		set CEG_DAMAGE to i;
+		emit-sfx 1030 from megalaser;
+		sleep 30;
+	}
+	
+	//fire
+	for (i=0;i<240;++i) {
+		sleep 30;
+		emit-sfx 2068 from megalaser;
+	}
+	
+	//close nose
+	sleep 500;
+	move nosel to x-axis [0] speed [20];
+	move noser to x-axis [0] speed [20];
+	wait-for-move nosel along x-axis;
+	wait-for-move noser along x-axis;
+	start-script RestoreStealth();
+	firingAM=0;
+}
+
+AimFromWeapon1(p) {
+	p=amturret;
+}
+
+QueryWeapon1(p) {
+	p=amflare;
+}
+
+AimWeapon1(h,p) {
+	if ((get HEALTH) < minhealth_am)	{
+		emit-sfx sparkFX from amturret;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim1;
+	set-signal-mask SIG_Aim1;
+	turn amturret to y-axis h speed <90>;
+	turn amturret to x-axis 0 - p speed <60>;
+	wait-for-turn amturret around y-axis;
+	wait-for-turn amturret around x-axis;
+	return 1;
+}
+
+FireWeapon1() {
+	start-script FireAMBeam();
+}
+
+AimFromWeapon2(p) {
+	p=amturret;
+}
+
+QueryWeapon2(p) {
+	p=amflare;
+}
+
+AimWeapon2(h,p) {
+	return 0;
+}
+
+QueryWeapon3(p) {
+	p=megalaser;
+}
+
+/*AimWeapon3(h,p) {
+	signal SIG_Aim3;
+	set-signal-mask SIG_Aim3;
+	turn lturret0 to y-axis h speed LTURRETAIM;
+	turn lbarrel0 to x-axis 0 - p speed LBARRELAIM;
+	wait-for-turn lturret0 around y-axis;
+	wait-for-turn lbarrel0 around x-axis;
+	return 1;
+}*/
+
+FireWeapon3() {
+	start-script FireMegaLaser();
+}
+
+AimFromWeapon4(p) {
+	p=grav;
+}
+
+QueryWeapon4(p) {
+	p=grav;
+}
+
+AimWeapon4(h,p) {
+	if ((get HEALTH) < minhealth_grav)	{
+		emit-sfx sparkFX from grav;
+		sleep 500;
+		return 0;
+	}
+	return (get PERK_MORE_GUNS);
+}
+
+#define MUZZLE (1028 + get PERK_BETTER_KINETICS)
+
+AimFromWeapon5(p) {
+	p=kturret_fore_l;
+}
+
+QueryWeapon5(p) {
+	if (gun1) {p = kflare1_fore_l;}
+	else {p = kflare2_fore_l;}
+}
+
+AimWeapon5(h,p) {
+	if ((get HEALTH) < minhealth_kinetic_front1)	{
+		emit-sfx sparkFX from kturret_fore_l;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim5;
+	set-signal-mask SIG_Aim5;
+	turn kturret_fore_l to y-axis h speed KTURRETAIM;
+	turn ksleeve_fore_l to x-axis (0 - p) speed KBARRELAIM;
+	wait-for-turn kturret_fore_l around y-axis;
+	wait-for-turn ksleeve_fore_l around y-axis;
+	return 1;
+}
+
+Shot5() {
+	if(gun1)
+	{ emit-sfx MUZZLE from kflare1_fore_l;}
+	else { emit-sfx MUZZLE from kflare2_fore_l;}
+	gun1 = !gun1;
+}
+
+AimFromWeapon6(p) {
+	p=kturret_fore_r;
+}
+
+QueryWeapon6(p) {
+	if (gun1) {p = kflare1_fore_r;}
+	else {p = kflare2_fore_r;}
+}
+
+AimWeapon6(h,p) {
+	if ((get HEALTH) < minhealth_kinetic_front2)	{
+		emit-sfx sparkFX from kturret_fore_r;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim6;
+	set-signal-mask SIG_Aim6;
+	turn kturret_fore_r to y-axis h speed KTURRETAIM;
+	turn ksleeve_fore_r to x-axis (0 - p) speed KBARRELAIM;
+	wait-for-turn kturret_fore_r around y-axis;
+	wait-for-turn ksleeve_fore_r around y-axis;
+	return 1;
+}
+
+Shot6() {
+	if(gun1)
+	{ emit-sfx MUZZLE from kflare1_fore_r;}
+	else { emit-sfx MUZZLE from kflare2_fore_r;}
+	gun1 = !gun1;
+}
+
+AimFromWeapon7(p) {
+	p=kturret_mid_l;
+}
+
+QueryWeapon7(p) {
+	if (gun1) {p = kflare1_mid_l;}
+	else {p = kflare2_mid_l;}
+}
+
+AimWeapon7(h,p) {
+	if ((get HEALTH) < minhealth_kinetic_mid1)	{
+		emit-sfx sparkFX from kturret_mid_l;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim7;
+	set-signal-mask SIG_Aim7;
+	turn kturret_mid_l to y-axis h speed KTURRETAIM;
+	turn ksleeve_mid_l to x-axis (0 - p) speed KBARRELAIM;
+	wait-for-turn kturret_mid_l around y-axis;
+	wait-for-turn ksleeve_mid_l around y-axis;
+	return 1;
+}
+
+Shot7() {
+	if(gun1)
+	{ emit-sfx MUZZLE from kflare1_mid_l;}
+	else { emit-sfx MUZZLE from kflare2_mid_l;}
+	gun1 = !gun1;
+}
+
+AimFromWeapon8(p) {
+	p=kturret_mid_r;
+}
+
+QueryWeapon8(p) {
+	if (gun1) {p = kflare1_mid_r;}
+	else {p = kflare2_mid_r;}
+}
+
+AimWeapon8(h,p) {
+	if ((get HEALTH) < minhealth_kinetic_mid2)	{
+		emit-sfx sparkFX from kturret_mid_r;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim8;
+	set-signal-mask SIG_Aim8;
+	turn kturret_mid_r to y-axis h speed KTURRETAIM;
+	turn ksleeve_mid_r to x-axis (0 - p) speed KBARRELAIM;
+	wait-for-turn kturret_mid_r around y-axis;
+	wait-for-turn ksleeve_mid_r around y-axis;
+	return 1;
+}
+
+Shot8() {
+	if(gun1)
+	{ emit-sfx MUZZLE from kflare1_mid_r;}
+	else { emit-sfx MUZZLE from kflare2_mid_r;}
+	gun1 = !gun1;
+}
+
+AimFromWeapon9(p) {
+	p=kturret_aft_l;
+}
+
+QueryWeapon9(p) {
+	if (gun1) {p = kflare1_aft_l;}
+	else {p = kflare2_aft_l;}
+}
+
+AimWeapon9(h,p) {
+	if ((get HEALTH) < minhealth_kinetic_rear1)	{
+		emit-sfx sparkFX from kturret_aft_l;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim9;
+	set-signal-mask SIG_Aim9;
+	turn kturret_aft_l to y-axis h speed KTURRETAIM;
+	turn ksleeve_aft_l to x-axis (0 - p) speed KBARRELAIM;
+	wait-for-turn kturret_aft_l around y-axis;
+	wait-for-turn ksleeve_aft_l around y-axis;
+	return 1;
+}
+
+Shot9() {
+	if(gun1)
+	{ emit-sfx MUZZLE from kflare1_aft_l;}
+	else { emit-sfx MUZZLE from kflare2_aft_l;}
+	gun1 = !gun1;
+}
+
+AimFromWeapon10(p) {
+	p=kturret_aft_r;
+}
+
+QueryWeapon10(p) {
+	if (gun1) {p = kflare1_aft_r;}
+	else {p = kflare2_aft_r;}
+}
+
+AimWeapon10(h,p) {
+	if ((get HEALTH) < minhealth_kinetic_rear2)	{
+		emit-sfx sparkFX from kturret_aft_r;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim10;
+	set-signal-mask SIG_Aim10;
+	turn kturret_aft_r to y-axis h speed KTURRETAIM;
+	turn ksleeve_aft_r to x-axis (0 - p) speed KBARRELAIM;
+	wait-for-turn kturret_aft_r around y-axis;
+	wait-for-turn ksleeve_aft_r around y-axis;
+	return 1;
+}
+
+Shot10() {
+	if(gun1)
+	{ emit-sfx MUZZLE from kflare1_aft_r;}
+	else { emit-sfx MUZZLE from kflare2_aft_r;}
+	gun1 = !gun1;
+}
+
+AimFromWeapon11(p) {
+	p=lturret_fore;
+}
+
+QueryWeapon11(p) {
+	p=lflare_fore;
+}
+
+AimWeapon11(h,p) {
+	if ((get HEALTH) < minhealth_laser_front)	{
+		emit-sfx sparkFX from lturret_fore;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim11;
+	set-signal-mask SIG_Aim11;
+	turn lturret_fore to y-axis h speed (KTURRETAIM*2);
+	turn lsleeve_fore to x-axis (0 - p) speed (KBARRELAIM*2);
+	wait-for-turn lturret_fore around y-axis;
+	wait-for-turn lturret_fore around y-axis;
+	return 1;
+}
+
+AimFromWeapon12(p) {
+	p=lturret_mid_l;
+}
+
+QueryWeapon12(p) {
+	p=lflare_mid_l;
+}
+
+AimWeapon12(h,p) {
+	if ((get HEALTH) < minhealth_laser_mid1))	{
+		emit-sfx sparkFX from lturret_mid_l;
+		sleep 500;
+		return 0;
+	}
+	if (!get PERK_MORE_GUNS) {return 0;}
+	signal SIG_Aim12;
+	set-signal-mask SIG_Aim12;
+	turn lturret_mid_l to y-axis h speed (KTURRETAIM*2);
+	turn lsleeve_mid_l to x-axis (0 - p) speed (KBARRELAIM*2);
+	wait-for-turn lturret_mid_l around y-axis;
+	wait-for-turn lturret_mid_l around y-axis;
+	return 1;
+}
+
+AimFromWeapon13(p) {
+	p=lturret_mid_r;
+}
+
+QueryWeapon13(p) {
+	p=lflare_mid_r;
+}
+
+AimWeapon13(h,p) {
+	if ((get HEALTH) < minhealth_laser_mid2)	{
+		emit-sfx sparkFX from lturret_mid_r;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim13;
+	set-signal-mask SIG_Aim13;
+	turn lturret_mid_r to y-axis h speed (KTURRETAIM*2);
+	turn lsleeve_mid_r to x-axis (0 - p) speed (KBARRELAIM*2);
+	wait-for-turn lturret_mid_r around y-axis;
+	wait-for-turn lturret_mid_r around y-axis;
+	return 1;
+}
+
+AimFromWeapon14(p) {
+	p=lturret_aft;
+}
+
+QueryWeapon14(p) {
+	p=lflare_aft;
+}
+
+AimWeapon14(h,p) {
+	if ((get HEALTH) < minhealth_laser_rear)	{
+		emit-sfx sparkFX from lturret_aft;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim14;
+	set-signal-mask SIG_Aim14;
+	turn lturret_aft to y-axis h speed (KTURRETAIM*2);
+	turn lsleeve_aft to x-axis (0 - p) speed (KBARRELAIM*2);
+	wait-for-turn lturret_aft around y-axis;
+	wait-for-turn lturret_aft around y-axis;
+	return 1;
+}
+
+AimFromWeapon15(p) {
+	p=grav;
+}
+
+QueryWeapon15(p) {
+	p=grav;
+}
+
+AimWeapon15(h,p) {
+	if ((get HEALTH) < minhealth_grav)	{
+		emit-sfx sparkFX from grav;
+		sleep 500;
+		return 0;
+	}
+	if ((get PERK_GRAV_FLAK) && (get PERK_MORE_GUNS)) return 1;
+	else return 0;
+}
+
+AimFromWeapon16(p) {
+	p=pturret_l;
+}
+
+QueryWeapon16(p) {
+	p=pflare_l;
+}
+
+AimWeapon16(h,p) {
+	if ((get HEALTH) < minhealth_plasma1)	{
+		emit-sfx sparkFX from pturret_l;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim16;
+	set-signal-mask SIG_Aim16;
+	turn pturret_l to y-axis h speed (PTURRETAIM);
+	turn psleeve_l to x-axis (0 - p) speed (PBARRELAIM);
+	wait-for-turn pturret_l around y-axis;
+	wait-for-turn psleeve_l around y-axis;
+	return 1;
+}
+
+AimFromWeapon17(p) {
+	p=pturret_r;
+}
+
+QueryWeapon17(p) {
+	p=pturret_r;
+}
+
+AimWeapon17(h,p) {
+	if ((get HEALTH) < minhealth_plasma2)	{
+		emit-sfx sparkFX from pturret_r;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim17;
+	set-signal-mask SIG_Aim17;
+	turn pturret_r to y-axis h speed (PTURRETAIM);
+	turn psleeve_r to x-axis (0 - p) speed (PBARRELAIM);
+	wait-for-turn pturret_r around y-axis;
+	wait-for-turn psleeve_r around y-axis;
+	return 1;
+}
+
+AimFromWeapon18(p) {
+	p=hullmain;
+}
+
+QueryWeapon18(p) {
+	p=hullmain;
+}
+
+AimWeapon18() {
+	if ((get HEALTH) < minhealth_torpedo)	{
+		emit-sfx sparkFX from torp1;
+		emit-sfx sparkFX from torp2;
+		emit-sfx sparkFX from torp3;
+		emit-sfx sparkFX from torp4;
+		emit-sfx sparkFX from torp5;
+		emit-sfx sparkFX from torp6;
+		sleep 500;
+		return 0;
+	}
+	return 1;
+}
+
+FireWeapon18() {
+	var t;
+	t=get TARGET_ID(6);
+	if(t>0) {
+		call-script lua_LaunchDroneWeapon(t, TORPEDO, torp5, 0);
+		call-script lua_LaunchDroneWeapon(t, TORPEDO, torp6, 0);
+		sleep 300;
+		call-script lua_LaunchDroneWeapon(get TARGET_ID(6), TORPEDO, torp3, 0);
+		call-script lua_LaunchDroneWeapon(get TARGET_ID(6), TORPEDO, torp4, 0);
+		sleep 300;
+		call-script lua_LaunchDroneWeapon(get TARGET_ID(6), TORPEDO, torp1, 0);
+		call-script lua_LaunchDroneWeapon(get TARGET_ID(6), TORPEDO, torp2, 0);
+	}
+}
+
+BlockShot18(target, block) {
+	block= !target;
+}
+
+AimFromWeapon19(p) {
+	p=mturret_l;
+}
+
+QueryWeapon19(p) {
+	if (miss1) {p = mflare1_l;}
+	else {p = mflare2_l;}
+}
+
+AimWeapon19(h,p) {
+	if ((get HEALTH) < minhealth_missile1))	{
+		emit-sfx sparkFX from mturret_l;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim19;
+	set-signal-mask SIG_Aim19;
+	turn mturret_l to y-axis h speed (MTURRETAIM);
+	turn msleeve_l to x-axis (0 - p) speed (MBARRELAIM);
+	wait-for-turn mturret_l around y-axis;
+	wait-for-turn msleeve_l around y-axis;
+	return 1;
+}
+
+Shot19() {
+	miss1 = !miss1;
+}
+
+AimFromWeapon20(p) {
+	p=mturret_r;
+}
+
+QueryWeapon20(p) {
+	if (miss2) {p = mflare1_r;}
+	else {p = mflare2_r;}
+}
+
+AimWeapon20(h,p) {
+	if ((get HEALTH) < minhealth_missile2)	{
+		emit-sfx sparkFX from mturret_r;
+		sleep 500;
+		return 0;
+	}
+	signal SIG_Aim19;
+	set-signal-mask SIG_Aim19;
+	turn mturret_r to y-axis h speed (MTURRETAIM);
+	turn msleeve_r to x-axis (0 - p) speed (MBARRELAIM);
+	wait-for-turn mturret_r around y-axis;
+	wait-for-turn msleeve_r around y-axis;
+	return 1;
+}
+
+Shot20() {
+	miss2 = !miss2;
+}

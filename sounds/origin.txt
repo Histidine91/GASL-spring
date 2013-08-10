@@ -1,0 +1,22 @@
+BZFlag:
+marker_place.wav
+message_private.wav
+message_team.wav
+
+Open Quarz:
+krog_stomp.wav
+
+Open LieroX:
+something.wav
+something2.wav
+
+Nanoblobs:
+beep4.wav
+beep6.wav
+
+nexuiz:
+talk.wav
+sparks.wav
+
+THIS (Public Domain):
+Pretty much everything not listed here, including subfolders

@@ -1,0 +1,3 @@
+lightening.tga, lightening2.tga, electnovaexplo.png: CC-BY-SA
+Credited to smoth (Steve Smith)
+http://springrts.com/phpbb/viewtopic.php?p=153566#p153566

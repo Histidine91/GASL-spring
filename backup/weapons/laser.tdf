@@ -1,0 +1,322 @@
+[LLight]
+	{
+	name=Light Laser;
+	RGBcolor=1 0 0;
+	weaponType=BeamLaser;
+	thickness=1;
+	intensity=1;
+	noselfdamage=1;
+	burst=2;
+	burstrate=.2;
+	beamttl=8;
+	beamdecay=.8;
+	beamburst=1;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=1;
+	range=600;
+
+	reloadtime=2;
+
+	areaofeffect=8;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:laser;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=60;
+	}
+}
+
+[LLightS2]
+	{
+	name=Light Laser;
+	RGBcolor=1 0 0;
+	weaponType=BeamLaser;
+	thickness=1;
+	intensity=1;
+	noselfdamage=1;
+	burst=2;
+	burstrate=.2;
+	beamttl=8;
+	beamdecay=.8;
+	beamburst=1;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=1;
+	range=450;
+
+	reloadtime=2;
+
+	areaofeffect=8;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:laser;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=60;
+	}
+}
+
+[LLightS]
+	{
+	name=Light Laser;
+	RGBcolor=1 0 0;
+	weaponType=BeamLaser;
+	thickness=1;
+	intensity=1;
+	noselfdamage=1;
+	beamttl=8;
+	beamdecay=.8;
+	beamburst=1;
+
+	soundstart=llaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=1;
+	range=450;
+
+	reloadtime=2;
+
+	areaofeffect=8;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:laser;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=60;
+	}
+}
+
+
+[LMedium]
+	{
+	name=Medium Laser;
+	RGBcolor=1 0 0;
+	weaponType=BeamLaser;
+	thickness=3;
+	intensity=1;
+	noselfdamage=1;
+	beamttl=8;
+	beamdecay=.8;
+	beamburst=1;
+
+	soundstart=mlaser;
+	soundhit=;
+	minIntensity=1;
+
+	turret=1;
+	range=550;
+
+	reloadtime=1;
+
+	areaofeffect=8;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=1000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:laser;
+
+	interceptedbyshieldtype=4; //laser
+	[DAMAGE]
+	{
+		default=120;
+	}
+}
+
+[LPointDefense]
+	{
+	name=Point Defense;
+	RGBcolor=0 1 0;
+	weaponType=BeamLaser;
+	thickness=2.5;
+	intensity=1;
+	noselfdamage=1;
+	minIntensity=1;
+	beamburst=1;
+	beamttl=16;
+	beamdecay=.9;
+	size=2;
+
+	//soundstart=weapons\klightfire;
+	soundhit=weapons\klighthit;
+
+	turret=1;
+	range=600;
+	weaponvelocity=1200;
+	FallOffRate=.05;
+
+	reloadtime=.5;
+
+	areaofeffect=8;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=30000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:laser;
+
+	interceptedbyshieldtype=1; //kinetic
+	[DAMAGE]
+	{
+		default=1;
+		drone=30;
+		torpedo=30;
+	}
+}
+
+
+[LPointDefenseL]
+	{
+	name=Point Defense;
+	RGBcolor=0 1 0;
+	weaponType=BeamLaser;
+	thickness=2.5;
+	intensity=1;
+	noselfdamage=1;
+	minIntensity=1;
+	beamburst=1;
+	beamttl=16;
+	beamdecay=.9;
+	size=2;
+
+	//soundstart=weapons\klightfire;
+	soundhit=weapons\klighthit;
+
+	turret=1;
+	range=1400;
+	weaponvelocity=1200;
+	FallOffRate=.05;
+
+	reloadtime=.25;
+
+	areaofeffect=8;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=30000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:laser;
+
+	interceptedbyshieldtype=1; //kinetic
+	[DAMAGE]
+	{
+		default=1;
+		drone=30;
+		torpedo=30;
+	}
+}
+
+[MPointDefense]
+	{
+	name=Point Defense;
+	RGBcolor=0 0.3 1;
+	weaponType=BeamLaser;
+	thickness=3;
+	intensity=1;
+	noselfdamage=1;
+	minIntensity=1;
+	beamburst=1;
+	beamttl=16;
+	beamdecay=.9;
+	size=2;
+
+	//soundstart=weapons\klightfire;
+	soundhit=weapons\klighthit;
+
+	turret=1;
+	range=600;
+	weaponvelocity=1200;
+	FallOffRate=.05;
+
+	reloadtime=.5;
+
+	areaofeffect=8;
+	collidefriendly=0;
+	avoidfriendly=0;
+	collidefeature=0;
+	avoidfeature=0;
+
+	tolerance=30000;
+
+	impulsefactor=0;
+	impulseBoost=0;
+	craterMult=0;
+	craterBoost=0;
+
+	explosiongenerator=custom:laser;
+
+	interceptedbyshieldtype=1; //kinetic
+	[DAMAGE]
+	{
+		default=1;
+		drone=45;
+		torpedo=45;
+	}
+}
+

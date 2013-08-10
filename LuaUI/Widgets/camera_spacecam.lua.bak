@@ -1,0 +1,776 @@
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+function widget:GetInfo()
+  return {
+    name      = "SpaceCam",
+    desc      = "Simple camera widget",
+    author    = "KingRaptor (based on COFC by CarRepairer)",
+    date      = "2011-03-16", --2013-June-30
+    license   = "GNU GPL, v2 or later",
+    layer     = 1002,
+    handler   = true,
+    enabled   = false,
+  }
+end
+
+include("keysym.h.lua")
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+local init = true
+local trackmode = false --before options
+local thirdPerson_trackunit = nil
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+options_path = 'Settings/Camera/Camera Controls'
+local cameraFollowPath = 'Settings/Camera/Camera Following'
+options_order = { 
+	'helpwindow', 
+	
+	'lblRotate',
+	'targetmouse', 
+	'rotateonedge', 
+	'rotfactor',
+    'inverttilt',
+    'groundrot',
+	
+	'lblScroll',
+	'edgemove', 
+	'speedFactor', 
+	'speedFactor_k', 
+	'invertscroll', 
+	'smoothmeshscroll', 
+	
+	'lblZoom',
+	'invertzoom', 
+	'invertalt', 
+	'zoomintocursor', 
+	'zoomoutfromcursor', 
+	'zoominfactor', 
+	'zoomoutfactor',
+	
+	'lblMisc',
+	'overviewmode', 
+	'smoothness',
+	'fov',
+	'freemode',
+	'resetcam',
+	
+	'lblFollowUnit',
+	'trackmode',
+	'thirdpersontrack',
+	
+	'lblMisc2',
+	'enableCycleView',
+}
+
+local OverviewAction = function() end
+local SetFOV = function(fov) end
+local SelectNextPlayer = function() end
+
+options = {
+	
+	lblblank1 = {name='', type='label'},
+	lblRotate = {name='Rotation', type='label'},
+	lblScroll = {name='Scrolling', type='label'},
+	lblZoom = {name='Zooming', type='label'},
+	lblMisc = {name='Misc.', type='label'},
+	
+	lblFollowCursor = {name='Cursor Following', type='label', path=cameraFollowPath},
+	lblFollowUnit = {name='Unit Following', type='label', path=cameraFollowPath},
+	lblMisc2 = {name='Misc.', type='label', path = cameraFollowPath},
+	
+	
+	helpwindow = {
+		name = 'COFCam Help',
+		type = 'text',
+		value = [[
+			Complete Overhead/Free Camera has six main actions...
+			
+			Zoom..... <Mousewheel>
+			Tilt World..... <Ctrl> + <Mousewheel>
+			Altitude..... <Alt> + <Mousewheel>
+			Mouse Scroll..... <Middlebutton-drag>
+			Rotate World..... <Ctrl> + <Middlebutton-drag>
+			Rotate Camera..... <Alt> + <Middlebutton-drag>
+			
+			Additional actions:
+			Keyboard: <arrow keys> replicate middlebutton drag while <pgup/pgdn> replicate mousewheel. You can use these with ctrl, alt & shift to replicate mouse camera actions.
+			Use <Shift> to speed up camera movements.
+			Reset Camera..... <Ctrl> + <Alt> + <Middleclick>
+		]],
+	},
+	smoothscroll = {
+		name = 'Smooth scrolling',
+		desc = 'Use smoothscroll method when mouse scrolling.',
+		type = 'bool',
+		value = true,
+	},
+	targetmouse = {
+		name = 'Rotate world origin at cursor',
+		desc = 'Rotate world using origin at the cursor rather than the center of screen.',
+		type = 'bool',
+		value = false,
+	},
+	edgemove = {
+		name = 'Scroll camera at edge',
+		desc = 'Scroll camera when the cursor is at the edge of the screen.',
+		springsetting = 'WindowedEdgeMove',
+		type = 'bool',
+		value = true,
+		
+	},
+	speedFactor = {
+		name = 'Mouse scroll speed',
+		desc = 'This speed applies to scrolling with the middle button.',
+		type = 'number',
+		min = 10, max = 40,
+		value = 25,
+	},
+	speedFactor_k = {
+		name = 'Keyboard/edge scroll speed',
+		desc = 'This speed applies to edge scrolling and keyboard keys.',
+		type = 'number',
+		min = 1, max = 50,
+		value = 20,
+	},
+	zoominfactor = {
+		name = 'Zoom-in speed',
+		type = 'number',
+		min = 0.1, max = 0.5, step = 0.05,
+		value = 0.2,
+	},
+	zoomoutfactor = {
+		name = 'Zoom-out speed',
+		type = 'number',
+		min = 0.1, max = 0.5, step = 0.05,
+		value = 0.2,
+	},
+	invertzoom = {
+		name = 'Invert zoom',
+		desc = 'Invert the scroll wheel direction for zooming.',
+		type = 'bool',
+		value = true,
+	},
+	invertalt = {
+		name = 'Invert altitude',
+		desc = 'Invert the scroll wheel direction for altitude.',
+		type = 'bool',
+		value = false,
+	},
+	inverttilt = {
+		name = 'Invert tilt',
+		desc = 'Invert the tilt direction when using ctrl+mousewheel.',
+		type = 'bool',
+		value = false,
+	},
+    
+	zoomoutfromcursor = {
+		name = 'Zoom out from cursor',
+		desc = 'Zoom out from the cursor rather than center of the screen.',
+		type = 'bool',
+		value = false,
+	},
+	zoomintocursor = {
+		name = 'Zoom in to cursor',
+		desc = 'Zoom in to the cursor rather than the center of the screen.',
+		type = 'bool',
+		value = true,
+	},
+	rotfactor = {
+		name = 'Rotation speed',
+		type = 'number',
+		min = 0.001, max = 0.020, step = 0.001,
+		value = 0.005,
+	},	
+	rotateonedge = {
+		name = "Rotate camera at edge",
+		desc = "Rotate camera when the cursor is at the edge of the screen (edge scroll must be off).",
+		type = 'bool',
+		value = false,
+	},
+    
+	smoothness = {
+		name = 'Smoothness',
+		desc = "Controls how smooth the camera moves.",
+		type = 'number',
+		min = 0.0, max = 0.8, step = 0.1,
+		value = 0.2,
+	},
+	fov = {
+		name = 'Field of View (Degrees)',
+		--desc = "FOV (25 deg - 100 deg).",
+		type = 'number',
+		min = 10, max = 100, step = 5,
+		value = Spring.GetCameraFOV(),
+		springsetting = 'CamFreeFOV', --save stuff in springsetting. reference: epicmenu_conf.lua
+		OnChange = function(self) SetFOV(self.value) end
+	},
+	invertscroll = {
+		name = "Invert scrolling direction",
+		desc = "Invert scrolling direction (doesn't apply to smoothscroll).",
+		type = 'bool',
+		value = false,
+	},
+	freemode = {
+		name = "FreeMode (risky)",
+		desc = "Be free. Camera movement not bound to map edge. USE AT YOUR OWN RISK!",
+		type = 'bool',
+		advanced = true,
+		value = false,
+		OnChange = function(self) init = true; end,
+	},
+	overviewmode = {
+		name = "COFC Overview",
+		desc = "Go to overview mode, then restore view to cursor position.",
+		type = 'button',
+		hotkey = {key='tab', mod=''},
+		OnChange = function(self) OverviewAction() end,
+	},
+	resetcam = {
+		name = "Reset Camera",
+		desc = "Reset the camera position and orientation. Map a hotkey or use <Ctrl> + <Alt> + <Middleclick>",
+		type = 'button',
+        -- OnChange defined later
+	},	
+	-- follow unit
+	trackmode = {
+		name = "Activate Trackmode",
+		desc = "Track the selected unit (mouse midclick to exit mode)",
+		type = 'button',
+        hotkey = {key='t', mod='alt+'},
+		path = cameraFollowPath,
+		OnChange = function(self) trackmode = true; Spring.Echo("COFC: Unit tracking ON") end,
+	},
+	
+    thirdpersontrack = {
+		name = "Enter 3rd Person Trackmode",
+		desc = "3rd Person track the selected unit (mouse midclick to exit mode).",
+		type = 'button',
+		hotkey = {key='k', mod='alt+'},
+		path = cameraFollowPath,
+		OnChange = function(self)
+			local selUnits = Spring.GetSelectedUnits()
+			if selUnits and selUnits[1] and thirdPerson_trackunit ~= selUnits[1] then --check if 3rd Person into same unit or if there's any unit at all
+				Spring.SendCommands("track")
+				--Spring.SendCommands("viewfps")
+				thirdPerson_trackunit = selUnits[1]
+				TrackUnit(thirdPerson_trackunit)
+			else
+				Spring.SendCommands("trackoff")
+				thirdPerson_trackunit = nil
+				--Spring.SendCommands("viewfree")
+			end
+        end,
+	},
+	
+	enableCycleView = {
+		name = "Group recall cycle within group",
+		type = 'bool',
+		value = false,
+		path = cameraFollowPath,
+		desc = "Tap the same group numbers to focus camera view toward each units within the same group. This option use \'Receive Indicator\' widget to intelligently cycle focus when appropriate.",
+		OnChange = function(self) 
+			if self.value==true then
+				Spring.SendCommands("luaui enablewidget Receive Units Indicator")
+			end
+		end,
+	},
+	-- end follow unit
+	
+}
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+local GL_LINES		= GL.LINES
+local GL_GREATER	= GL.GREATER
+local GL_POINTS		= GL.POINTS
+
+local glBeginEnd	= gl.BeginEnd
+local glColor		= gl.Color
+local glLineWidth	= gl.LineWidth
+local glVertex		= gl.Vertex
+local glAlphaTest	= gl.AlphaTest
+local glPointSize 	= gl.PointSize
+local glTexture 	= gl.Texture
+local glTexRect 	= gl.TexRect
+
+local red   = { 1, 0, 0 }
+local green = { 0, 1, 0 }
+local black = { 0, 0, 0 }
+local white = { 1, 1, 1 }
+
+
+local spGetCameraState		= Spring.GetCameraState
+local spGetCameraVectors	= Spring.GetCameraVectors
+--local spGetGroundHeight		= Spring.GetGroundHeight
+local spGetSmoothMeshHeight	= Spring.GetSmoothMeshHeight
+local spGetActiveCommand	= Spring.GetActiveCommand
+local spGetModKeyState		= Spring.GetModKeyState
+local spGetMouseState		= Spring.GetMouseState
+local spGetSelectedUnits	= Spring.GetSelectedUnits
+local spGetGameSpeed		= Spring.GetGameSpeed
+local spGetUnitPosition		= Spring.GetUnitPosition
+local spGetUnitViewPosition	= Spring.GetUnitViewPosition
+local spGetUnitDirection	= Spring.GetUnitDirection
+local spGetUnitVelocity		= Spring.GetUnitVelocity
+local spIsAboveMiniMap		= Spring.IsAboveMiniMap
+local spSendCommands		= Spring.SendCommands
+local spSetCameraState		= Spring.SetCameraState
+local spSetMouseCursor		= Spring.SetMouseCursor
+local spTraceScreenRay		= Spring.TraceScreenRay
+local spWarpMouse			= Spring.WarpMouse
+local spGetCameraDirection	= Spring.GetCameraDirection
+local spSetCameraTarget		= Spring.SetCameraTarget
+local spGetTimer 			= Spring.GetTimer
+local spDiffTimers 			= Spring.DiffTimers
+
+local spGetGroundHeight = function(x,z)
+  local val = Spring.GetGroundHeight(x,z)
+  if val < 0 then val = 0 end
+  return val
+end
+
+local abs	= math.abs
+local min 	= math.min
+local max	= math.max
+local sqrt	= math.sqrt
+local sin	= math.sin
+local cos	= math.cos
+
+local echo = Spring.Echo
+
+local helpText = {}
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+local ls_x, ls_y, ls_z --lockspot position
+local ls_dist, ls_have, ls_onmap --lockspot flag
+local tilting
+local overview_mode, last_rx, last_ls_dist --overview_mode's variable
+local follow_timer = 0
+local epicmenuHkeyComp = {} --for saving & reapply hotkey system handled by epicmenu.lua
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+local vsx, vsy = widgetHandler:GetViewSizes()
+local cx,cy = vsx * 0.5,vsy * 0.5
+function widget:ViewResize(viewSizeX, viewSizeY)
+	vsx = viewSizeX
+	vsy = viewSizeY
+	cx = vsx * 0.5
+	cy = vsy * 0.5
+end
+
+local PI 			= math.pi
+--local TWOPI			= PI*2	
+local HALFPI		= PI/2
+--local HALFPIPLUS	= HALFPI+0.01
+local HALFPIMINUS	= HALFPI-0.01
+local RADperDEGREE = PI/180
+
+local CAM_TRACK_PERIOD = 0.01
+local OVERVIEW_DISTICON = 150
+
+local fpsmode = false
+local mx, my = 0,0
+local msx, msy = 0,0
+local smoothscroll = false
+local springscroll = false
+local lockspringscroll = false
+local rotate, movekey
+local move, rot = {}, {}
+local key_code = {
+	left 		= 276,
+	right 		= 275,
+	up 			= 273,
+	down 		= 274,
+	pageup 		= 280,
+	pagedown 	= 281,
+}
+local keys = {
+	[276] = 'left',
+	[275] = 'right',
+	[273] = 'up',
+	[274] = 'down',
+}
+local icon_size = 20
+local cycle = 1
+local camcycle = 1
+local trackcycle = 1
+local hideCursor = false
+
+
+local mwidth, mheight = Game.mapSizeX, Game.mapSizeZ
+local averageEdgeHeight = -300
+local mcx, mcz 	= mwidth / 2, mheight / 2
+local mcy 		= spGetGroundHeight(mcx, mcz)
+local maxDistY = max(mheight, mwidth) * 2
+do
+	local northEdge = spGetGroundHeight(mwidth/2,0)
+	local eastEdge = spGetGroundHeight(0,mheight/2)
+	local southEdge = spGetGroundHeight(mwidth/2,mheight)
+	local westEdge = spGetGroundHeight(mwidth,mheight/2)
+	--averageEdgeHeight =(northEdge+eastEdge+southEdge+westEdge)/4 --is used for estimating coordinate in null space
+	
+	local currentFOVhalf_rad = (Spring.GetCameraFOV()/2)*PI/180
+	local mapLenght = (max(mheight, mwidth)+4000)/2
+	maxDistY =  mapLenght/math.tan(currentFOVhalf_rad) --adjust TAB/Overview distance based on camera FOV
+end
+
+local trackCam = {dist = 200, heading = 0, pitch = 0}
+local trackCamOverview = {dist = 1500, heading = 0, pitch = PI*0.7}
+
+local origIconDistance = Spring.GetConfigInt("UnitIconDist", 150)
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local rotate_transit --switch for smoothing "rotate at mouse position instead of screen center"
+local last_move = spGetTimer() --switch for reseting lockspot for Edgescroll
+local last_zoom = {spGetTimer(),spGetTimer()} --switch for delaying zooming updates for FollowCursorAutoZoom
+local thirdPerson_transit = spGetTimer() --switch for smoothing "3rd person trackmode edge screen scroll"
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+local function GetDist(x1,y1,z1, x2,y2,z2)
+	local d1 = x2-x1
+	local d2 = y2-y1
+	local d3 = z2-z1
+	
+	return sqrt(d1*d1 + d2*d2 + d3*d3)
+end
+
+local function explode(div,str)
+  if (div=='') then return false end
+  local pos,arr = 0,{}
+  -- for each divider found
+  for st,sp in function() return string.find(str,div,pos,true) end do
+    table.insert(arr,string.sub(str,pos,st-1)) -- Attach chars left of current divider
+    pos = sp + 1 -- Jump past current divider
+  end
+  table.insert(arr,string.sub(str,pos)) -- Attach chars right of last divider
+  return arr
+end
+
+local function GetRotationFromVector(dx, dy, dz)
+	local rx = math.atan2(dy, dz)
+	local rz = math.atan2(dy, dx)
+	local ry = math.atan2(dz, dx)
+	return rx, ry, rz
+end
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+local previousFov=-1
+local prevInclination =99
+local prevAzimuth = 299
+local prevX = 9999
+local prevY = 9999
+local cachedResult = {0,0,0}
+local function OverrideTraceScreenRay(x,y,cs) --this function provide an adjusted TraceScreenRay for null-space outside of the map (by msafwan)
+	local halfViewSizeY = vsy/2
+	local halfViewSizeX = vsx/2
+	y = y- halfViewSizeY --convert screen coordinate to 0,0 at middle
+	x = x- halfViewSizeX
+	local currentFov = cs.fov/2 --in Spring: 0 degree is directly ahead and +FOV/2 degree to the left and -FOV/2 degree to the right
+	--//Speedup//--
+	if previousFov==currentFov and prevInclination == cs.rx and prevAzimuth == cs.ry and prevX ==x and prevY == y then --if camera Sphere coordinate & mouse position not change then use cached value
+		return cachedResult[1],cachedResult[2],cachedResult[3] 
+	end
+	
+	--//Opengl FOV scaling logic//--
+	local referenceScreenSize = halfViewSizeY --because Opengl Glut use vertical screen size for FOV setting
+	local referencePlaneDistance = referenceScreenSize -- because Opengl use 45 degree as default FOV, in which case tan(45)=1= referenceScreenSize/referencePlaneDistance
+	local currentScreenSize = math.tan(currentFov*RADperDEGREE)*referencePlaneDistance --calculate screen size for current FOV if the distance to perspective projection plane is the default for 45 degree
+	local resizeFactor = referenceScreenSize/currentScreenSize --the ratio of the default screen size to new FOV's screen size
+	local perspectivePlaneDistance = resizeFactor*referencePlaneDistance --move perspective projection plane (closer or further away) so that the size appears to be as the default size for 45 degree
+	--Note: second method is "perspectivePlaneDistance=halfViewSizeY/math.tan(currentFov*RADperDEGREE)" which yield the same result with 1 line.
+	
+	--//mouse-to-Sphere projection//--
+	local distanceFromCenter = sqrt(x*x+y*y) --mouse cursor distance from center screen. We going to simulate a Sphere dome which we will position the mouse cursor.
+	local inclination = math.atan(distanceFromCenter/perspectivePlaneDistance) --translate distance in 2d plane to angle projected from the Sphere
+	inclination = inclination -PI/2 --offset 90 degree because we want to place the south hemisphere (bottom) of the dome on the screen
+	local azimuth = math.atan2(-x,y) --convert x,y to angle, so that left is +degree and right is -degree. Note: negative x flip left-right or right-left (flip the direction of angle)
+	--//Sphere-to-coordinate conversion//--
+	local sphere_x = 100* sin(azimuth)* cos(inclination) --convert Sphere coordinate back to Cartesian coordinate to prepare for rotation procedure
+	local sphere_y = 100* sin(inclination)
+	local sphere_z = 100* cos(azimuth)* cos(inclination)
+	--//coordinate rotation 90+x degree//--
+	local rotateToInclination = PI/2+cs.rx --rotate to +90 degree facing the horizon then rotate to camera's current facing.
+	local new_x = sphere_x --rotation on x-axis
+	local new_y = sphere_y* cos (rotateToInclination) + sphere_z* sin (rotateToInclination) --move points of Sphere to new location 
+	local new_z = sphere_z* cos (rotateToInclination) - sphere_y* sin (rotateToInclination)
+	--//coordinate-to-Sphere conversion//--
+	local cursorTilt = math.atan2(new_y,sqrt(new_z*new_z+new_x*new_x)) --convert back to Sphere coordinate
+	local cursorHeading = math.atan2(new_x,new_z) --Sphere's azimuth
+	
+	--//Sphere-to-groundPosition translation//--
+	local tiltSign = abs(cursorTilt)/cursorTilt --Sphere's inclination direction (positive upward or negative downward)
+	local cursorTiltComplement = (PI/2-abs(cursorTilt))*tiltSign --return complement angle for cursorTilt
+	cursorTiltComplement = min(1.5550425,abs(cursorTiltComplement))*tiltSign --limit to 89 degree to prevent infinity in math.tan() 
+	local cursorxzDist = math.tan(cursorTiltComplement)*(averageEdgeHeight-cs.py) --how far does the camera angle look pass the ground beneath
+	local cursorxDist = sin(cs.ry+cursorHeading)*cursorxzDist ----break down the ground beneath into x and z component.  Note: using Sin() instead of regular Cos() because coordinate & angle is left handed
+	local cursorzDist = cos(cs.ry+cursorHeading)*cursorxzDist
+	local gx, gy, gz = cs.px+cursorxDist,averageEdgeHeight,cs.pz+cursorzDist --estimated ground position infront of camera 
+	--Finish
+	if false then
+		-- Spring.Echo("MouseCoordinate")
+		-- Spring.Echo(y .. " y")
+		-- Spring.Echo(x .. " x")
+		-- Spring.Echo("Before_Angle")
+		-- Spring.Echo(inclination*(180/PI) .. " inclination")
+		-- Spring.Echo(azimuth*(180/PI).. " azimuth")
+		-- Spring.Echo(distanceFromCenter.. " distanceFromCenter")
+		-- Spring.Echo(perspectivePlaneDistance.. " perspectivePlaneDistance")
+		-- Spring.Echo( halfViewSizeY/math.tan(currentFov*RADperDEGREE) .. " perspectivePlaneDistance(2ndMethod)")
+		-- Spring.Echo("CameraAngle")
+		-- Spring.Echo(cs.rx*(180/PI))
+		-- Spring.Echo(cs.ry*(180/PI))
+		-- Spring.Echo("After_Angle")
+		-- Spring.Echo(cursorTilt*(180/PI))
+		-- Spring.Echo((cs.ry+cursorHeading)*(180/PI) .. " cursorComponent: " .. cursorHeading*(180/PI))
+		Spring.MarkerAddPoint(gx, gy, gz, "here")
+	end
+	--//caching for efficiency
+	cachedResult[1] = gx
+	cachedResult[2] = gy
+	cachedResult[3] = gz
+	prevInclination =cs.rx
+	prevAzimuth = cs.ry
+	prevX = x
+	prevY = y
+	previousFov = currentFov	
+
+	return gx,gy,gz
+	--Most important credit to!:
+	--0: Google search service
+	--1: "Perspective Projection: The Wrong Imaging Model" by Margaret M. Fleck (http://www.cs.illinois.edu/~mfleck/my-papers/stereographic-TR.pdf)
+	--2: http://www.scratchapixel.com/lessons/3d-advanced-lessons/perspective-and-orthographic-projection-matrix/perspective-projection-matrix/
+	--3: http://stackoverflow.com/questions/5278417/rotating-body-from-spherical-coordinates
+	--4: http://en.wikipedia.org/wiki/Spherical_coordinate_system
+end
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+--[[ --NOTE: is not yet used for the moment
+local function MoveRotatedCam(cs, mxm, mym)
+	if not cs.dy then
+		return cs
+	end
+	
+	-- forward, up, right, top, bottom, left, right
+	local camVecs = spGetCameraVectors()
+	local cf = camVecs.forward
+	local len = sqrt((cf[1] * cf[1]) + (cf[3] * cf[3]))
+	local dfx = cf[1] / len
+	local dfz = cf[3] / len
+	local cr = camVecs.right
+	local len = sqrt((cr[1] * cr[1]) + (cr[3] * cr[3]))
+	local drx = cr[1] / len
+	local drz = cr[3] / len
+	
+	local vecDist = (- cs.py) / cs.dy
+	
+	local ddx = (mxm * drx) + (mym * dfx)
+	local ddz = (mxm * drz) + (mym * dfz)
+	
+	local gx1, gz1 = cs.px + vecDist*cs.dx,			cs.pz + vecDist*cs.dz --note me: what does cs.dx mean?
+	local gx2, gz2 = cs.px + vecDist*cs.dx + ddx,	cs.pz + vecDist*cs.dz + ddz 
+	
+	local extra = 500
+	
+	if gx2 > mwidth + extra then
+		ddx = mwidth + extra - gx1
+	elseif gx2 < 0 - extra then
+		ddx = -gx1 - extra
+	end
+	
+	if gz2 > mheight + extra then
+		ddz = mheight - gz1 + extra
+	elseif gz2 < 0 - extra then
+		ddz = -gz1 - extra
+	end
+	
+	cs.px = cs.px + ddx
+	cs.pz = cs.pz + ddz
+	return cs
+end
+--]]
+
+--Note: If the x,y is not pointing at an onmap point, this function traces a virtual ray to an
+--          offmap position using the camera direction and disregards the x,y parameters.
+local function VirtTraceRay(x,y, cs, useWater)
+	local _, gpos = spTraceScreenRay(x, y, true, false, true, not useWater)
+	
+	if gpos then
+		local gx, gy, gz = gpos[1], gpos[2], gpos[3]
+		
+		--gy = spGetSmoothMeshHeight (gx,gz)
+		
+		if gx < 0 or gx > mwidth or gz < 0 or gz > mheight then --out of map
+			return false, gx, gy, gz	
+		else
+			return true, gx, gy, gz
+		end
+	end
+	
+	if not cs or not cs.dy or cs.dy == 0 then
+		return false, false
+	end
+	--[[ 
+	local vecDist = (- cs.py) / cs.dy
+	local gx, gy, gz = cs.px + vecDist*cs.dx, 	cs.py + vecDist*cs.dy, 	cs.pz + vecDist*cs.dz  --note me: what does cs.dx mean?
+	--]]
+
+	local gx,gy,gz = OverrideTraceScreenRay(x,y,cs) --use override if spTraceScreenRay() do not have results
+	
+	--gy = spGetSmoothMeshHeight (gx,gz)
+	return false, gx, gy, gz
+end
+--==End camera utility function^^ (a frequently used function. Function often used for controlling camera).
+
+
+SetFOV = function(fov)
+	local cs = spGetCameraState()
+	cs.fov = fov
+	spSetCameraState(cs,0)
+	--Spring.Echo(fov .. " degree")
+	
+	local currentFOVhalf_rad = (fov/2)*PI/180
+	local mapLength = (max(mheight, mwidth)+4000)/2
+	maxDistY =  mapLength/math.tan(currentFOVhalf_rad) --adjust maximum TAB/Overview distance based on camera FOV
+end
+
+local function ResetCam()
+	local cs = spGetCameraState()
+	cs.px = Game.mapSizeX/2
+	cs.py = maxDistY
+	cs.pz = Game.mapSizeZ/2
+	cs.rx = -HALFPI
+	cs.ry = PI
+	spSetCameraState(cs, 1)
+end
+options.resetcam.OnChange = ResetCam
+
+-- TRACK UNIT
+local baseDelta = 1
+TrackUnit = function(unitID)
+	--spSendCommands("viewta")
+	local paused = select(3, spGetGameSpeed())
+	local cam = {}
+	local oldcam = spGetCameraState()
+	local tx, ty, tz = spGetUnitViewPosition(unitID, true)
+	--local vx, vy, vz = spGetUnitDirection(unitID)
+	--local rotX, rotY, rotZ = GetRotationFromVector(vx, vy, vz)
+	--local oldcam = cam
+	local velocity = {spGetUnitVelocity(unitID)}
+	--x = x + p.velocity[1]*Game.gameSpeed
+	--y = y + p.velocity[2]*Game.gameSpeed
+	--z = z + p.velocity[3]*Game.gameSpeed
+	
+	local tcam = overview_mode and trackCamOverview or trackCam
+	
+	local dist = tcam.dist
+	local pitch = tcam.pitch -- + (overview_mode and 0 or rotX)
+	local yaw = tcam.heading -- + (overview_mode and 0 or rotY)
+	
+	if overview_mode then
+		--yaw = 0
+		--thirdPerson_pitch = 0.7*HALFPI
+	end
+	
+	local targetPos = {
+		tx - math.sin(yaw) * math.cos(pitch) * dist,
+		ty + math.sin(pitch) * dist,
+		tz - math.cos(yaw) * math.cos(pitch) * dist,
+	}
+	
+	local deltaPos = {
+		targetPos[1] - oldcam.px,
+		targetPos[2] - oldcam.py,
+		targetPos[3] - oldcam.pz,
+	}
+	--cam.dx = deltaPos[1]
+	--cam.dy = deltaPos[2]
+	--cam.dz = deltaPos[3]
+	cam.px = targetPos[1]
+	cam.py = targetPos[2]
+	cam.pz = targetPos[3]
+	cam.oldHeight = y
+	cam.rx = 0-pitch
+	cam.ry = yaw
+	cam.rz = thirdPerson_roll
+	
+	local delta = (((cam.px - oldcam.px)^2 + (cam.py - oldcam.py)^2 + (cam.pz - oldcam.pz)^2)^0.5)
+	--Spring.Echo(cam.px, cam.py, cam.pz, cam.rx, cam.ry, cam.rz)
+	if delta <= 0 then delta = 0 end --CAM_TRACK_PERIOD end
+	spSetCameraState(cam, delta)
+	--Spring.SetCameraTarget(cam.px, cam.py, cam.pz, 0.5)
+end
+
+OverviewAction = function()
+	if not overview_mode then
+		if thirdPerson_trackunit then
+			
+		else
+			local cs = spGetCameraState()
+			SetLockSpot2(cs)
+			last_ls_dist = ls_dist
+			last_rx = cs.rx
+			
+			cs.px = Game.mapSizeX/2
+			cs.py = maxDistY
+			cs.pz = Game.mapSizeZ/2
+			cs.rx = -HALFPI
+			spSetCameraState(cs, 0.2)
+		end
+		if WG.ShowMapGrid then
+			WG.ShowMapGrid()
+		end
+		Spring.SendCommands("disticon " .. OVERVIEW_DISTICON)
+	else --if in overview mode
+		if thirdPerson_trackunit then
+			local selUnits = spGetSelectedUnits() --player's new unit to track
+			if not (selUnits and selUnits[1]) then --if player has no new unit to track
+				Spring.SelectUnitArray({thirdPerson_trackunit}) --select the original unit
+				selUnits = spGetSelectedUnits()
+			end
+			thirdPerson_trackunit = nil
+			if selUnits and selUnits[1] then 
+				thirdPerson_trackunit = selUnits[1]
+				TrackUnit(thirdPerson_trackunit)
+			end
+		else
+			local cs = spGetCameraState()
+			mx, my = spGetMouseState()
+			local onmap, gx, gy, gz = VirtTraceRay(mx,my,cs) --create a lockstop point.
+			if gx then --Note:  Now VirtTraceRay can extrapolate coordinate in null space (no need to check for onmap)
+				local cs = spGetCameraState()			
+				cs.rx = last_rx
+				ls_dist = last_ls_dist 
+				ls_x = gx
+				ls_z = gz
+				ls_y = gy
+				ls_have = true
+				local cstemp = UpdateCam(cs) --set camera position & orientation based on lockstop point
+				if cstemp then cs = cstemp; end
+				spSetCameraState(cs, 1)
+			end
+		end
+		
+		if WG.HideMapGrid then
+			WG.HideMapGrid()
+		end
+		Spring.SendCommands("disticon 1000")
+	end
+	
+	overview_mode = not overview_mode
+end

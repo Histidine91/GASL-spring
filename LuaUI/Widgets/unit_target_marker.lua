@@ -12,16 +12,27 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+local spGetUnitTeam		= Spring.GetUnitTeam
+local spGetUnitDefID		= Spring.GetUnitDefID
+local spGetUnitCommands		= Spring.GetUnitCommands
+local spGetUnitPosition		= Spring.GetUnitPosition
+local spGetCameraState		= Spring.GetCameraState
+local spGetVisibleUnits 	= Spring.GetVisibleUnits
+local spWorldToScreenCoords	= Spring.WorldToScreenCoords
+local spIsUnitAllied		= Spring.IsUnitAllied
+
 local function GetUnitPosition(unitID)
-	local _,_,_,x,y,z = Spring.GetUnitPosition(unitID, true)
+	local _,_,_,x,y,z = spGetUnitPosition(unitID, true)
 	return x,y,z
 end
 
-local scaleMult = 5	--elmos -> meter
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
-local dsize=36
+local scaleMult = 5	--elmos -> meter
+local ROTATION_PERIOD = 1
+
 local ssize=30;
-local csize=20;
 local maxDistance=5000;
 local minDistance=1200;
 local nameRange=1500;
@@ -29,9 +40,13 @@ local reticleSize=10;
 local arrowSize=10;
 local baseDistance = 500^0.5
 
-local selectedUnit = (Spring.GetSelectedUnits() or {})[1]
-
 local square
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local selectedUnit = (Spring.GetSelectedUnits() or {})[1]
+local currentTarget
+local rotAngle = 0
 
 local colors = {
 	blue = {0, 0, 1, 1},
@@ -39,6 +54,11 @@ local colors = {
 	green = {0, 1, 0, 1},
 	red = {1, 0, 0, 1},
 }
+
+local footprint = {}
+for i=1,#UnitDefs do
+	footprint[i] = UnitDefs[i].xsize/2
+end
 
 local function GetTwoPointDistance(x1, y1, z1, x2, y2, z2)
 	local distSq = (x1-x2)^2 + (y1-y2)^2 + (z1-z2)^2
@@ -52,6 +72,8 @@ local function Square(size)
 	gl.Vertex(ssize*size,-ssize*size,0)
 end
 
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 function widget:Initialize()
 end
@@ -63,6 +85,21 @@ function widget:SelectionChanged(newSelection)
 	selectedUnit = newSelection and newSelection[1]
 end
 
+function widget:GameFrame(n)
+	if (n%15 == 0) and selectedUnit then
+		local commands = spGetUnitCommands(selectedUnit)
+		if commands and commands[1] and commands[1].id == CMD.ATTACK then
+			currentTarget = commands[1].params[1]
+		else
+			currentTarget = nil
+		end
+	end
+end
+
+function widget:Update(dt)
+	rotAngle = (rotAngle + (dt*360)/ROTATION_PERIOD)%360
+end
+
 --local echoFreq = 0
 function widget:DrawScreen(vsx,vsy)
 	--[[
@@ -71,28 +108,28 @@ function widget:DrawScreen(vsx,vsy)
 	end
 	]]
 	
-	local cam = Spring.GetCameraState()
-	local units = Spring.GetVisibleUnits(nil, nil, false)
+	local cam = spGetCameraState()
+	local units = spGetVisibleUnits(nil, nil, false)
 	for i=1,#units do
 		local unitID = units[i]
-		local unitTeam = Spring.GetUnitTeam(unitID)
-		local unitDefID = Spring.GetUnitDefID(unitID)
+		local unitTeam = spGetUnitTeam(unitID)
+		local unitDefID = spGetUnitDefID(unitID)
 		if true then	--if unitID ~= selectedUnit then
 			local x,y,z = GetUnitPosition(unitID)
 			if x and y and z then
 				local dist = GetTwoPointDistance(x,y,z,cam.px, cam.py, cam.pz)
+				local size = (baseDistance/(dist^0.5)) or 1
 				if (dist < maxDistance) and (dist > minDistance) then
-					local size = (baseDistance/(dist^0.5)) or 1
 					--local isTarget = bla
 					local color = colors.cyan
 				
 					local x,y,z = GetUnitPosition(unitID)
-					local sx,sy,sz=Spring.WorldToScreenCoords(x,y,z)
+					local sx,sy,sz=spWorldToScreenCoords(x,y,z)
 					--if echoFreq > 120 then
 					--	Spring.Echo(sx,sy,sz)
 					--	echoFreq = 0
 					--end
-					local isAllied = Spring.IsUnitAllied(unitID)
+					local isAllied = spIsUnitAllied(unitID)
 					-- team coloration
 					if not isAllied then
 						color = colors.red
@@ -129,6 +166,19 @@ function widget:DrawScreen(vsx,vsy)
 						gl.Text(UnitDefs[ud].customParams.label,0,ssize*size + 2,16,"c")
 					end
 					]]
+					gl.PopMatrix()
+				end
+				if unitID == currentTarget then
+					local x,y,z = GetUnitPosition(unitID)
+					local sx,sy,sz=spWorldToScreenCoords(x,y,z)
+					gl.PushMatrix()
+					gl.Translate(sx,sy,0)
+					gl.Color(1,1,1,1)
+					gl.Texture("LuaUI/Images/targetmarker.png")
+					gl.Rotate(rotAngle,0,0,1)
+					--gl.Billboard()
+					local texSize = size*footprint[unitDefID]
+					gl.TexRect(-48*texSize, -48*texSize, 48*texSize, 48*texSize)
 					gl.PopMatrix()
 				end
 			end

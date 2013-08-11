@@ -241,12 +241,12 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 	Label:New{
 		parent = units[index].panel,
 		autosize=false;
-		x = 72,
-		y = numBars*25 .. "%",
-		align="left";
+		x = 68,
+		y = 1+numBars*25 .. "%",
 		caption = 'H',
-		fontSize = 9;
+		fontSize = 10;
 		fontShadow = true;
+		valign = "ascender",
 	}
 	units[index].healthbar = Progressbar:New{
 		parent  = units[index].panel,
@@ -263,12 +263,12 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		Label:New{
 			parent = units[index].panel,
 			autosize=false;
-			x=72,
-			y = numBars*25 .. "%",
-			align="left";
+			x = 68,
+			y = 1+numBars*25 .. "%",
 			caption = 'E',
-			fontSize = 9;
+			fontSize = 10;
 			fontShadow = true;
+			valign = "ascender",
 		}
 		units[index].energybar = Progressbar:New{
 			parent  = units[index].panel,
@@ -286,12 +286,12 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		Label:New{
 			parent = units[index].panel,
 			autosize=false;
-			x=72,
-			y=numBars*25 .. "%",
-			align="left";
+			x = 68,
+			y = 1+numBars*25 .. "%",
 			caption = 'S',
-			fontSize = 9;
+			fontSize = 10;
 			fontShadow = true;
+			valign = "ascender",
 		}
 		units[index].spiritbar = Progressbar:New{
 			parent  = units[index].panel,
@@ -309,12 +309,12 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		Label:New{
 			parent = units[index].panel,
 			autosize=false;
-			x=72,
-			y=numBars*25 .. "%",
-			align="left";
+			x = 68,
+			y = 1+numBars*25 .. "%",
 			caption = '!',
-			fontSize = 9;
+			fontSize = 10;
 			fontShadow = true;
+			valign = "ascender",
 		}
 		units[index].suppressionbar = Progressbar:New{
 			parent  = units[index].panel,

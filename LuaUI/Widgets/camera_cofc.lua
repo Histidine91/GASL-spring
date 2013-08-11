@@ -519,7 +519,7 @@ do
 end
 
 local trackCam = {dist = 200, heading = PI, pitch = 0}
-local trackCamOverview = {dist = 1500, heading = PI, pitch = PI*0.7}
+local trackCamOverview = {dist = 1500, heading = PI, pitch = PI*0.35}
 
 local origIconDistance = Spring.GetConfigInt("UnitIconDist", 150)
 
@@ -1516,6 +1516,7 @@ function widget:MousePress(x, y, button) --called once when pressed, not repeate
 	local a,c,m,s = spGetModKeyState()
 	
 	if thirdPerson_trackunit then
+		spWarpMouse(cx, cy)
 		rotate = true
 		return true
 	end

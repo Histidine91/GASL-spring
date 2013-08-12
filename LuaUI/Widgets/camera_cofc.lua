@@ -350,12 +350,12 @@ options = {
 		OnChange = function(self)
 			local selUnits = Spring.GetSelectedUnits()
 			if selUnits and selUnits[1] and thirdPerson_trackunit ~= selUnits[1] then --check if 3rd Person into same unit or if there's any unit at all
-				Spring.SendCommands("track")
+				--Spring.SendCommands("track")
 				--Spring.SendCommands("viewfps")
 				thirdPerson_trackunit = selUnits[1]
 				TrackUnit(thirdPerson_trackunit)
 			else
-				Spring.SendCommands("trackoff")
+				--Spring.SendCommands("trackoff")
 				thirdPerson_trackunit = nil
 				--Spring.SendCommands("viewfree")
 			end
@@ -784,7 +784,7 @@ local function Zoom(zoomin, shift, forceCenter)
 	((zoomin and options.zoomintocursor.value) or ((not zoomin) and options.zoomoutfromcursor.value)) --zoom to cursor or zoom-out from cursor
 	then
 		
-		local onmap, gx,gy,gz = VirtTraceRay(mx, my, cs)
+		local onmap, gx,gy,gz = VirtTraceRay(mx, my, cs, true)
 		
 		if gx then
 			dx = gx - cs.px
@@ -983,7 +983,7 @@ OverviewAction = function()
 		else
 			local cs = spGetCameraState()
 			mx, my = spGetMouseState()
-			local onmap, gx, gy, gz = VirtTraceRay(mx,my,cs) --create a lockstop point.
+			local onmap, gx, gy, gz = VirtTraceRay(mx,my,cs,true) --create a lockstop point.
 			if gx then --Note:  Now VirtTraceRay can extrapolate coordinate in null space (no need to check for onmap)
 				local cs = spGetCameraState()			
 				cs.rx = last_rx
@@ -1515,7 +1515,8 @@ function widget:MousePress(x, y, button) --called once when pressed, not repeate
 	local a,c,m,s = spGetModKeyState()
 	
 	if thirdPerson_trackunit then
-		spWarpMouse(cx, cy)
+		msx = cx
+		msy = cy
 		rotate = true
 		return true
 	end
@@ -1562,13 +1563,13 @@ function widget:MousePress(x, y, button) --called once when pressed, not repeate
 		rotate_transit = nil
 		if options.targetmouse.value then --if rotate world at mouse cursor: 
 			
-			local onmap, gx, gy, gz = VirtTraceRay(x,y, cs)
+			local onmap, gx, gy, gz = VirtTraceRay(x,y, cs,true)
 			if gx then  --Note: we don't block offmap position since VirtTraceRay() now work for offmap position.
 				SetLockSpot2(cs,x,y) --lockspot at cursor position
 				spSetCameraTarget(gx,gy,gz, 1) 
 				
 				--//update "ls_dist" with value from mid-screen's LockSpot because rotation is centered on mid-screen and not at cursor//--
-				_,gx,gy,gz = VirtTraceRay(cx,cy,cs) --get ground position traced from mid of screen
+				_,gx,gy,gz = VirtTraceRay(cx,cy,cs,true) --get ground position traced from mid of screen
 				local dx,dy,dz = gx-cs.px, gy-cs.py, gz-cs.pz
 				ls_dist = sqrt(dx*dx + dy*dy + dz*dz) --distance to ground 
 				

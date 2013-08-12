@@ -83,6 +83,10 @@ local function UpdateWeaponAccuracy(unitID, unitDefID, i)
    local defData = accDefs[unitDefID]
    local unitData = units[unitID]
    local targetID, targetDefID
+   
+   if not unitData then
+      return
+   end
       
    if unitData.env then
       targetID = GG.UnitScript.CallAsUnit(unitID, unitData.env.GetWeaponTarget, i)

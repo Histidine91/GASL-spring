@@ -33,6 +33,8 @@ local buttonColorGreen = {0,1,0.2,1}
 local buttonColorYellow = {1,1,0,1}
 local buttonColorBlue = {0,0.2,1,1}
 local buttonAlphaDeselected = 0.7
+local pingColor1 = {1,0.2,0.2,0.7}
+local pingColor2 = {1,0.2,0.2,0.5}
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -57,12 +59,17 @@ local echo = Spring.Echo
 
 local BUTTON_WIDTH = 64
 local BUTTON_HEIGHT = 52
---local BASE_COLUMNS = 6
---local NUM_FAC_COLUMNS = BASE_COLUMNS - 1	-- unused
+local BUTTON_OVERLAY_X = (BUTTON_WIDTH-4)/2
+local BUTTON_OVERLAY_Y = (BUTTON_HEIGHT-4)/2
+
+--local damageWarningPing	-- display list
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 local UPDATE_FREQUENCY = 0.25
+local DAMAGE_WARNING_PERIOD = 0.7
+local DAMAGE_WARNING_MIN_SIZE_MOD = 0.3
+local DAMAGE_WARNING_SIZE_RATIO = 0.5	-- inner ring vs. outer ring
 
 local angelDefs = {
   [UnitDefNames.luckystar.id] = {hasSpirit = true},
@@ -97,20 +104,12 @@ options = {}
 
 -- list and interface vars
 local unitsByID = {}	-- [unitID] = index
-local units = {} -- [index] = {unitID, unitDefID, panel, button, image, [healthbar] = ProgressBar, [energybar] = ProgressBar, [spiritbar] = ProgressBar}
+local units = {} -- [index] = {unitID, unitDefID, panel, button, image, [healthbar] = ProgressBar, [energybar] = ProgressBar, [spiritbar] = ProgressBar, [suppressionbar] = ...}
+local overlayPhase = 0
 
 --local gamestart = GetGameFrame() > 1
 
 -------------------------------------------------------------------------------
-
-local teamColors = {}
-local GetTeamColor = Spring.GetTeamColor or function (teamID)
-  local color = teamColors[teamID]
-  if (color) then return unpack(color) end
-  local _,_,_,_,_,_,r,g,b = Spring.GetTeamInfo(teamID)
-  teamColors[teamID] = {r,g,b}
-  return r,g,b
-end
 
 -------------------------------------------------------------------------------
 -- SCREENSIZE FUNCTIONS
@@ -188,9 +187,8 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		caption = '',
 		padding = {1,1,1,1},
 		--keepAspect = true,
-		backgroundColor = buttonColor,
 		OnClick = { function (self, x, y, mouse)
-			if units[index].isDestroyed then
+			if units[index].isDead then
 				return
 			end
 			local alt,_,_,shift = GetModKeyState()
@@ -205,7 +203,7 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 			end
 		end},
 		OnDblClick = { function()
-			if units[index].isDestroyed then
+			if units[index].isDead then
 				return
 			end
 			if WG.SetThirdPersonTrackUnit then
@@ -230,8 +228,8 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 	
 	units[index].image = Image:New {
 		parent = units[index].button,
-		width="91%";
-		height="91%";
+		width="90%";
+		height="90%";
 		x="5%";
 		y="5%";
 		file = '#'..unitDefID,	-- FIXME
@@ -279,6 +277,15 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 			max     = 1;
 			caption = "";
 			color   = {1,1,0,1};
+		}
+		units[index].energyLowIndicator = Image:New{
+			--parent = units[index].image,
+			width = 24,
+			height = 24,
+			right = 0,
+			bottom = 0,
+			file = "LuaUI/Images/energy.png",
+			hidden = true
 		}
 		numBars = numBars + 1
 	end
@@ -332,7 +339,8 @@ end
 
 local function UpdateUnitInfo(unitID)
 	local index = unitsByID[unitID]
-	if not units[index].panel or units[index].isDestroyed then
+	local unitData = units[index]
+	if (not unitData.panel) or unitData.isDead then
 		return
 	end
 	
@@ -341,29 +349,33 @@ local function UpdateUnitInfo(unitID)
 		return
 	end
 	local spirit = GetUnitRulesParam(unitID, "spirit") or 0
-	local energy = GetUnitRulesParam(unitID, "energy") or 0
+	local energy = GetUnitRulesParam(unitID, "energy")
 	local suppression = GetUnitRulesParam(unitID, "suppression") or 0
 
-	units[index].healthbar.color = GetHealthColor(health/maxHealth)
-	units[index].healthbar:SetValue(health/maxHealth)
-	--units[index].healthbar:SetCaption(math.floor(health*100/maxHealth) .. "%")
-	if units[index].spiritbar then
-		units[index].spiritbar:SetValue(spirit)
+	unitData.healthbar.color = GetHealthColor(health/maxHealth)
+	unitData.healthbar:SetValue(health/maxHealth)
+	if unitData.spiritbar then
+		unitData.spiritbar:SetValue(spirit)
 	end
-	if units[index].energybar then
-		units[index].energybar:SetValue(energy)
+	if unitData.energybar then
+		unitData.energybar:SetValue(energy or 0)
 	end
-	if units[index].suppressionbar then
-		units[index].suppressionbar:SetValue(suppression)
+	if unitData.suppressionbar then
+		unitData.suppressionbar:SetValue(suppression)
 	end
 	
-	--[[
-	units[index].button.tooltip = "Commander: "..UnitDefs[comms[index].commDefID].humanName ..
-							"\n\255\0\255\255Health:\008 "..GetHealthColor(health/maxHealth, "char")..math.floor(health).."/"..maxHealth.."\008"..
-							"\n\255\0\255\0Left-click: Select and go to"..
-							"\nRight-click: Select"..
-							"\nShift: Append to current selection\008"
-	]]
+	
+	if energy then
+		if energy <= 0.3 then
+			if unitData.energyLowIndicator.hidden then
+				unitData.image:AddChild(unitData.energyLowIndicator)
+				unitData.energyLowIndicator.hidden = false
+			end
+		elseif (not unitData.energyLowIndicator.hidden) then
+			unitData.image:RemoveChild(unitData.energyLowIndicator)
+			unitData.energyLowIndicator.hidden = true
+		end
+	end
 end
 
 
@@ -379,31 +391,34 @@ local function AddUnit(unitID, unitDefID, teamID)
 
 	local index = #units + 1
 	unitsByID[unitID] = index
-	units[index] = {unitID = unitID, unitDefID = unitDefID}
+	units[index] = {unitID = unitID, unitDefID = unitDefID, parent = parent}
 	AddUnitDisplay(unitID, unitDefID, index, '', parent, parent == stack_angels)	-- FIXME hotkey
 	UpdateUnitInfo(unitID)
 end
 
 local function RemoveUnit(unitID)
-	-- TBD blackout angels instead of removing them
 	local index = unitsByID[unitID]
-	if units[index].persistent then
+	local unitData = units[index]
+	if unitData.persistent then
 		-- do stuff
-		units[index].isDestroyed = true
-		units[index].button.color = {0.3, 0.3, 0.3, 1}
-		units[index].image.color = {0.3, 0.3, 0.3, 1}
-		units[index].healthbar:SetValue(0)
-		if units[index].energybar then
-			units[index].energybar:SetValue(0)
+		unitData.isDead = true
+		unitData.button.color = {0.3, 0.3, 0.3, 1}
+		unitData.image.color = {0.3, 0.3, 0.3, 1}
+		unitData.healthbar:SetValue(0)
+		if unitData.energybar then
+			unitData.energybar:SetValue(0)
 		end
-		if units[index].spiritbar then
-			units[index].spiritbar:SetValue(0)
+		if unitData.spiritbar then
+			unitData.spiritbar:SetValue(0)
 		end
-		units[index].button:Invalidate()
-		units[index].image:Invalidate()
+		if unitData.suppressionbar then
+			unitData.suppressionbar:SetValue(0)
+		end
+		unitData.button:Invalidate()
+		unitData.image:Invalidate()
 	else
-		if units[index].panel then
-			units[index].panel:Dispose()
+		if unitData.panel then
+			unitData.panel:Dispose()
 		end
 		table.remove(units, index)
 		for id, i in pairs(unitsByID) do
@@ -450,6 +465,58 @@ local function SetCurrentStack(stackName)
 		button:Invalidate()
 	end
 end
+
+local function DrawWarningFlash(x, y)
+	--TODO make display list ?
+	gl.PushMatrix()
+	gl.Translate(x,y,0)
+	local size = DAMAGE_WARNING_MIN_SIZE_MOD+(1-DAMAGE_WARNING_MIN_SIZE_MOD)*overlayPhase
+	local vx = BUTTON_OVERLAY_X*size
+	local vy = BUTTON_OVERLAY_Y*size
+	gl.BeginEnd(GL.QUADS, function(vx,vy)
+		gl.Color(pingColor1)
+		gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
+		gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
+		gl.Color(pingColor2)
+		gl.Vertex(vx,vy,0)
+		gl.Vertex(-vx,vy,0)
+		
+		gl.Color(pingColor1)
+		gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
+		gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
+		gl.Color(pingColor2)
+		gl.Vertex(vx,-vy,0)
+		gl.Vertex(vx,vy,0)
+		
+		gl.Color(pingColor1)
+		gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
+		gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
+		gl.Color(pingColor2)
+		gl.Vertex(-vx,-vy,0)
+		gl.Vertex(vx,-vy,0)
+		
+		gl.Color(pingColor1)
+		gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
+		gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
+		gl.Color(pingColor2)
+		gl.Vertex(-vx,vy,0)
+		gl.Vertex(-vx,-vy,0)
+	end, vx, vy)
+	gl.PopMatrix()
+end
+
+local function DrawSpiritGlow(x,y)
+	gl.PushMatrix()
+	gl.Translate(x,y,0)
+	gl.Color(1,1,0.4,0.7*math.sin(overlayPhase*math.pi))
+	gl.BeginEnd(GL.QUADS, function()
+		gl.Vertex(-BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
+		gl.Vertex(BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
+		gl.Vertex(BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
+		gl.Vertex(-BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
+	end)
+	gl.PopMatrix()
+end
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 -- engine callins
@@ -483,8 +550,9 @@ function widget:UnitTaken(unitID, unitDefID, unitTeam, newTeam)
 end
 
 local timer = 0
-local warningColorPhase = false
 function widget:Update(dt)
+	overlayPhase = (overlayPhase + dt/DAMAGE_WARNING_PERIOD)%1
+
 	timer = timer + dt
 	if timer < UPDATE_FREQUENCY then
 		return
@@ -493,24 +561,31 @@ function widget:Update(dt)
 	for unitID in pairs(unitsByID) do
 		UpdateUnitInfo(unitID)
 	end
-	warningColorPhase = not warningColorPhase
-	--[[
-	for i=1,#comms do
-		local comm = comms[i]
-		if comm.button and comm.warningTime > 0 then
-			comm.warningTime = comm.warningTime - timer
-			if comm.warningTime > 0 then
-				comms[i].button.backgroundColor = (warningColorPhase and buttonColorWarning) or buttonColor
-			else
-				comms[i].button.backgroundColor = buttonColor
-			end
-			comms[i].button:Invalidate()
-		end
-	end
-	]]--
 	timer = 0
 end
 
+function widget:DrawScreen()
+	for i=1,#units do
+		local unitData = units[i]
+		if unitData.parent == currentStack and (not unitData.isDead) then
+			if currentStack ~= stack_enemy then
+				local health = unitData.healthbar.value
+				if health <= 0.3 then
+					local x, y = unitData.button:LocalToScreen(BUTTON_WIDTH/2, BUTTON_HEIGHT/2)
+					y = screen0.height - y
+					DrawWarningFlash(x, y)
+				end
+			end
+			if unitData.spiritbar and unitData.spiritbar.value == 100 then
+				local x, y = unitData.button:LocalToScreen(BUTTON_WIDTH/2, BUTTON_HEIGHT/2)
+				y = screen0.height - y
+				DrawSpiritGlow(x, y)
+			end
+		end
+		
+	end
+	gl.Color(1,1,1,1)
+end
 
 function widget:UnitDamaged(unitID, unitDefID, unitTeam)
 end
@@ -656,7 +731,4 @@ function widget:Initialize()
 	self:ViewResize(viewSizeX, viewSizeY)
 	
 	InitializeUnits()
-end
-
-function widget:Shutdown()
 end

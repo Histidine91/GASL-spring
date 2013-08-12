@@ -177,7 +177,7 @@ function widget:DrawScreen(vsx,vsy)
 					gl.Texture("LuaUI/Images/targetmarker.png")
 					gl.Rotate(rotAngle,0,0,1)
 					--gl.Billboard()
-					local texSize = size*footprint[unitDefID]
+					local texSize = size*footprint[unitDefID]^0.5
 					gl.TexRect(-48*texSize, -48*texSize, 48*texSize, 48*texSize)
 					gl.PopMatrix()
 				end

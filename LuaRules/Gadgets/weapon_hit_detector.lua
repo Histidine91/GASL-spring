@@ -29,8 +29,11 @@ local activeProjectiles = {}
 local gameframe = 0
 
 for i=1,#WeaponDefs do
-	Script.SetWatchWeapon(i, true)
-	weaponDamages[i] = WeaponDefs[i].damages[0]
+	local damage = WeaponDefs[i].damages[0]
+	if damage >= 100 then
+		Script.SetWatchWeapon(i, true)
+		weaponDamages[i] = damage
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -44,13 +47,16 @@ end
 function gadget:UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID, attackerID, attackerDefID, attackerTeam, projectileID)
 	if activeProjectiles[projectileID] then
 		local data = activeProjectiles[projectileID]
-		GG.EventWrapper.AddEvent("weaponHit", data.damage/20, data.targetID, data.targetDefID, data.targetTeam, data.unitID, data.unitDefID, data.unitTeam)
+		--GG.EventWrapper.AddEvent("weaponHit", data.damage/20, data.targetID, data.targetDefID, data.targetTeam, data.unitID, data.unitDefID, data.unitTeam)
 		activeProjectiles[projectileID] = nil
 	end
 	return damage
 end
 
 function gadget:ProjectileCreated(proID, proOwnerID, weaponID)
+	if not weaponDamages[weaponID] then
+		return
+	end
 	local targetID, targetType = spGetProjectileTarget(proID)
 	local targetDefID, targetTeam
 	if targetID and (targetType == "u") then
@@ -67,7 +73,10 @@ end
 function gadget:ProjectileDestroyed(proID)
 	if activeProjectiles[proID] then
 		local data = activeProjectiles[proID]
-		GG.EventWrapper.AddEvent("weaponMiss", data.damage/20, data.targetID, data.targetDefID, data.targetTeam, data.unitID, data.unitDefID, data.unitTeam)
+		if not Spring.GetUnitIsDead(data.targetID) then
+			GG.EventWrapper.AddEvent("weaponEvaded", data.damage/20, data.targetID, data.targetDefID, data.targetTeam, data.unitID, data.unitDefID, data.unitTeam)
+			GG.EventWrapper.AddEvent("weaponMiss", data.damage/20, data.unitID, data.unitDefID, data.unitTeam, data.targetID, data.targetDefID, data.targetTeam)
+		end
 	end
 	activeProjectiles[proID] = nil
 end

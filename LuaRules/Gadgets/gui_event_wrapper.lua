@@ -64,11 +64,12 @@ end
 function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
 	local attackerID = Spring.GetUnitLastAttacker(unitID)
 	local attackerDefID, attackerTeam
-	if attacker and attacker > 0 then
+	if attackerID and attackerID > 0 then
 		attackerDefID = Spring.GetUnitDefID(attackerID)
 		attackerTeam = Spring.GetUnitTeam(attackerID)
+		AddEvent("kill", (UnitDefs[unitDefID].power^0.5)*2+10, attackerID, attackerDefID, attackerTeam, unitID, unitDefID, unitTeam)
 	end
-	AddEvent("unitDestroyed", UnitDefs[unitDefID].power^0.5, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
+	AddEvent("death", (UnitDefs[unitDefID].power^0.5)*2+10, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
 end
 
 function gadget:Initialize()

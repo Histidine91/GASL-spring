@@ -1,19 +1,26 @@
 eventDefs = {
-	unitDestroyed = {
+	death = {
 		priorityFunc = function(eventDef, params, isEnemy)
 			if (not isEnemy) then
 				return 100
 			end
-			local power = UnitDefs[params.unitDefID].power^0.5
-			return (power)*2 + 5
-		end
+			return 40
+		end,
+		staticOverlay = true
+	},
+	kill = {
+		priorityFunc = function(eventDef, params, isEnemy)
+			local power = UnitDefs[params.unitDefID2].power^0.5
+			return (power)*2 + 10
+		end,
 	},
 	unitDamaged_severe = {
 		priority = 100,
 		priorityEnemy = 40,
 		allowMinorEvent = true,
 		maxPeriod = 30*2,
-		magnitudeQueueMult = 0.05
+		magnitudeQueueMult = 0.05,
+		warningOverlay = true
 	},
 	unitDamaged_moderate = {
 		priority = 70,
@@ -31,6 +38,7 @@ eventDefs = {
 		priority = 90,
 		allowMinorEvent = true,
 		maxPeriod = 30*4,
+		warningOverlay = true
 	},
 	unitSuppressed_severe = {
 		priority = 90,
@@ -52,10 +60,32 @@ eventDefs = {
 	},
 	unitEnergy_low = {
 		priority = 50,
+		queueRating = 20,
 		allowMinorEvent = true,
 	},
 	criticalHit = {
 		priority = 25,
+		queueRating = 40,
+		magnitudeQueueMult = 0.05
+	},
+	criticalHit_received = {
+		priority = 25,
+		queueRating = 40,
+		magnitudeQueueMult = 0.05
+	},
+	weaponHit = {
+		priority = 15,
+		queueRating = 20,
+		magnitudeQueueMult = 0.05
+	},
+	weaponMiss = {
+		priority = 10,
+		queueRating = 20,
+		magnitudeQueueMult = 0.05
+	},
+	weaponEvaded = {
+		priority = 10,
+		queueRating = 20,
 		magnitudeQueueMult = 0.05
 	},
 	spiritFull = {

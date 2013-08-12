@@ -80,7 +80,8 @@ local function HideWindow(dt)
 		end
 		window:SetColor({1,1,1,alpha})
 		]]--
-		
+		image.file = nil
+		image:Invalidate()
 		screen0:RemoveChild(window)
 		window.hidden = true
 	end
@@ -128,6 +129,7 @@ local function CreateEventPanel(params)
 	}
 	if params.image then
 		image.file = params.image
+		image.color = (params.warningOverlay) and {1,0.7,0.7,1} or {1,1,1,1}
 		image:Invalidate()
 	end
 	stackPanel:AddChild(panel, nil, 1)
@@ -172,43 +174,33 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 		--Spring.Echo("meh", eventDef.lastEvent, gameframe)
 		return
 	end
+	if not unitID then
+		return
+	end
 	
 	local params = {eventType = eventType, magnitude = magnitude, unitID = unitID, unitDefID = unitDefID,
-		unitTeam = unitTeam, unitID2 = unitID2, unitDefID2 = unitDefID2, unitTeam2 = unitTeam2}
+		unitTeam = unitTeam, unitID2 = unitID2, unitDefID2 = unitDefID2, unitTeam2 = unitTeam2,
+		warningOverlay = eventDef.warningOverlay}
 	
-	local bothTeams = unitID2 and (not eventDef.friendlyOnly)
-	for i=1, bothTeams and 2 or 1 do
-		local uid = ((i == 1) and unitID) or unitID2
-		local udid = ((i == 1) and unitDefID) or unitDefID2
-		local isEnemy = not spIsUnitAllied(uid)
-		local priority = (isEnemy and eventDef.priorityEnemy) or eventDef.priority or eventDef.priorityFunc(eventDef, params, isEnemy)
-		local chance = math.random() * 100
-		
-		local eventTypeArg = eventType
-		if bothTeams and i == 1 then
-			eventTypeArg = eventType .. "_received"
+	local isEnemy = not spIsUnitAllied(unitID)
+	local priority = (isEnemy and eventDef.priorityEnemy) or eventDef.priority or eventDef.priorityFunc(eventDef, params, isEnemy)
+	local chance = math.random() * 100
+	
+	if force or ((chance-eventDef.queueRating) < priority) then
+		local eventParams = GetEventDialogue(eventType, unitID, unitDefID)
+		if eventParams then
+			CreateEventPanel(eventParams)
+			eventDef.queueRating = 0
+			eventDef.lastEvent = gameframe
 		end
-		
-		if eventType == "unitDestroyed" then
-			Spring.Echo(priority)
+	else
+		if magnitude and magnitude ~= 0 then
+			eventDef.queueRating = eventDef.queueRating + magnitude*eventDef.magnitudeQueueMult
 		end
-		
-		if force or ((chance-eventDef.queueRating) < priority) then
-			local eventParams = GetEventDialogue(eventTypeArg, uid, udid)
+		if eventDef.allowMinorEvent and (not isEnemy) then
+			local eventParams = GetEventDialogue(eventType, unitID, unitDefID, true)
 			if eventParams then
 				CreateEventPanel(eventParams)
-				eventDef.queueRating = 0
-				eventDef.lastEvent = gameframe
-			end
-		else
-			if magnitude and magnitude ~= 0 then
-				eventDef.queueRating = eventDef.queueRating + magnitude*eventDef.magnitudeQueueMult
-			end
-			if eventDef.allowMinorEvent and (not isEnemy) then
-				local eventParams = GetEventDialogue(eventTypeArg, uid, udid, true)
-				if eventParams then
-					CreateEventPanel(eventParams)
-				end
 			end
 		end
 	end

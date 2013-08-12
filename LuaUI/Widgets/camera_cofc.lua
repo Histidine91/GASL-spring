@@ -759,7 +759,6 @@ local function UpdateCam(cs)
 	local cs = cs
 	if not (cs.rx and cs.ry and ls_dist) then
 		--return cs
-		Spring.Echo("wtf")
 		return false
 	end
 	

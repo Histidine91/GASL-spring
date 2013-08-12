@@ -1289,7 +1289,7 @@ local function GetHelpText(tooltip_type)
 
 	local sc_caption = ''
 	if tooltip_type == 'build' then
-		sc_caption = 'Space+click: Show unit stats'
+		sc_caption = 'Alt+click: Show unit stats'
 	elseif tooltip_type == 'buildunit' then
 			if showExtendedTip then
 			
@@ -1298,15 +1298,15 @@ local function GetHelpText(tooltip_type)
 					'Ctrl+click: x20 multiplier.\n'..
 					'Alt+click: Add units to front of queue. \n'..
 					'Rightclick: remove units from queue.\n'..
-					'Space+click: Show unit stats'
+					'Alt+click: Show unit stats'
 			else
 				sc_caption = '(Hold Spacebar for help)'
 			end
 	
 	elseif tooltip_type == 'morph' then
-		sc_caption = 'Space+click: Show unit stats'
+		sc_caption = 'Alt+click: Show unit stats'
 	else
-		sc_caption = 'Space+click: Show unit stats'
+		sc_caption = 'Alt+click: Show unit stats'
 	end
 	--return TextBox:New{ text = sc_caption, textColor=color.tooltip_help, width=250, fontSize=ttFontSize,  }
 	return sc_caption
@@ -1656,7 +1656,7 @@ local function MakeToolTip_Unit(data, tooltip)
 			{ name='utt', text = unittooltip, wrap=true },
 			{ name='hp', directcontrol = 'hp_unit', },
 			{ name='res', directcontrol = 'resources_unit' },
-			{ name='help', text = green .. 'Space+click: Show unit stats', },
+			{ name='help', text = green .. 'Alt+click: Show unit stats', },
 		},
 	}
 	
@@ -1768,7 +1768,7 @@ local function MakeToolTip_Feature(data, tooltip)
 					and { name='hp', directcontrol = (tt_ud and 'hp_corpse' or 'hp_feature'), } 
 					or {}),
 			{ name='res', directcontrol = tt_ud and 'resources_corpse' or 'resources_feature' },
-			{ name='help', text = tt_ud and (green .. 'Space+click: Show unit stats') or '', },
+			{ name='help', text = tt_ud and (green .. 'Alt+click: Show unit stats') or '', },
 		},
 	}
 	

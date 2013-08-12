@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 include ("constants.lua")
+
+local spGetUnitRulesParam = Spring.GetUnitRulesParam
 --------------------------------------------------------------------------------
 -- pieces
 --------------------------------------------------------------------------------
@@ -61,15 +63,17 @@ local function RestoreAfterDelay()
     StopSpin(vulcan_R, z_axis, math.pi/8)
 end
 
---[[
 local function FeatherLoop()
     while true do
-	EmitSfx(engine_L, 1027)
-	EmitSfx(engine_R, 1027)
+	local spirit = spGetUnitRulesParam(unitID, "spirit")
+	if spirit == 100 then
+	    EmitSfx(engine_L, 1027)
+	    EmitSfx(engine_R, 1027)
+	end
 	Sleep(500)
     end
 end
-
+--[[
 local function DebugPhalanx()
     while true do
 	for i=1,4 do
@@ -97,7 +101,7 @@ function script.Create()
 	Turn(piece("phalanx_r"..i), x_axis, angles[i])
     end
     
-    --StartThread(FeatherLoop)
+    StartThread(FeatherLoop)
     --StartThread(DebugPhalanx)
 end
 

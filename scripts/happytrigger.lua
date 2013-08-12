@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 include ("constants.lua")
+
+local spGetUnitRulesParam = Spring.GetUnitRulesParam
 --------------------------------------------------------------------------------
 -- pieces
 --------------------------------------------------------------------------------
@@ -10,6 +12,7 @@ local laser, laserflare = piece('laser', 'laserflare')
 local railgun_brace, railgun_L, railgunflare_L, railgun_R, railgunflare_R = piece('railgun_brace', 'railgun_l', 'railgunflare_l', 'railgun_r', 'railgunflare_r')
 local missile_L, missileflare_L, missile_R, missileflare_R = piece('missile_l', 'missileflare_l', 'missile_r', 'missileflare_r')
 local phalanx_L, phalanxarm_L, phalanx_R, phalanxarm_R = piece('phalanx_l', 'phalanxarm_l', 'phalanx_r', 'phalanxarm_r')
+local engine_L, engine_R = piece('engine_l', 'engine_r')
 
 local weapons = {
     {aimpoint = base, muzzles = {railgunflare_L, railgunflare_R}, index = 1, emit = 1026},	-- railgun
@@ -52,6 +55,7 @@ local function DamageLoop()
     end
 end
 
+--[[
 local function Ping()
     while true do
 	for i=1,8 do
@@ -59,6 +63,18 @@ local function Ping()
 	    EmitSfx(piece("phalanx_r"..i), 1026)
 	end
 	Sleep(300)
+    end
+end
+]]
+
+local function FeatherLoop()
+    while true do
+	local spirit = spGetUnitRulesParam(unitID, "spirit")
+	if spirit == 100 then
+	    EmitSfx(engine_L, 1027)
+	    EmitSfx(engine_R, 1027)
+	end
+	Sleep(500)
     end
 end
 
@@ -82,6 +98,7 @@ function script.Create()
     end
     
     --StartThread(Ping)
+    StartThread(FeatherLoop)
 end
 
 function script.MoveRate(rate)

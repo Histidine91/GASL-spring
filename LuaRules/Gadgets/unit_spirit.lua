@@ -56,7 +56,7 @@ local function AddSpirit(unitID, unitDefID, unitTeam, targetDefID, damage)
   spiritUnits[unitID].spirit = newSpirit
   if currSpirit < 100 and newSpirit == 100 then
     GG.EventWrapper.AddEvent("spiritFull", 10, unitID, unitDefID, unitTeam)
-    SendToUnsynced("spirit_max", unitID)
+    SendToUnsynced("spirit_max", unitID)	-- handled by unit script with CEG
   end
   spSetUnitRulesParam(unitID, "spirit", newSpirit)
 end
@@ -84,7 +84,7 @@ function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
 end
 
 function gadget:GameFrame(n)
-  SendToUnsynced("spirit_GameFrame", n)
+  --SendToUnsynced("spirit_GameFrame", n)
 end
 
 function gadget:Initialize()

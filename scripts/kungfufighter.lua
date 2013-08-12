@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 include ("constants.lua")
+
+local spGetUnitRulesParam = Spring.GetUnitRulesParam
 --------------------------------------------------------------------------------
 -- pieces
 --------------------------------------------------------------------------------
@@ -11,6 +13,7 @@ local vulcan_L, vulcan_R, vulcanFlare_L, vulcanFlare_R = piece('vulcan_l', 'vulc
 local missile_L, missile_L1, missile_L2, missile_L3 = piece('missile_l', 'missile_l1', 'missile_l2', 'missile_l3')
 local missile_R, missile_R1, missile_R2, missile_R3 = piece('missile_r', 'missile_r1', 'missile_r2', 'missile_r3')
 local armJoint_L, armJoint_R, arm_L, arm_R, claw_L, claw_R = piece('armjoint_l', 'armjoint_r', 'arm_l', 'arm_r', 'claw_l', 'claw_r')
+local engine_L, engine_R = piece('engine_l', 'engine_r')
 
 local weapons = {
     {aimpoint = base, muzzles = {vulcanFlare_L, vulcanFlare_R}, index = 1, emit = 1026},	-- vulcan
@@ -52,6 +55,17 @@ local function RestoreAfterDelay()
     StopSpin(vulcan_R, z_axis, math.pi/8)
 end
 
+local function FeatherLoop()
+    while true do
+	local spirit = spGetUnitRulesParam(unitID, "spirit")
+	if spirit == 100 then
+	    EmitSfx(engine_L, 1027)
+	    EmitSfx(engine_R, 1027)
+	end
+	Sleep(500)
+    end
+end
+
 function script.Create()
     Turn(pod_L, z_axis, math.rad(12))
     Turn(pod_R, z_axis, math.rad(-12))
@@ -71,6 +85,8 @@ function script.Create()
 	Turn(piece("missile_l"..i), y_axis, -angle)
 	Turn(piece("missile_r"..i), y_axis, angle)
     end
+    
+    StartThread(FeatherLoop)
 end
 
 function script.MoveRate(rate)

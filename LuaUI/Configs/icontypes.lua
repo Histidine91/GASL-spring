@@ -11,24 +11,25 @@
 local icontypes = {
 	default = {
 		size=1,
-		radiusadjust=1,
+		radiusadjust=0,
 	},
   	tiny = {
 		bitmap="icons/trinver.tga",
 		size=".25",
-		radiusadjust=0,
 		distance=0.5,	-- Multiplier for the distance at which unit turns into icon
 	},
 	
 	luckystar = {
 		bitmap="icons/luckystar.png",
 		size=2.0,
-		radiusadjust=0,
 	},
 	kungfufighter = {
 		bitmap="icons/kungfufighter.png",
 		size=2.0,
-		radiusadjust=0,
+	},
+	happytrigger = {
+		bitmap="icons/happytrigger.png",
+		size=2.4,
 	},
 	
 	--small ships

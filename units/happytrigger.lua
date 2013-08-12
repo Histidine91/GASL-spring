@@ -6,7 +6,7 @@ local unitDef = {
 	-- Required Tags
 	power = 400,
 	mass = 240,
-	icontype = "luckystar",
+	icontype = "happytrigger",
 	category = "SMALL STRONG TARGET ANY",
 	footprintX = 2,
 	footprintZ = 2,
@@ -277,6 +277,7 @@ local unitDef = {
 			"custom:damage_fire",
 			"custom:death_small",
 			"custom:cannon_muzzle",
+			"custom:feather",
 		},
 	},
 	customParams  =  {

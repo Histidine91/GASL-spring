@@ -86,9 +86,10 @@ for i=1,#WeaponDefs do
 		burstSize = wd.salvoSize or 1,
 		projectiles = wd.projectiles or 1,
 		reloadTime = wd.reload or 1,
+		accuracy = (wd.accuracy or 0) + (wd.sprayangle or 0),
 		range = wd.range,
 		damageType = customParams.damagetype or "kinetic",
-		ap = customParams.ap,
+		ap = tonumber(customParams.ap),
 		critChance = customParams.critchance,
 		special = customParams.special,
 	}
@@ -187,7 +188,7 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 		fontShadow = true;
 	}
 	local ap
-	if data.ap then
+	if data.ap and (data.ap ~= 0) then
 		ap = Label:New{
 			parent = panel;
 			caption = "Armor piercing: " .. data.ap,

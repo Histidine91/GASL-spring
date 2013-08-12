@@ -32,7 +32,7 @@ local buttonColorRed = {1,0,0,1}
 local buttonColorGreen = {0,1,0.2,1}
 local buttonColorYellow = {1,1,0,1}
 local buttonColorBlue = {0,0.2,1,1}
-local buttonAlphaDeselected = 0.7
+local buttonAlphaDeselected = 0.4
 local pingColor1 = {1,0.2,0.2,0.7}
 local pingColor2 = {1,0.2,0.2,0.5}
 
@@ -210,7 +210,12 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 				WG.SetThirdPersonTrackUnit(unitID)
 			end
 		end},
-		tooltip = "Left click: Select and go to\nRight click: Select\nDouble-click: Lock camera (controllable units only)\nShift+click: Append to current selection\nAlt+click: Open info window",
+		tooltip = "\255\0\255\0" .. UnitDefs[unitDefID].humanName .. "\008\n"..
+			"Left click: Select and go to\n"..
+			"Right click: Select\n"..
+			"Double-click: Lock camera (controllable units only)\n"..
+			"Shift+click: Append to current selection\n"..
+			"Alt+click: Open info window",
 	}
 	if (hotkey ~= nil) then 
 		Label:New {

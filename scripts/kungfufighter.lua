@@ -22,6 +22,7 @@ local gunRotate = 0
 -- constants
 --------------------------------------------------------------------------------
 local SIG_DAMAGE = 1
+local SIG_RESTORE = 2
 
 --------------------------------------------------------------------------------
 -- variables
@@ -41,6 +42,14 @@ local function DamageLoop()
 	end
 	Sleep(50)
     end
+end
+
+local function RestoreAfterDelay()
+    Signal(SIG_RESTORE)
+    SetSignalMask(SIG_RESTORE)
+    Sleep(4000)
+    StopSpin(vulcan_L, z_axis, math.pi/8)
+    StopSpin(vulcan_R, z_axis, math.pi/8)
 end
 
 function script.Create()
@@ -79,10 +88,15 @@ end
 
 function script.FireWeapon(num)
     if num == 1 then
-	Turn(vulcan_L, z_axis, gunRotate*math.rad(-60), math.pi)
-	Turn(vulcan_R, z_axis, gunRotate*math.rad(60), math.pi)
+	--[[
+	Turn(vulcan_L, z_axis, gunRotate*math.rad(-60), math.pi*2)
+	Turn(vulcan_R, z_axis, gunRotate*math.rad(60), math.pi*2)
 	gunRotate = gunRotate + 1
 	if gunRotate == 3 then gunRotate = 0 end
+	]]--
+	Spin(vulcan_L, z_axis, -math.pi*4)
+	Spin(vulcan_R, z_axis, math.pi*4)
+	StartThread(RestoreAfterDelay)
     end
 end
 

@@ -74,7 +74,6 @@ local unitDef = {
 	weaponDefs = {
 		RAILGUN = {
 			name                    = [[Assault Railgun]],
-			accuracy                = 250,
 			areaOfEffect            = 32,
 			--burst                   = 2,
 			--burstRate               = 0.2,
@@ -107,12 +106,13 @@ local unitDef = {
 			reloadtime              = 6,
 			soundHit                = [[weapon/cannon/kheavyfire]],
 			soundStart              = [[weapon/cannon/medplasma_fire]],
+			sprayangle		= 250,
 			thickness		= 6,
 			texture1		= "plasma",
 			texture2		= "null",
 			turret                  = true,
 			weaponType              = [[LaserCannon]],
-			weaponVelocity          = 450,	
+			weaponVelocity          = 600,	
 		},
 		
 		LASER = {
@@ -238,10 +238,10 @@ local unitDef = {
 				default = 100,
 			},
 			
-			dance 		= 10,
+			--dance 		= 10,
 			explosiongenerator = "custom:laser",
 			fixedLauncher	= true,
-			flightTime	= 7,
+			flightTime	= 5,
 			impactOnly	= true,
 			impulseFactor	= 0,
 			impulseBoost	= 0,

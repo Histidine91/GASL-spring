@@ -196,10 +196,10 @@ local unitDef = {
 				default = 100,
 			},
 			
-			dance 		= 10,
+			--dance 		= 10,
 			explosiongenerator = "custom:laser",
 			fixedLauncher	= true,
-			flightTime	= 7,
+			flightTime	= 5,
 			impactOnly	= true,
 			impulseFactor	= 0,
 			impulseBoost	= 0,
@@ -280,8 +280,8 @@ local unitDef = {
 		explosionGenerators = {
 			"custom:damage_fire",
 			"custom:death_small",
-			"custom:muzzlekinetic",
-			"custom:muzzlemassdriver",
+			"custom:gunmuzzle",
+			"custom:feather",
 		},
 	},
 	customParams  =  {

@@ -170,8 +170,8 @@ local unitDef = {
 		explosionGenerators = {
 			"custom:damage_fire",
 			"custom:death_small",
-			"custom:muzzlekinetic",
-			"custom:muzzlemassdriver",
+			"custom:gunmuzzle",
+			"custom:feather",
 		},
 	},
 	customParams  =  {

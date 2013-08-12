@@ -9,6 +9,7 @@ local base, fuselage, pod_L, pod_R, prong_L, prong_R = piece('base', 'fuselage',
 local laser, laserflare = piece('laser', 'laserflare')
 local vulcan_L, vulcan_R, vulcanFlare_L, vulcanFlare_R = piece('vulcan_l', 'vulcan_r', 'vulcanflare_l', 'vulcanflare_r')
 local missile, missile1, missile2, missile3 = piece('missile', 'missile1', 'missile2', 'missile3')
+local engine_L, engine_R = piece('engine_l', 'engine_r')
 
 local weapons = {
     {aimpoint = laser, muzzles = {laserflare}, index = 1},	-- laser
@@ -30,6 +31,7 @@ local gunRotate = 0
 -- constants
 --------------------------------------------------------------------------------
 local SIG_DAMAGE = 1
+local SIG_RESTORE = 2
 
 --------------------------------------------------------------------------------
 -- variables
@@ -51,7 +53,24 @@ local function DamageLoop()
     end
 end
 
-local function bla()
+local function RestoreAfterDelay()
+    Signal(SIG_RESTORE)
+    SetSignalMask(SIG_RESTORE)
+    Sleep(4000)
+    StopSpin(vulcan_L, z_axis, math.pi/8)
+    StopSpin(vulcan_R, z_axis, math.pi/8)
+end
+
+--[[
+local function FeatherLoop()
+    while true do
+	EmitSfx(engine_L, 1027)
+	EmitSfx(engine_R, 1027)
+	Sleep(500)
+    end
+end
+
+local function DebugPhalanx()
     while true do
 	for i=1,4 do
 	    EmitSfx(piece("phalanx_l"..i), 1027)
@@ -60,6 +79,7 @@ local function bla()
 	Sleep(300)
     end
 end
+]]
 
 function script.Create()
     Turn(pod_L, z_axis, math.rad(12))
@@ -77,7 +97,8 @@ function script.Create()
 	Turn(piece("phalanx_r"..i), x_axis, angles[i])
     end
     
-    --StartThread(bla)
+    --StartThread(FeatherLoop)
+    --StartThread(DebugPhalanx)
 end
 
 function script.MoveRate(rate)
@@ -95,10 +116,15 @@ end
 
 function script.FireWeapon(num)
     if num == 2 then
-	Turn(vulcan_L, z_axis, gunRotate*math.rad(-60), math.pi)
-	Turn(vulcan_R, z_axis, gunRotate*math.rad(60), math.pi)
+	--[[
+	Turn(vulcan_L, z_axis, gunRotate*math.rad(-60), math.pi*2)
+	Turn(vulcan_R, z_axis, gunRotate*math.rad(60), math.pi*2)
 	gunRotate = gunRotate + 1
 	if gunRotate == 3 then gunRotate = 0 end
+	]]--
+	Spin(vulcan_L, z_axis, -math.pi*4)
+	Spin(vulcan_R, z_axis, math.pi*4)
+	StartThread(RestoreAfterDelay)
     end
 end
 

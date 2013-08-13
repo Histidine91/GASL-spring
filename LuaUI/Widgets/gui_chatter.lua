@@ -27,7 +27,7 @@ local WINDOW_WIDTH = 540
 local WINDOW_HEIGHT = 144
 local IMAGE_WIDTH = 89
 local IMAGE_HEIGHT = 100
-local PANEL_HEIGHT = 40
+local PANEL_HEIGHT = 48
 local PANEL_HEIGHT_MINOR = 24
 local NAME_WIDTH = 80
 local TIME_KEEP_WINDOW_OPEN = 6
@@ -129,7 +129,7 @@ local function CreateEventPanel(params)
 	}
 	if params.image then
 		image.file = params.image
-		image.color = (params.warningOverlay) and {1,0.7,0.7,1} or {1,1,1,1}
+		image.color = (params.warningOverlay) and {1,0.6,0.6,1} or {1,1,1,1}
 		image:Invalidate()
 	end
 	stackPanel:AddChild(panel, nil, 1)

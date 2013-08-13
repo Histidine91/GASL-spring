@@ -127,6 +127,20 @@ corjamtBursts = {
   count      = 20,
 }
 
+spiritBursts = {
+  life       = 45,
+  rotSpeed   = 8,
+  rotSpread  = 3,
+  arc        = 30,
+  arcSpread  = 0,
+  size       = 35,
+  sizeSpread = 10,
+  colormap   = { {1, 1, 1, 0.3}, {1, 1, 1, 0.3}, {1, 1, 1, 0} },
+  directional= true,
+  count      = 30,
+  sizeGrowth = 6,
+}
+
 ----------------------------------------------------------------------------
 -- COLORSPHERES ------------------------------------------------------------
 ----------------------------------------------------------------------------
@@ -441,6 +455,28 @@ cormexGlow = {
 ----------------------------------------------------------------------------
 -- SimpleParticles ---------------------------------------------------------
 ----------------------------------------------------------------------------
+--[[
+feather = {
+  life         = 90,
+  lifeSpread   = 15,
+  speed	       = 10,
+  speedSpread  = 1,
+  colormap     = { {1, 1, 1, 0.8}, {1, 1, 1, 0.8}, {1, 1, 1, 0.8}, {1, 1, 1, 0.02} },
+  rotSpeed     = 0.3,
+  rotFactor    = 1.0,
+  rotFactorSpread = -2.0,
+  rotairdrag	= 1,
+  rotSpread	= 360,
+  size		= 15,
+  emitVector	= {0,0,-1},
+  emitRotSpread	= 30,
+  texture	= "bitmaps/CC/feather.png",
+  count		= 10,
+  delaySpread   = 300,
+  repeatEffect	= true,
+}
+]]--
+
 roostDirt = {
   layer        = 10,
   speed        = 0,

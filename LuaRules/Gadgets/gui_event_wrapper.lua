@@ -21,9 +21,9 @@ if (gadgetHandler:IsSyncedCode()) then
 --[[
 events to record:
 	+enemy killed
-	shot missed		-need gadget
-	enemy shot evaded	-need gadget
-	-enemy damaged
+	+shot missed
+	+enemy shot evaded
+	enemy damaged
 	+took damage (low, moderate, severe)
 	+critical hit
 	+energy low/critical

@@ -54,7 +54,11 @@ local presets = {
 effectUnitDefs = {
   luckystar = {
 	{class='Ribbon', options={width=2, size=128, piece="engine_l"}},
-	{class='Ribbon', options={width=2, size=128, piece="engine_r"}},	
+	{class='Ribbon', options={width=2, size=128, piece="engine_r"}},
+	--{class='SimpleParticles', options=MergeTable(feather, {piece="engine_l"})},
+	--{class='SimpleParticles', options=MergeTable(feather, {piece="engine_r"})},
+	--{class="Bursts", options=spiritBursts},
+	--{class="StaticParticles", options=MergeTable(commandCoronaWhite, {sizeGrowth=5, life=90, repeatEffect=false})},
   },
   kungfufighter = {
 	{class='Ribbon', options={width=2, size=128, piece="engine_l"}},

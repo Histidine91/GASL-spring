@@ -16,7 +16,7 @@ local unitDef = {
 	objectName = "luckystar.s3o",
 	SoundCategory = "FIGHTER",
 	collisionVolumeType = "Box",
-	collisionVolumeScales = "20 12 30",
+	collisionVolumeScales = "22 15 30",
 	collisionVolumeTest = true,
 
 	-- Movement
@@ -69,7 +69,10 @@ local unitDef = {
 			onlyTargetCategory = "TARGET",
 			badTargetCategory = "ARMORED",
 		},
-		
+		{
+			def = "HYPERCANNON",
+			onlyTargetCategory = "NONE"
+		},
 	},
 	
 	weaponDefs = {
@@ -134,6 +137,8 @@ local unitDef = {
 				suppression_noFlank = 1,
 				critchance = 0.075,
 				energypershot = 180,
+				jammable = true,
+				eccm = 20,
 			},
 			
 			craterMult		= 0,
@@ -199,7 +204,7 @@ local unitDef = {
 			--dance 		= 10,
 			explosiongenerator = "custom:laser",
 			fixedLauncher	= true,
-			flightTime	= 5,
+			flightTime	= 6,
 			impactOnly	= true,
 			impulseFactor	= 0,
 			impulseBoost	= 0,
@@ -229,15 +234,15 @@ local unitDef = {
 		VULCAN_DUAL = {
 			name			= "Dual Vulcan Cannon",
 			areaOfEffect		= 8,
-			--burst                   = 3,
-			--burstRate               = 0.1,
+			burst                   = 3,
+			burstRate               = 0.1,
 			
 			customParams	= {
 				ap = 50,
 				damagetype = "kinetic",
 				description = "Twin rapid-fire autocannons that chew up soft targets. Accuracy and armor penetration are subpar.",
 				critchance = 0.075,
-				energypershot = 2,
+				energypershot = 6,
 			},
 			
 			craterMult		= 0,
@@ -258,7 +263,7 @@ local unitDef = {
 			noSelfDamage		= true,
 			projectiles		= 2,
 			range			= 1200,
-			reloadtime		= .1,
+			reloadtime		= 0.3,
 			rgbColor		= "1 0.5 0",
 			soundStart		= "weapon/cannon/klightfire",
 			soundHit		= "weapon/cannon/klighthit",
@@ -268,7 +273,52 @@ local unitDef = {
 			turret			= false,
 			weaponVelocity		= 800,
 			weaponType		= "LaserCannon",
-		}, 
+		},
+		HYPERCANNON = {
+			name		= "Hyper Cannon",
+			accuracy	= 0,
+			areaOfEffect	= 48,
+			beamDecay	= 0.85,
+			beamTTL		= 6,
+			beamTime	= 0.03,
+			
+			customParams	= {
+				ap = 0,
+				damagetype = "energy",
+				description = "An immensely powerful beam that wipes anything in its path.",
+				critchance = 0.05,
+				special = true,
+				statsdamage = 100*30*5
+			},
+			
+			craterMult		= 0,
+			craterBoost		= 0,
+			
+			damage = {
+				default = 100,
+			},
+			
+			explosiongenerator = "custom:graser_pink",
+			impactOnly 	= true,
+			impulsefactor	= 0,
+			impulseBoost	= 0,
+			intensity	= 1,
+			interceptedByShieldType = 2,
+			--largeBeamLaser	= true,
+			laserFlareSize	= 8,
+			minIntensity	= 1,
+			noExplode	= true,
+			noSelfDamage	= true,
+			range		= 2000,
+			reloadtime	= 10,
+			rgbColor 	= "1 0.2 0.8",
+			soundHit	= nil,
+			soundStart 	= nil,
+			thickness	= 40,
+			tolerance	= 1000,
+			turret		= false,
+			weaponType	= "BeamLaser",
+		},		
 	},
 
 	explodeAs = "RetroDeathSmall",
@@ -290,11 +340,6 @@ local unitDef = {
 		type = "small",
 		role = "attacker",
 		cost = 2000,
-		trailtex = "bitmaps/trails/1m2sw.png",
-		trailr = .5,
-		trailg = 1,
-		trailb = .5,
-		trailalpha = 1,
 		useflightcontrol = 1,
 		combatspeed = 1.4,
 		combatrange = 1600,

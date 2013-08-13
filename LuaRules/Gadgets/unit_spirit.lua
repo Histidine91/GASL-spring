@@ -33,12 +33,36 @@ local spiritDefs = {
 local spiritUnits = {}
 _G.spiritUnits = spiritUnits
 
+local invalidWeapons = {}
+for i=1,#WeaponDefs do
+  if (WeaponDefs[i].customParams or {}).special then
+    invalidWeapons[i] = true
+  end
+end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
 function GG.GetUnitSpirit(unitID)
   return spiritUnits[unitID] and spiritUnits[unitID].spirit
 end
+
+local function SetSpirit(unitID, unitDefID, unitTeam, newSpirit)
+  if spiritUnits[unitID] then
+    local currSpirit = spiritUnits[unitID].spirit
+    if newSpirit > 100 then
+      newSpirit = 100
+    end	
+    spiritUnits[unitID].spirit = newSpirit
+    spSetUnitRulesParam(unitID, "spirit", newSpirit)
+    if currSpirit < 100 and newSpirit == 100 then
+      GG.EventWrapper.AddEvent("spiritFull", 10, unitID, unitDefID, unitTeam)
+      SendToUnsynced("spirit_max", unitID)	-- handled by unit script with CEG
+      GG.SetSpecialWeaponEnabled(unitID, unitDefID, unitTeam, true)
+    end
+    spSetUnitRulesParam(unitID, "spirit", newSpirit)
+  end
+end
+GG.SetUnitSpirit = SetSpirit
 
 local function CalculateSpiritChange(unitDefID, damage)
   local unitDef = UnitDefs[unitDefID]
@@ -49,21 +73,16 @@ end
 
 local function AddSpirit(unitID, unitDefID, unitTeam, targetDefID, damage)
   local currSpirit = spiritUnits[unitID].spirit
-  local newSpirit = currSpirit + CalculateSpiritChange(unitDefID, damage)
-  if newSpirit > 100 then
-    newSpirit = 100
-  end	
-  spiritUnits[unitID].spirit = newSpirit
-  if currSpirit < 100 and newSpirit == 100 then
-    GG.EventWrapper.AddEvent("spiritFull", 10, unitID, unitDefID, unitTeam)
-    SendToUnsynced("spirit_max", unitID)	-- handled by unit script with CEG
-  end
-  spSetUnitRulesParam(unitID, "spirit", newSpirit)
+  local newSpirit = currSpirit + CalculateSpiritChange(targetDefID, damage)
+  SetSpirit(unitID, unitDefID, unitTeam, newSpirit)
 end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID, attackerID, attackerDefID, attackerTeam)
+  if invalidWeapons[weaponID] then
+    return
+  end
   if spiritUnits[unitID] then
     AddSpirit(unitID, unitDefID, unitTeam, unitDefID, damage)
   end

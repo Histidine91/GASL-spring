@@ -72,6 +72,11 @@ local function GetAttackerVector(unitID, attackerID)
 	return dotUp, dotFront
 end
 
+function GG.SetUnitSuppression(unitID, value)
+	units[unitID].suppression = value
+	spSetUnitRulesParam(unitID, "suppression", value, {inlos = true})
+end
+
 function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID,
                             attackerID, attackerDefID, attackerTeam)
 	if not (weaponID and units[unitID]) then

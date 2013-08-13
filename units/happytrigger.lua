@@ -16,7 +16,7 @@ local unitDef = {
 	objectName = "happytrigger.s3o",
 	SoundCategory = "FIGHTER",
 	collisionVolumeType = "Box",
-	collisionVolumeScales = "20 12 36",
+	collisionVolumeScales = "22 15 36",
 	collisionVolumeTest = true,
 
 	-- Movement
@@ -176,6 +176,8 @@ local unitDef = {
 				suppression_noFlank = 1,
 				critchance = 0.075,
 				energypershot = 360,
+				jammable = true,
+				eccm = 20,
 			},
 			
 			craterMult		= 0,
@@ -241,7 +243,7 @@ local unitDef = {
 			--dance 		= 10,
 			explosiongenerator = "custom:laser",
 			fixedLauncher	= true,
-			flightTime	= 5,
+			flightTime	= 6,
 			impactOnly	= true,
 			impulseFactor	= 0,
 			impulseBoost	= 0,

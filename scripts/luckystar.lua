@@ -17,7 +17,8 @@ local weapons = {
     {aimpoint = laser, muzzles = {laserflare}, index = 1},	-- laser
     {aimpoint = base, muzzles = {vulcanFlare_L, vulcanFlare_R}, index = 1, emit = 1026},	-- vulcan
     {aimpoint = missile, muzzles = {missile1, missile2, missile3}, index = 1},	-- missile
-    {aimpoint = base, muzzles = {}, index = 1}	-- phalanx
+    {aimpoint = base, muzzles = {}, index = 1},	-- phalanx
+    {aimpoint = laser, muzzles = {laserflare}, index = 1}	-- hyperCannon
 }
 do
     local muzzles = weapons[4].muzzles
@@ -34,11 +35,14 @@ local gunRotate = 0
 --------------------------------------------------------------------------------
 local SIG_DAMAGE = 1
 local SIG_RESTORE = 2
+local SIG_SPECIAL = 4
+
+local HYPER_CANNON_TIME = 30*5	-- gameframes
 
 --------------------------------------------------------------------------------
 -- variables
 --------------------------------------------------------------------------------
-
+local isUsingSpecial = false
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function DamageLoop()
@@ -72,6 +76,21 @@ local function FeatherLoop()
 	end
 	Sleep(500)
     end
+end
+
+local function HyperCannonLoop()
+    Signal(SIG_SPECIAL)
+    SetSignalMask(SIG_SPECIAL)
+    isUsingSpecial = true
+    for i=1,HYPER_CANNON_TIME do
+	EmitSfx(laserflare, 2052)
+	Sleep(33)
+    end
+    isUsingSpecial = false
+end
+
+function HyperCannonTrigger()
+    StartThread(HyperCannonLoop)
 end
 --[[
 local function DebugPhalanx()
@@ -134,7 +153,7 @@ end
 
 function script.AimWeapon(num)
     GG.UpdateWeaponAccuracy(unitID, unitDefID, num)
-    return true
+    return (not isUsingSpecial)
 end
 
 function script.Shot(num)
@@ -148,7 +167,10 @@ function script.Shot(num)
     end
 end
 
-function script.HitByWeapon()
+function script.HitByWeapon(x, z, weaponDefID, damage)
+    if isUsingSpecial then
+	return 0
+    end
     StartThread(DamageLoop)
 end
 

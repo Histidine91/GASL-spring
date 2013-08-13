@@ -522,6 +522,25 @@ return {
       },
     },
   },    
+
+  ["graser_pink"] = {
+    rays = {
+      air                = true,
+      class              = [[explspike]],
+      count              = 15,
+      ground             = true,
+      water              = true,
+      underwater    = true,
+      properties = {
+        alpha              = 0.9,
+        alphadecay         = 0.1,
+        color              = [[1,0.2,0.8]],
+        dir                = [[-1 r2, 0 r1, -1 r2]],
+        length             = 105,
+        width              = 5,
+      },
+    },
+  },    
   
   ["torpedo"] = {
     circle = {

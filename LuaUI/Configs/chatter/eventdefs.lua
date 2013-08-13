@@ -109,7 +109,10 @@ eventDefs = {
 	commandReceived = {
 		priority = 30,
 		queueRating = 100,	-- always play at start
-	}
+	},
+	specialWeapon = {
+		priority = 100,
+	},
 }
 
 for eventName, eventDef in pairs(eventDefs) do

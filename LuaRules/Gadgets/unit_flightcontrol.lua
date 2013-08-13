@@ -39,6 +39,8 @@ if (gadgetHandler:IsSyncedCode()) then
 --------------------------------------------------------------------------------
 --SYNCED
 --------------------------------------------------------------------------------
+include "LuaRules/Configs/special_weapon_defs.lua"
+
 local cmdSetAttackSpeed = {
 	id      = CMD_SET_ATTACK_SPEED,
 	type    = CMDTYPE.ICON_MODE,
@@ -67,6 +69,7 @@ local AUTOENGAGE_COMMANDS = {
 	[CMD.FIGHT] = true,
 	[CMD.PATROL] = true,
 }
+
 local BEHAVIOR_STRINGS = {
 	[0] = "idle",
 	[1] = "moving",
@@ -81,13 +84,13 @@ local waitWaitList = {}
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-local function GetDistance(x1, x2, y1, y2, z1, z2)
+local function GetDistance(x1, y1, z1, x2, y2, z2)
 	local dist = ((x1 - x2)^2 + (z1 - z2)^2)
 	dist = (dist + (z1 - z2)^2)^0.5
 	return dist
 end
 
-local function GetUnitMidpos(unitID)
+local function GetUnitMidPos(unitID)
 	local _,_,_,x,y,z = spGetUnitPosition(unitID, true)
 	return x,y,z
 end
@@ -176,8 +179,7 @@ local function GetNewHeading(old, wanted, turnrate)
 	return new, dir
 end
 
-local function GetDistanceFromTargetMoveGoal(targetID, initialHeading, distance, maxAngle)
-	local tx, ty, tz = GetUnitMidpos(targetID)
+local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distance, maxAngle)
 	local angleXZ = math.random(-100, 100)
 	local angleYZ = 0--math.random(-100, 100)*0.6
 	angleXZ = angleXZ * maxAngle/100 + initialHeading
@@ -222,6 +224,28 @@ end
 
 function GG.GetUnitSpeed(unitID)
 	return spacecraft[unitID] and spacecraft[unitID].speed
+end
+
+function GG.BreakOffTarget(unitID)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	local unitDefID = data.unitDefID
+	local def = spacecraftDefs[unitDefID]
+	local cmd = data.commandCache
+	if not (commandCache and commandCache.id == CMD.ATTACK) then
+		return
+	end
+	
+	local targetID = data.commandCache and data.commandCache.params[1]
+	data.behavior = 3
+	local heading = spGetUnitHeading(unitID)
+	heading = NormalizeHeading(heading)
+	local tx, ty, tz = GetUnitMidPos(targetID)
+	data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.maxAvoidanceAngle)
+	data.lastDistance = distance
+	data.wantedSpeed = def.speed
 end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -301,7 +325,7 @@ function gadget:AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdO
 		if cmdID == CMD.ATTACK and not cmdOptions.shift then	-- explicit attack order makes unit stop avoidance behavior
 			local target = #cmdParams == 1 and cmdParams[1]
 			if target and spValidUnitID(target) then
-				spacecraft[unitID].moveGoal = {GetUnitMidpos(target)}
+				spacecraft[unitID].moveGoal = {GetUnitMidPos(target)}
 				spacecraft[unitID].behavior = 2
 			end
 			return true
@@ -337,7 +361,7 @@ function gadget:GameFrame(f)
 	
 		local unitDefID = data.unitDefID
 		local def = spacecraftDefs[unitDefID]
-		local px, py, pz = GetUnitMidpos(unitID)
+		local px, py, pz = GetUnitMidPos(unitID)
 		
 		-- first determine what we should do
 		if data.commandCacheTTL <= 0 then
@@ -357,7 +381,36 @@ function gadget:GameFrame(f)
 		if data.commandCache and ((f+unitID)%3 == 0) then
 			local command = data.commandCache
 			local cmdID = command.id
-			if def.orbitTarget or cmdID == CMD.GUARD then
+			if specialCMDs[cmdID] then
+				local ux, uy, uz = GetUnitMidPos(unitID)
+				local tx, ty, tz
+				if (#command.params == 1) then
+					tx, ty, tz = GetUnitMidPos(command.params[1])
+				else
+					tx, ty, tz = unpack(command.params)
+				end
+				if tx and ty and tz then
+					local distance = GetDistance(ux, uy, uz, tx, ty, tz)
+					local minRange = specialWeapons[specialCMDs[cmdID]].minRange
+					local maxRange = specialWeapons[specialCMDs[cmdID]].maxRange
+					if distance > maxRange then
+						data.behavior = 2
+						data.moveGoal = {tx, ty, tz}
+						data.wantedSpeed = def.speed
+					elseif distance < minRange then
+						data.behavior = 3
+						data.wantedSpeed = def.speed
+						
+						local heading = spGetUnitHeading(unitID)
+						heading = NormalizeHeading(heading)
+						data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.maxAvoidanceAngle)
+					else
+						data.behavior = 2
+						data.wantedSpeed = GetWantedSpeed(distance, data, def)
+						data.moveGoal = {tx, ty, tz}
+					end
+				end
+			elseif def.orbitTarget or cmdID == CMD.GUARD then
 				local targetID = command.params[1]
 				if targetID and spValidUnitID(targetID) then
 					local distance = spGetUnitSeparation(unitID, targetID, false)
@@ -371,12 +424,13 @@ function gadget:GameFrame(f)
 					end
 					if distance > (orbitDistance) then
 						data.behavior = 2
-						data.moveGoal = {GetUnitMidpos(targetID)}
+						data.moveGoal = {GetUnitMidPos(targetID)}
 						data.wantedSpeed = def.speed
 					elseif data.behavior == 2 then
 						local heading = spGetUnitHeading(unitID)/65536*2*math.pi
 						heading = NormalizeHeading(heading)
-						data.moveGoal = GetDistanceFromTargetMoveGoal(targetID, heading, orbitDistance, def.maxAvoidanceAngle)
+						local tx, ty, tz = GetUnitMidPos(targetID)
+						data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, orbitDistance, def.maxAvoidanceAngle)
 						data.wantedSpeed = ((cmdID == CMD.GUARD) or (def.combatSpeed < targetData.wantedSpeed)) and def.speed or def.combatSpeed
 						data.behavior = 3
 					end
@@ -390,13 +444,14 @@ function gadget:GameFrame(f)
 					
 					if data.behavior == 2 then
 						-- too close, switch to avoid behavior
-						data.moveGoal = {GetUnitMidpos(targetID)}
+						data.moveGoal = {GetUnitMidPos(targetID)}
 						data.wantedSpeed = GetWantedSpeed(distance, data, def)
 						if distance < (targetDef.avoidDistance or 0) or (distance < MIN_AVOID_DISTANCE) then
 							data.behavior = 3
 							local heading = spGetUnitHeading(unitID)
 							heading = NormalizeHeading(heading)
-							data.moveGoal = GetDistanceFromTargetMoveGoal(targetID, heading, def.combatRange, def.maxAvoidanceAngle)
+							local tx, ty, tz = GetUnitMidPos(targetID)
+							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.maxAvoidanceAngle)
 							data.lastDistance = distance
 							data.wantedSpeed = def.speed
 							--Spring.Echo(unitID .. " last distance = " .. distance)
@@ -407,7 +462,7 @@ function gadget:GameFrame(f)
 						if data.timeBeforeShakePursuer == 0 then
 							if distance <= (data.lastDistance or 0) + (def.speed*60) then
 								data.behavior = 2
-								data.moveGoal = {GetUnitMidpos(targetID)}
+								data.moveGoal = {GetUnitMidPos(targetID)}
 								data.wantedSpeed = def.combatSpeed
 								--Spring.Echo(unitID .. " is jinking (distance " .. distance .. ", was " .. data.lastDistance .. ")")
 							end
@@ -415,10 +470,10 @@ function gadget:GameFrame(f)
 							data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
 						end
 						-- far enough, switch to closing behavior
-						local distance2 = GetDistance(px, data.moveGoal[1], py, data.moveGoal[2], pz, data.moveGoal[3])
+						local distance2 = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
 						if distance > def.combatRange or distance2 < MOVE_DISTANCE_THRESHOLD then
 							data.behavior = 2
-							data.moveGoal = {GetUnitMidpos(targetID)}
+							data.moveGoal = {GetUnitMidPos(targetID)}
 							data.wantedSpeed = GetWantedSpeed(distance, data, def)
 							data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
 							--Spring.Echo("Got enough distance, closing in again")
@@ -428,7 +483,7 @@ function gadget:GameFrame(f)
 						--data.behavior = 6
 					else
 						data.behavior = 2
-						data.moveGoal = {GetUnitMidpos(targetID)}
+						data.moveGoal = {GetUnitMidPos(targetID)}
 						data.wantedSpeed = GetWantedSpeed(distance, data, def)
 						data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
 					end
@@ -441,7 +496,7 @@ function gadget:GameFrame(f)
 				end
 			elseif MOVE_COMMANDS[cmdID] then
 				data.moveGoal = command.params
-				local distance = GetDistance(px, data.moveGoal[1], py, data.moveGoal[2], pz, data.moveGoal[3])
+				local distance = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
 				data.wantedSpeed = (distance > 100) and def.speed or def.combatSpeed
 				if distance <= MOVE_DISTANCE_THRESHOLD then	-- close enough
 					Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {data.commandCache.tag}, {})

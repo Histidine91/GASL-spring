@@ -16,7 +16,7 @@ local unitDef = {
 	objectName = "kungfufighter.s3o",
 	SoundCategory = "FIGHTER",
 	collisionVolumeType = "Box",
-	collisionVolumeScales = "20 12 30",
+	collisionVolumeScales = "22 15 30",
 	collisionVolumeTest = true,
 
 	-- Movement
@@ -79,6 +79,8 @@ local unitDef = {
 				suppression_noFlank = 1,
 				critchance = 0.075,
 				energypershot = 270,
+				jammable = true,
+				eccm = 15,
 			},
 			
 			craterMult		= 0,

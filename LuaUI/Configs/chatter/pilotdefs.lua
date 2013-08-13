@@ -71,6 +71,10 @@ local pilotDefsPre = {
 				{image = portraits.milfeulle_normal, text = "Yes, sir!"},
 				{image = portraits.milfeulle_normal, text = "Lucky Star, roger."},
 			},
+			specialWeapon = {
+				{image = portraits.milfeulle_veryhappy, text = "Now it's my turn!\nHyper Cannon, fire!"},
+				{image = portraits.milfeulle_aggressive, text = "Eei!\nHyper Cannon!"},
+			},
 		}
 	},
 	kungfufighter = {

@@ -72,6 +72,18 @@ local function Square(size)
 	gl.Vertex(ssize*size,-ssize*size,0)
 end
 
+local function UpdateTarget()
+	if not selectedUnit then
+		return
+	end
+	local commands = spGetUnitCommands(selectedUnit)
+	if commands and commands[1] and commands[1].id == CMD.ATTACK then
+		currentTarget = commands[1].params[1]
+	else
+		currentTarget = nil
+	end
+end
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
@@ -83,16 +95,12 @@ end
 
 function widget:SelectionChanged(newSelection)
 	selectedUnit = newSelection and newSelection[1]
+	UpdateTarget()
 end
 
 function widget:GameFrame(n)
-	if (n%15 == 0) and selectedUnit then
-		local commands = spGetUnitCommands(selectedUnit)
-		if commands and commands[1] and commands[1].id == CMD.ATTACK then
-			currentTarget = commands[1].params[1]
-		else
-			currentTarget = nil
-		end
+	if (n%5 == 0) then
+		UpdateTarget()
 	end
 end
 

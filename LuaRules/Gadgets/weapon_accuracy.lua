@@ -14,11 +14,10 @@ function gadget:GetInfo()
 end
 
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
 --SYNCED
+--------------------------------------------------------------------------------
 if not gadgetHandler:IsSyncedCode() then
-	return
+   return
 end
 
 local UPDATE_PERIOD = 15
@@ -59,22 +58,33 @@ for i=1,#UnitDefs do
    ecmDefs[i] = (ud.customParams.ecm or 0)/100
 end
 
-local function GetAccMult(unitID, unitDefID, targetID, targetDefID)
-   local ecmMod = targetDefID and ecmDefs[targetDefID] or 0
-   --[[
-   local moraleMod = 0
-   local morale = GG.GetMorale(unitDefID)
-   if morale then
-      moraleMod = (morale - BASE_MORALE)/50 * MORALE_ACCURACY_MULT
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local function GetAccMult(unitID, unitDefID, targetID, targetDefID, params)
+   params = params or {useSuppression = true}
+   
+   local ecmMod = 0
+   if params.useECM then
+      ecmMod = targetDefID and ecmDefs[targetDefID] or 0
    end
-   ]]--
+   
+   local moraleMod = 0
+   if params.useMorale then
+      local morale = GG.GetMorale(unitDefID)
+      if morale then
+	 moraleMod = (morale - BASE_MORALE)/50 * MORALE_ACCURACY_MULT
+      end
+   end
+   
    local suppressionMod = 0
-   local suppression = GG.GetUnitSuppression(unitID)
-   if suppression then
-      suppressionMod = suppression * SUPPRESSION_MULT
+   if params.useSuppression then
+      local suppression = GG.GetUnitSuppression(unitID)
+      if suppression then
+	 suppressionMod = suppression * SUPPRESSION_MULT
+      end
    end
       
-   local accMult = 1 + ecmMod + suppressionMod--+ moraleMod
+   local accMult = 1 + ecmMod + suppressionMod + moraleMod
    return accMult
 end
 GG.GetAccMult = GetAccMult
@@ -111,7 +121,8 @@ end
 --GG.UpdateUnitAccuracy = UpdateUnitAccuracy
 GG.UpdateWeaponAccuracy = UpdateWeaponAccuracy
 
-
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
    units[unitID] = nil
 end

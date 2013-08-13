@@ -70,17 +70,13 @@ local unitDef = {
 		type = "small",
 		role = "attacker",
 		cost = 200,
-		trailtex = "bitmaps/trails/1m2sw.png",
-		trailr = .5,
-		trailg = 1,
-		trailb = .5,
-		trailalpha = 1,
 		useflightcontrol = 1,
 		combatspeed = 1.6,
 		combatrange = 1200,
 		inertiafactor = 0.96,
 		rollangle = math.rad(30),
 		armor = 50,
+		ecm = 10,
 	},
 }
 

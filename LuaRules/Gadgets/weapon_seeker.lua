@@ -39,7 +39,7 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-local function GetScatterImpactPoint(projectileID, targetID, accuracy, speed)
+local function GetScatterImpactPoint(projectileID, targetID, maxSpread, speed)
 	local _,_,_,x,y,z = Spring.GetUnitPosition(targetID, true)
 	local x1, y1, z1 = Spring.GetProjectilePosition(projectileID)
 	
@@ -55,7 +55,7 @@ local function GetScatterImpactPoint(projectileID, targetID, accuracy, speed)
 	y = y + vy*time
 	z = z + vz*time
 	
-	local dist = math.random(0, accuracy)
+	local dist = math.random(0, maxSpread)
 	local heading = math.random(-180,180)
 	local pitch = math.random(-90,90)
 	heading = math.rad(heading)

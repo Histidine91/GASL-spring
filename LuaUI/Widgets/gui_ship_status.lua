@@ -112,7 +112,7 @@ local overlayPhase = 0
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
--- SCREENSIZE FUNCTIONS
+-- FUNCTIONS
 -------------------------------------------------------------------------------
 local vsx, vsy   = widgetHandler:GetViewSizes()
 
@@ -121,6 +121,42 @@ function widget:ViewResize(viewSizeX, viewSizeY)
   vsy = viewSizeY
 end
 
+local function DamagePing(vx,vy)
+	gl.Color(pingColor1)
+	gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
+	gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
+	gl.Color(pingColor2)
+	gl.Vertex(vx,vy,0)
+	gl.Vertex(-vx,vy,0)
+	
+	gl.Color(pingColor1)
+	gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
+	gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
+	gl.Color(pingColor2)
+	gl.Vertex(vx,-vy,0)
+	gl.Vertex(vx,vy,0)
+	
+	gl.Color(pingColor1)
+	gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
+	gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
+	gl.Color(pingColor2)
+	gl.Vertex(-vx,-vy,0)
+	gl.Vertex(vx,-vy,0)
+	
+	gl.Color(pingColor1)
+	gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
+	gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
+	gl.Color(pingColor2)
+	gl.Vertex(-vx,vy,0)
+	gl.Vertex(-vx,-vy,0)
+end
+
+local function SpiritGlow()
+	gl.Vertex(-BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
+	gl.Vertex(BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
+	gl.Vertex(BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
+	gl.Vertex(-BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
+end
 -------------------------------------------------------------------------------
 -- helper funcs
 
@@ -478,35 +514,7 @@ local function DrawWarningFlash(x, y)
 	local size = DAMAGE_WARNING_MIN_SIZE_MOD+(1-DAMAGE_WARNING_MIN_SIZE_MOD)*overlayPhase
 	local vx = BUTTON_OVERLAY_X*size
 	local vy = BUTTON_OVERLAY_Y*size
-	gl.BeginEnd(GL.QUADS, function(vx,vy)
-		gl.Color(pingColor1)
-		gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
-		gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
-		gl.Color(pingColor2)
-		gl.Vertex(vx,vy,0)
-		gl.Vertex(-vx,vy,0)
-		
-		gl.Color(pingColor1)
-		gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
-		gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
-		gl.Color(pingColor2)
-		gl.Vertex(vx,-vy,0)
-		gl.Vertex(vx,vy,0)
-		
-		gl.Color(pingColor1)
-		gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
-		gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
-		gl.Color(pingColor2)
-		gl.Vertex(-vx,-vy,0)
-		gl.Vertex(vx,-vy,0)
-		
-		gl.Color(pingColor1)
-		gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
-		gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
-		gl.Color(pingColor2)
-		gl.Vertex(-vx,vy,0)
-		gl.Vertex(-vx,-vy,0)
-	end, vx, vy)
+	gl.BeginEnd(GL.QUADS, DamagePing, vx, vy)
 	gl.PopMatrix()
 end
 
@@ -514,12 +522,7 @@ local function DrawSpiritGlow(x,y)
 	gl.PushMatrix()
 	gl.Translate(x,y,0)
 	gl.Color(1,1,0.4,0.7*math.sin(overlayPhase*math.pi))
-	gl.BeginEnd(GL.QUADS, function()
-		gl.Vertex(-BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
-		gl.Vertex(BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
-		gl.Vertex(BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
-		gl.Vertex(-BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
-	end)
+	gl.BeginEnd(GL.QUADS, SpiritGlow)
 	gl.PopMatrix()
 end
 -------------------------------------------------------------------------------

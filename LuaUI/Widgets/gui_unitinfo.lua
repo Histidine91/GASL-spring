@@ -82,7 +82,7 @@ for i=1,#WeaponDefs do
 	weaponData[i] = {
 		name = wd.description,
 		desc = customParams.description,
-		damage = wd.damages[0],
+		damage = wd.customParams.statsdamage or wd.damages[0],
 		burstSize = wd.salvoSize or 1,
 		projectiles = wd.projectiles or 1,
 		reloadTime = wd.reload or 1,
@@ -133,8 +133,7 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 		x = 0,
 		y = 0,
 		align="left";
-		fontSize = 14;
-		fontShadow = true;
+		font = {size = 14, shadow = true, color = data.special and {0,1,1,1} or nil},
 	}
 	local damageType = Image:New{
 		parent = panel,
@@ -144,45 +143,56 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 		width = 48,
 		height = 48,
 	}
+	local grid = Grid:New{
+		parent = panel,
+		rows = 2,
+		columns = 3,
+		x = 0,
+		y = 12,
+		right = 60,
+		bottom = 0,
+	}
 	local dmgString = "Damage: "..data.damage
 	local projectiles = data.burstSize * data.projectiles
 	if projectiles > 1 then
 		dmgString = dmgString .. " x "..projectiles
 	end
 	local damage = Label:New{
-		parent = panel;
+		parent = grid;
 		caption = dmgString,
-		x = 0,
-		y = 18,
+		--x = 0,
+		--y = 18,
 		align="left";
 		fontSize = 12;
 		fontShadow = true;
 	}
-	local value_reloadTime = ("%.2f"):format(data.reloadTime)
-	local reloadTime = Label:New{
-		parent = panel;
-		caption = "Reload: " .. value_reloadTime .. " s",
-		x = 144,
-		y = 18,
-		align="left";
-		fontSize = 12;
-		fontShadow = true;
-	}
-	local value_dps = ("%.1f"):format(data.damage*projectiles/data.reloadTime)
-	local dps = Label:New{
-		parent = panel;
-		caption = "DPS: " .. value_dps,
-		x = 288,
-		y = 18,
-		align="left";
-		fontSize = 12;
-		fontShadow = true;
-	}
+	if not data.special then
+		local value_reloadTime = ("%.2f"):format(data.reloadTime)
+		local reloadTime = Label:New{
+			parent = grid;
+			caption = "Reload: " .. value_reloadTime .. " s",
+			--x = 144,
+			--y = 18,
+			align="left";
+			fontSize = 12;
+			fontShadow = true;
+		}
+		local value_dps = ("%.1f"):format(data.damage*projectiles/data.reloadTime)
+		local dps = Label:New{
+			parent = grid;
+			caption = "DPS: " .. value_dps,
+			--x = 288,
+			--y = 18,
+			align="left";
+			fontSize = 12;
+			fontShadow = true;
+		}
+	end
 	local range = Label:New{
-		parent = panel;
+		parent = grid;
 		caption = "Range: " .. data.range,
-		x = 0,
-		y = 36,
+		--x = 0,
+		--y = 36,
 		align="left";
 		fontSize = 12;
 		fontShadow = true;
@@ -190,10 +200,10 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 	local ap
 	if data.ap and (data.ap ~= 0) then
 		ap = Label:New{
-			parent = panel;
+			parent = grid;
 			caption = "Armor piercing: " .. data.ap,
-			x = 144,
-			y = 36,
+			--x = 144,
+			--y = 36,
 			align="left";
 			fontSize = 12;
 			fontShadow = true;
@@ -202,10 +212,10 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 	local critChance
 	if data.critChance then
 		critChance = Label:New{
-			parent = panel;
+			parent = grid;
 			caption = "Crit chance: " .. ("%.1f"):format(data.critChance*100) .. "%",
-			x = ap and 288 or 144,
-			y = 36,
+			--x = ap and 288 or 144,
+			--y = 36,
 			align= "left";
 			fontSize = 12;
 			fontShadow = true;

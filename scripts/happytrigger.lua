@@ -8,15 +8,15 @@ local spGetUnitRulesParam = Spring.GetUnitRulesParam
 --------------------------------------------------------------------------------
 
 local base, fuselage, pod_L, pod_R, prong_L, prong_R = piece('base', 'fuselage', 'pod_l', 'pod_r', 'prong_l', 'prong_r')
-local laser, laserflare = piece('laser', 'laserflare')
-local railgun_brace, railgun_L, railgunflare_L, railgun_R, railgunflare_R = piece('railgun_brace', 'railgun_l', 'railgunflare_l', 'railgun_r', 'railgunflare_r')
+local laser, laserFlare = piece('laser', 'laserflare')
+local railgun_brace, railgun_L, railgunFlare_L, railgun_R, railgunFlare_R = piece('railgun_brace', 'railgun_l', 'railgunflare_l', 'railgun_r', 'railgunflare_r')
 local missile_L, missileflare_L, missile_R, missileflare_R = piece('missile_l', 'missileflare_l', 'missile_r', 'missileflare_r')
-local phalanx_L, phalanxarm_L, phalanx_R, phalanxarm_R = piece('phalanx_l', 'phalanxarm_l', 'phalanx_r', 'phalanxarm_r')
+local phalanx_L, phalanxArm_L, phalanx_R, phalanxArm_R = piece('phalanx_l', 'phalanxarm_l', 'phalanx_r', 'phalanxarm_r')
 local engine_L, engine_R = piece('engine_l', 'engine_r')
 
 local weapons = {
-    {aimpoint = base, muzzles = {railgunflare_L, railgunflare_R}, index = 1, emit = 1026},	-- railgun
-    {aimpoint = laser, muzzles = {laserflare}, index = 1},	-- laser
+    {aimpoint = base, muzzles = {railgunFlare_L, railgunFlare_R}, index = 1, emit = 1026},	-- railgun
+    {aimpoint = laser, muzzles = {laserFlare}, index = 1},	-- laser
     {aimpoint = base, muzzles = {missileflare_L, missileflare_R}, index = 1},	-- missile
     {aimpoint = base, muzzles = {}, index = 1}	-- phalanx
 }
@@ -85,8 +85,8 @@ function script.Create()
     Turn(prong_R, z_axis, math.rad(42))
     Turn(prong_L, x_axis, math.rad(30))
     Turn(prong_R, x_axis, math.rad(30))
-    Turn(phalanxarm_L, z_axis, math.rad(-12))
-    Turn(phalanxarm_R, z_axis, math.rad(12))
+    Turn(phalanxArm_L, z_axis, math.rad(-12))
+    Turn(phalanxArm_R, z_axis, math.rad(12))
     
     for i=1,8 do
 	local angle = (i%2 == 0) and math.rad(80) or -math.rad(80)

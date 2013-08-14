@@ -220,6 +220,8 @@ local unitDef = {
 			areaofeffect	= 8,
 			avoidfriendly 	= false,
 			burnblow	= true,
+			burst		= 4,
+			burstRate	= 0.06,
 			
 			customParams	= {
 				ap = 25,
@@ -251,7 +253,7 @@ local unitDef = {
 			model		= "",
 			myGravity	= 0,
 			noSelfDamage	= true,
-			projectiles	= 16,
+			projectiles	= 4,
 			range		= 1450,
 			reloadTime	= 20,
 			smoketrail 	= false,

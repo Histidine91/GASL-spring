@@ -5,7 +5,10 @@ local colors = {
 	pink = "\255\255\128\128",
 	yellow = "\255\255\255\0",
 	orange = "\255\255\128\0",
+	green = "\255\0\255\0",
 	violet = "\255\255\0\255",
+	skyblue = "\255\0\224\255",
+	midnightblue = "\255\0\0\160"
 }
 
 local pilotDefsPre = {
@@ -35,6 +38,7 @@ local pilotDefsPre = {
 			},
 			criticalHit_received = {
 				{image = portraits.milfeulle_stressed, text = "Owww... My head hurts..."},
+				{image = portraits.milfeulle_pain, text = "Kyaaaaa!\nWhat power..."},
 			},
 			unitSuppressed_severe = {
 				{image = portraits.milfeulle_pain, text = "Please... make it stop..."},
@@ -50,6 +54,7 @@ local pilotDefsPre = {
 			},
 			unitEnergy_critical = {
 				{image = portraits.milfeulle_concerned, text = "Tact, I'm running low on energy.\nPlease resupply me soon."},
+				{image = portraits.milfeulle_stressed, text = "Please resplenish my energy soon."},
 				minor = colors.pink .. "Lucky Star\008 down to " .. colors.orange .. "30% energy\008!"
 			},
 			unitEnergy_low = {
@@ -92,15 +97,17 @@ local pilotDefsPre = {
 			},
 			unitDamaged_moderate = {
 				{image = portraits.ranpha_serious, text = "Kung-fu Fighter, I could use repairs soon."},
+				{image = portraits.ranpha_angry, text = "Damage up to 50%...? But the fight's not over yet!"},
 				minor = colors.red .. "Kung-Fu Fighter\008 is " .. colors.orange .. "50% damaged\008!"
 			},
 			unitDamaged_minor = {
-				{image = portraits.ranpha_aggressive, text = "You think you can kill me with that kind of fire?"},
+				{image = portraits.ranpha_aggressive, text = "Is that all you got?"},
 				{image = portraits.ranpha_furious, text = "Oooh, you did it...\nNow I'm really pissed off!"},
 				minor = colors.red .. "Kung-Fu Fighter\008 is " .. colors.yellow .. "20% damaged\008!"
 			},
 			criticalHit = {
 				{image = portraits.ranpha_aggressive, text = "Take that!\nI got plenty more where that came from!"},
+				{image = portraits.ranpha_aggressive, text = "All right! A direct hit!"},
 			},
 			criticalHit_received = {
 				{image = portraits.ranpha_pain, text = "Gah!\nThat was a nasty blow..."},
@@ -127,12 +134,16 @@ local pilotDefsPre = {
 			},
 			weaponMiss = {
 				{image = portraits.ranpha_oh, text = "No way, I missed?!"},
+				{image = portraits.ranpha_worried, text = "They evaded it.\nGot to be chance..."},
 			},
 			weaponEvaded = {
 				{image = portraits.ranpha_normal, text = "Evasion successful!"},
+				{image = portraits.ranpha_normal, text = "All right, I evaded that. My Emblem Frame is moving awesomely!"},
+				{image = portraits.ranpha_aggressive, text = "Attack evaded. Your movement can't keep up with mine!"},
+				
 			},
 			spiritFull = {
-				{image = portraits.ranpha_happy, text = "Anchor Claw, ready!\nTact, what do you want me to hit?"},
+				{image = portraits.ranpha_happy, text = "Anchor Claw, launch preparations complete!\nTact, what do you want me to hit?"},
 				{image = portraits.ranpha_veryhappy, text = "Yes! Yes! Yes!\nVoltage to the max!"},
 				minor = colors.red .. "Kung-Fu Fighter\008 has " .. colors.yellow .. "maxed spirit\008!"
 			},
@@ -144,6 +155,10 @@ local pilotDefsPre = {
 				{image = portraits.ranpha_normal, text = "Yes, sir."},
 				{image = portraits.ranpha_serious, text = "I already knew that obviously."},
 				{image = portraits.ranpha_normal, text = "I got it, Tact."},
+			},
+			specialWeapon = {
+				{image = portraits.ranpha_aggressive, text = "Crush them!\nAnchor Claw!"},
+				{image = portraits.ranpha_aggressive, text = "Iron Fisted Judgement!\nAnchor Claw!"},
 			},
 		}
 	},
@@ -200,6 +215,7 @@ local pilotDefsPre = {
 			},
 			weaponMiss = {
 				{image = portraits.forte_serious, text = "Tch, they evaded...\nI'll have to try again."},
+				{image = portraits.forte_oh, text = "They dodged that barrage?\nWhat an enemy."},
 				{image = portraits.forte_what, text = "You skittish punk!\nI won't let you get away!"},
 			},
 			weaponEvaded = {
@@ -210,6 +226,9 @@ local pilotDefsPre = {
 				{image = portraits.forte_excited, text = "Well, well!\nLooks like I just ran out of gum!"},
 				minor = colors.violet .. "Happy Trigger\008 has " .. colors.yellow .. "maxed spirit\008!"
 			},
+			resupply = {
+				{image = portraits.forte_normal, text = "Unit #4, energy restored.\nI'm ready to rumble again."},
+			},
 			engagingEnemy = {
 				{image = portraits.forte_normal, text = "Target on radar.\nMoving to engage."},
 				{image = portraits.forte_normal, text = "Target acquired.\nHappy Trigger is oscar mike."}
@@ -218,8 +237,245 @@ local pilotDefsPre = {
 				{image = portraits.forte_normal, text = "Yes, sir."},
 				{image = portraits.forte_normal, text = "Happy Trigger, roger."},
 			},
+			specialWeapon = {
+				{image = portraits.forte_excited, text = "Get out of the way!\nStrike Burst!"},
+				{image = portraits.forte_excited, text = "It's Harrington time!\nStrike Burst!"},
+			},
 		}
-	},	
+	},
+	--[[
+	trickmaster = {
+		name = "Mint",
+		dialogue = {
+			death = {
+				{image = portraits.forte_pain, text = "Happy-Trigger, unable to continue action!"},
+			},
+			kill = {
+				{image = portraits.forte_normal, text = "Splash one bandit.\nOn to the next."},
+				{image = portraits.forte_excited, text = "One bad guy down!\nWho's next?"},
+			},
+			unitDamaged_severe = {
+				{image = portraits.forte_pain, text = "Happy Trigger, severely damaged!\nRepairs needed urgently!"},
+				minor = colors.skyblue .. "Trick Master\008 is " .. colors.red .. "75% damaged\008!"
+			},
+			unitDamaged_moderate = {
+				{image = portraits.mint_normal, text = "Damage accumulated.\nBut I'm still okay."},
+				minor = colors.skyblue .. "Trick Master\008 is " .. colors.orange .. "50% damaged\008!"
+			},
+			unitDamaged_minor = {
+				{image = portraits.forte_serious, text = "Tch... it's but a scratch..."},
+				{image = portraits.forte_what, text = "Hmph. It's going to take more than that to get through the Happy Trigger's armor."},
+				minor = colors.skyblue .. "Trick Master\008 is " .. colors.yellow .. "20% damaged\008!"
+			},
+			criticalHit = {
+				{image = portraits.forte_excited, text = "Do ya feel lucky, punk? Do ya?"},
+			},
+			criticalHit_received = {
+				{image = portraits.forte_pain, text = "Urgh! That was stronger than anticipated..."},
+			},
+			unitSuppressed_severe = {
+				{image = portraits.forte_pain, text = "Happy Trigger, requesting immediate assistance!"},
+				minor = colors.skyblue .. "Trick Master\008 is " .. colors.red .. "80% suppressed\008!"
+			},
+			unitSuppressed_moderate = {
+				{image = portraits.forte_concerned, text = "Tch... this is starting to get nasty."},
+				{image = portraits.forte_what, text = "Enough playing around...\nI'm going to whoop your ass!"},
+				minor = colors.skyblue .. "Trick Master\008 is " .. colors.orange .. "50% suppressed\008!"
+			},
+			unitSuppressed_minor = {
+				{image = portraits.forte_what, text = "You little punk...\nYou really want to pick a fight with me?"},
+				{image = portraits.forte_what, text = "Tch... I'm not going to take that lying down."},
+				minor = colors.skyblue .. "Trick Master\008 is " .. colors.yellow .. "25% suppressed\008!"
+			},
+			unitEnergy_critical = {
+				{image = portraits.forte_serious, text = "Energy down to critical levels.\nRequesting immediate resupply."},
+				minor = colors.skyblue .. "Trick Master\008 down to " .. colors.orange .. "30% energy\008!"
+			},
+			unitEnergy_critical = {
+				{image = portraits.vanilla_normal, text = "Energy decreased... Resupply, please, Tact."},
+				minor = colors.skyblue .. "Trick Master\008 down to " .. colors.yellow .. "50% energy\008!"
+			},
+			weaponMiss = {
+				{image = portraits.mint_sigh, text = "It's no good... my attack has been evaded."},
+				{image = portraits.mint_worried, text = "Did they just evade my attack?\nI can't take them lightly."},
+				{image = portraits.mint_surprised, text = "Umm... I missed?\nNo, I should say they evaded!"},
+			},
+			weaponEvaded = {
+				{image = portraits.mint_normal, text = "Enemy attack has been evaded.\nTheir aiming is naive."},
+			},
+			spiritFull = {
+				{image = portraits.forte_excited, text = "I'm all powered up!\nTime for the bad guys to feel pain!"},
+				{image = portraits.forte_excited, text = "Well, well!\nLooks like I just ran out of gum!"},
+				minor = colors.skyblue .. "Trick Master\008 has " .. colors.yellow .. "maxed spirit\008!"
+			},
+			engagingEnemy = {
+				{image = portraits.forte_normal, text = "Target on radar.\nMoving to engage."},
+				{image = portraits.forte_normal, text = "Target acquired.\nHappy Trigger is oscar mike."}
+			},
+			commandReceived = {
+				{image = portraits.forte_normal, text = "Yes, sir."},
+				{image = portraits.forte_normal, text = "Happy Trigger, roger."},
+			},
+			specialWeapon = {
+				{image = portraits.mint_aggressive, text = "I'm really going to enjoy this.\nFlier Dance!"},
+			},
+		}
+	},
+	harvester = {
+		name = "Vanilla",
+		dialogue = {
+			death = {
+				{image = portraits.chitose_pain, text = "Unit #6, no longer combat-capable!"},
+			},
+			kill = {
+				{image = portraits.forte_normal, text = "Splash one bandit.\nOn to the next."},
+				{image = portraits.forte_excited, text = "One bad guy down!\nWho's next?"},
+			},
+			unitDamaged_severe = {
+				{image = portraits.forte_pain, text = "Happy Trigger, severely damaged!\nRepairs needed urgently!"},
+				minor = colors.green .. "Harvester\008 is " .. colors.red .. "75% damaged\008!"
+			},
+			unitDamaged_moderate = {
+				{image = portraits.chitose_normal, text = "This is Unit #6, requesting repairs."},
+				minor = colors.green .. "Harvester\008 is " .. colors.orange .. "50% damaged\008!"
+			},
+			unitDamaged_minor = {
+				{image = portraits.forte_serious, text = "Tch... it's but a scratch..."},
+				{image = portraits.forte_what, text = "Hmph. It's going to take more than that to get through the Happy Trigger's armor."},
+				minor = colors.green .. "Harvester\008 is " .. colors.yellow .. "20% damaged\008!"
+			},
+			criticalHit = {
+				{image = portraits.vanilla_normal text = "I hit the center of the target...\nI was successful, Tact."},
+			},
+			criticalHit_received = {
+				{image = portraits.forte_pain, text = "Urgh! That was stronger than anticipated..."},
+			},
+			unitSuppressed_severe = {
+				{image = portraits.forte_pain, text = "Happy Trigger, requesting immediate assistance!"},
+				minor = colors.green .. "Harvester\008 is " .. colors.red .. "80% suppressed\008!"
+			},
+			unitSuppressed_moderate = {
+				{image = portraits.forte_concerned, text = "Tch... this is starting to get nasty."},
+				{image = portraits.forte_what, text = "Enough playing around...\nI'm going to whoop your ass!"},
+				minor = colors.green .. "Harvester\008 is " .. colors.orange .. "50% suppressed\008!"
+			},
+			unitSuppressed_minor = {
+				{image = portraits.forte_what, text = "You little punk...\nYou really want to pick a fight with me?"},
+				{image = portraits.forte_what, text = "Tch... I'm not going to take that lying down."},
+				minor = colors.green .. "Harvester\008 is " .. colors.yellow .. "25% suppressed\008!"
+			},
+			unitEnergy_critical = {
+				{image = portraits.forte_serious, text = "Energy down to critical levels.\nRequesting immediate resupply."},
+				minor = colors.green .. "Harvester\008 down to " .. colors.orange .. "30% energy\008!"
+			},
+			unitEnergy_critical = {
+				{image = portraits.forte_normal, text = "Energy down to 50%...\nI can still keep going, though."},
+				minor = colors.green .. "Harvester\008 down to " .. colors.yellow .. "50% energy\008!"
+			},
+			weaponMiss = {
+				{image = portraits.mint_sigh, text = "It's no good... my attack has been evaded."},
+				{image = portraits.mint_worried, text = "Did they just evade my attack?\nI can't take them lightly."},
+				{image = portraits.mint_surprised, text = "Umm... I missed?\nNo, I should say they evaded!"},
+			},
+			weaponEvaded = {
+				{image = portraits.chitose_happy, text = "Your aiming is naive.\nEvasion successful."},
+			},
+			spiritFull = {
+				{image = portraits.forte_excited, text = "I'm all powered up!\nTime for the bad guys to feel pain!"},
+				{image = portraits.forte_excited, text = "Well, well!\nLooks like I just ran out of gum!"},
+				minor = colors.green .. "Harvester\008 has " .. colors.yellow .. "maxed spirit\008!"
+			},
+			engagingEnemy = {
+				{image = portraits.forte_normal, text = "Target on radar.\nMoving to engage."},
+				{image = portraits.forte_normal, text = "Target acquired.\nHappy Trigger is oscar mike."}
+			},
+			commandReceived = {
+				{image = portraits.forte_normal, text = "Yes, sir."},
+				{image = portraits.forte_normal, text = "Happy Trigger, roger."},
+			},
+			specialWeapon = {
+				{image = portraits.mint_aggressive, text = "I'm really going to enjoy this.\nFlier Dance!"},
+			},
+		}
+	},
+	sharpshooter = {
+		name = "Chitose",
+		dialogue = {
+			death = {
+				{image = portraits.chitose_pain, text = "Unit #6, no longer combat-capable!"},
+			},
+			kill = {
+				{image = portraits.forte_normal, text = "Splash one bandit.\nOn to the next."},
+				{image = portraits.forte_excited, text = "One bad guy down!\nWho's next?"},
+			},
+			unitDamaged_severe = {
+				{image = portraits.forte_pain, text = "Happy Trigger, severely damaged!\nRepairs needed urgently!"},
+				minor = colors.midnightblue .. "Sharpshooter\008 is " .. colors.red .. "75% damaged\008!"
+			},
+			unitDamaged_moderate = {
+				{image = portraits.chitose_normal, text = "This is Unit #6, requesting repairs."},
+				minor = colors.midnightblue .. "Sharpshooter\008 is " .. colors.orange .. "50% damaged\008!"
+			},
+			unitDamaged_minor = {
+				{image = portraits.forte_serious, text = "Tch... it's but a scratch..."},
+				{image = portraits.forte_what, text = "Hmph. It's going to take more than that to get through the Happy Trigger's armor."},
+				minor = colors.midnightblue .. "Sharpshooter\008 is " .. colors.yellow .. "20% damaged\008!"
+			},
+			criticalHit = {
+				{image = portraits.chitose_happy, text = "Full of holes, aren't you?\nI Hit the bulls-eye."},
+			},
+			criticalHit_received = {
+				{image = portraits.forte_pain, text = "Urgh! That was stronger than anticipated..."},
+			},
+			unitSuppressed_severe = {
+				{image = portraits.forte_pain, text = "Happy Trigger, requesting immediate assistance!"},
+				minor = colors.midnightblue .. "Sharpshooter\008 is " .. colors.red .. "80% suppressed\008!"
+			},
+			unitSuppressed_moderate = {
+				{image = portraits.forte_concerned, text = "Tch... this is starting to get nasty."},
+				{image = portraits.forte_what, text = "Enough playing around...\nI'm going to whoop your ass!"},
+				minor = colors.midnightblue .. "Sharpshooter\008 is " .. colors.orange .. "50% suppressed\008!"
+			},
+			unitSuppressed_minor = {
+				{image = portraits.forte_what, text = "You little punk...\nYou really want to pick a fight with me?"},
+				{image = portraits.forte_what, text = "Tch... I'm not going to take that lying down."},
+				minor = colors.midnightblue .. "Sharpshooter\008 is " .. colors.yellow .. "25% suppressed\008!"
+			},
+			unitEnergy_critical = {
+				{image = portraits.forte_serious, text = "Energy down to critical levels.\nRequesting immediate resupply."},
+				minor = colors.midnightblue .. "Sharpshooter\008 down to " .. colors.orange .. "30% energy\008!"
+			},
+			unitEnergy_critical = {
+				{image = portraits.forte_normal, text = "Energy down to 50%...\nI can still keep going, though."},
+				minor = colors.midnightblue .. "Sharpshooter\008 down to " .. colors.yellow .. "50% energy\008!"
+			},
+			weaponMiss = {
+				{image = portraits.mint_sigh, text = "It's no good... my attack has been evaded."},
+				{image = portraits.mint_worried, text = "Did they just evade my attack?\nI can't take them lightly."},
+				{image = portraits.mint_surprised, text = "Umm... I missed?\nNo, I should say they evaded!"},
+			},
+			weaponEvaded = {
+				{image = portraits.chitose_happy, text = "Your aiming is naive.\nEvasion successful."},
+			},
+			spiritFull = {
+				{image = portraits.forte_excited, text = "I'm all powered up!\nTime for the bad guys to feel pain!"},
+				{image = portraits.forte_excited, text = "Well, well!\nLooks like I just ran out of gum!"},
+				minor = colors.midnightblue .. "Sharpshooter\008 has " .. colors.yellow .. "maxed spirit\008!"
+			},
+			engagingEnemy = {
+				{image = portraits.forte_normal, text = "Target on radar.\nMoving to engage."},
+				{image = portraits.forte_normal, text = "Target acquired.\nHappy Trigger is oscar mike."}
+			},
+			commandReceived = {
+				{image = portraits.forte_normal, text = "Yes, sir."},
+				{image = portraits.forte_normal, text = "Happy Trigger, roger."},
+			},
+			specialWeapon = {
+				{image = portraits.mint_aggressive, text = "I'm really going to enjoy this.\nFlier Dance!"},
+			},
+		}
+	},
+	]]
 }
 
 pilotDefs = {}

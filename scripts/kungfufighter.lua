@@ -8,7 +8,7 @@ local spGetUnitRulesParam = Spring.GetUnitRulesParam
 --------------------------------------------------------------------------------
 
 local base, fuselage, pod_L, pod_R, prong_L, prong_R = piece('base', 'fuselage', 'pod_l', 'pod_r', 'prong_l', 'prong_r')
-local bellypod = piece('bellypod')
+local hmissile, hmissileFlare = piece('hmissile', 'hmissileflare')
 local vulcan_L, vulcan_R, vulcanFlare_L, vulcanFlare_R = piece('vulcan_l', 'vulcan_r', 'vulcanflare_l', 'vulcanflare_r')
 local missile_L, missile_L1, missile_L2, missile_L3 = piece('missile_l', 'missile_l1', 'missile_l2', 'missile_l3')
 local missile_R, missile_R1, missile_R2, missile_R3 = piece('missile_r', 'missile_r1', 'missile_r2', 'missile_r3')
@@ -18,6 +18,7 @@ local engine_L, engine_R = piece('engine_l', 'engine_r')
 local weapons = {
     {aimpoint = base, muzzles = {vulcanFlare_L, vulcanFlare_R}, index = 1, emit = 1026},	-- vulcan
     {aimpoint = fuselage, muzzles = {missile_L1, missile_R1, missile_L2, missile_R2, missile_L3, missile_R3}, index = 1},	-- missile
+    {aimpoint = hmissileFlare, muzzles = {hmissileFlare}, index = 1}	-- big missile
 }
 local gunRotate = 0
 

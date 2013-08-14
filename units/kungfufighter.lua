@@ -57,7 +57,12 @@ local unitDef = {
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 120,
 		},
-		
+		{
+			def = "MISSILE_HARPOON",
+			onlyTargetCategory = "LARGE",
+			weaponMainDir = "0 0 1",
+			maxAngleDif = 90,
+		},
 	},
 	
 	weaponDefs = {
@@ -105,7 +110,7 @@ local unitDef = {
 			reloadTime	= 18,
 			smoketrail 	= true,
 			soundHit	= "explosion/ex_small6",
-			soundStart	= "weapon/missile/missile_fire10",
+			soundStart	= "weapon/missile/missile_small",
 			startVelocity	= 100,
 			tolerance	= 3000,
 			tracks		= true,
@@ -160,7 +165,60 @@ local unitDef = {
 			turret			= false,
 			weaponVelocity		= 850,
 			weaponType		= "LaserCannon",
-		}, 
+		},
+		
+		MISSILE_HARPOON = 
+		{
+			name 		= "Harpoon Missile",
+			areaofeffect	= 96,
+			avoidfriendly 	= false,
+			burnblow	= true,
+			cegTag		= "missiletrailredsmall",
+			
+			customParams	= {
+				ap = 150,
+				damagetype = "kinetic",
+				description = "Heavy shipkiller missile with increased punch and ECCM capability, but poor maneuverability.",
+				minimumrange = 900,
+				suppression_noFlank = 1,
+				critchance = 0.1,
+				energypershot = 140,
+				jammable = true,
+				eccm = 40,
+			},
+			
+			craterMult		= 0,
+			craterBoost		= 0,
+			
+			damage = {
+				default = 1400,
+			},
+			
+			dance 		= 15,
+			explosiongenerator = "custom:missile",
+			fixedLauncher	= true,
+			flightTime	= 16,
+			impulseFactor	= 0,
+			impulseBoost	= 0,
+			interceptedByShieldType = 4,
+			model		= "missile_small.s3o",
+			myGravity	= 0,
+			noSelfDamage	= true,
+			range		= 2000,
+			reloadTime	= 14,
+			smoketrail 	= true,
+			soundHit	= "explosion/ex_med17",
+			soundStart	= "weapon/missile/missile_fire",
+			startVelocity	= 100,
+			tolerance	= 3000,
+			tracks		= true,
+			turret		= false,
+			turnrate	= 9000,
+			weaponAcceleration = 20,
+			weaponType 	= "MissileLauncher",
+			weaponVelocity	= 250,
+			wobble		= 20000,
+		},
 	},
 
 	explodeAs = "RetroDeathSmall",

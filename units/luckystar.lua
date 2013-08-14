@@ -28,7 +28,7 @@ local unitDef = {
 	brakeRate = 1.5,
 	acceleration = .09,
 	canMove = true,
-	maxVelocity = 2.8,
+	maxVelocity = 3,
 	turnRate = 900,
 	collide = false,
 
@@ -343,7 +343,7 @@ local unitDef = {
 		useflightcontrol = 1,
 		combatspeed = 1.4,
 		combatrange = 1600,
-		inertiafactor = 0.97,
+		inertiafactor = 0.985,
 		rollangle = math.rad(30),
 		armor = 100,
 		morale = 50,

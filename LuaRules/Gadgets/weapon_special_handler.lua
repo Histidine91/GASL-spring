@@ -29,6 +29,7 @@ local spGetUnitVectors	= Spring.GetUnitVectors
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 --local unitsWithSpecial = {}	--[unitID] = specialWeapons[unitDefsWithSpecials[unitDefID]]
+local targets = {}	--[unitID] = targetID
 
 -- helper funcs
 local function GetDistance(x1, y1, z1, x2, y2, z2)
@@ -54,8 +55,15 @@ local function GetTargetVector(unitID, tx, ty, tz)
 end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+local function SetTarget(unitID, target)
+  targets[unitID] = target
+end
 
-local function SetSpecialWeaponEnabled(unitID, unitDefID, unitTeam, bool)
+local function GetTarget(unitID)
+  return targets[unitID]
+end
+
+local function SetEnabled(unitID, unitDefID, unitTeam, bool)
   local data = specialWeapons[unitDefsWithSpecials[unitDefID]]
   if not data then
     return
@@ -67,20 +75,26 @@ local function SetSpecialWeaponEnabled(unitID, unitDefID, unitTeam, bool)
     Spring.EditUnitCmdDesc(unitID, cmdDescID, cmdDesc)
   end
 end
-GG.SetSpecialWeaponEnabled = SetSpecialWeaponEnabled
 
 -- actualy use the special
 local function ExecuteCommand(cmdData, unitID, unitDefID, unitTeam, cmdParams)
+  local target = cmdParams
+  if #cmdParams == 1 then
+    target = cmdParams[1]
+  end
+  SetTarget(unitID, target)
+
   if cmdData.scriptFunction then
     local env = Spring.UnitScript.GetScriptEnv(unitID)
     local func = env[cmdData.scriptFunction]
-    Spring.UnitScript.CallAsUnit(unitID, func)
+    Spring.UnitScript.CallAsUnit(unitID, func, cmdParams)
   end
   if cmdData.gadgetFunction then
     cmdData.gadgetFunction(unitID, unitDefID, unitTeam, cmdParams)
   end
+  
   GG.SetUnitSpirit(unitID, unitDefID, unitTeam, 0)
-  SetSpecialWeaponEnabled(unitID, unitDefId, unitTeam, false)
+  SetEnabled(unitID, unitDefId, unitTeam, false)
   GG.SetUnitSuppression(unitID, 0)
   
   local unitID2, unitDefID2, unitTeam2
@@ -90,6 +104,8 @@ local function ExecuteCommand(cmdData, unitID, unitDefID, unitTeam, cmdParams)
     unitTeam2 = spGetUnitTeam(unitID2)
   end
   GG.EventWrapper.AddEvent("specialWeapon", 0, unitID, unitDefID, unitTeam, unitID2, unitDefID2, unitTeam2)
+  
+  --Spring.GiveOrderToUnit(unitID, CMD.INSERT, {0, CMD.ATTACK, 0, cmdParams[1], cmdParams[2], cmdParams[3], cmdParams[4]}, {"alt"})
 end
 
 -- check if we can activate the special
@@ -137,7 +153,7 @@ function gadget:UnitCreated(unitID, unitDefID, unitTeam)
 end
 
 function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
-  --unitsWithSpecial[unitID] = nil
+  targets[unitID] = nil
 end
 
 function gadget:CommandFallback(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions)
@@ -177,6 +193,14 @@ function gadget:AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdO
     end
   end
   return true
+end
+
+function gadget:Initialize()
+  GG.SpecialWeapon = {
+    SetEnabled = SetEnabled,
+    SetTarget = SetTarget,
+    GetTarget = GetTarget,
+  }
 end
 
 --[[

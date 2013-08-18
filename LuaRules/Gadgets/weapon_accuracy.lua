@@ -22,10 +22,8 @@ end
 
 local UPDATE_PERIOD = 15
 
---[[
 local BASE_MORALE = 50
 local MORALE_ACCURACY_MULT = -0.25	-- 25% tighter spread at max morale
-]]--
 local SUPPRESSION_MULT = 0.5 	-- 50% wider spread at max suppression
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -61,7 +59,7 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function GetAccMult(unitID, unitDefID, targetID, targetDefID, params)
-   params = params or {useSuppression = true}
+   params = params or {useSuppression = true, useMorale = true}
    
    local ecmMod = 0
    if params.useECM then
@@ -72,7 +70,7 @@ local function GetAccMult(unitID, unitDefID, targetID, targetDefID, params)
    if params.useMorale then
       local morale = GG.GetMorale(unitDefID)
       if morale then
-	 moraleMod = (morale - BASE_MORALE)/50 * MORALE_ACCURACY_MULT
+	 moraleMod = (morale - BASE_MORALE)/BASE_MORALE * MORALE_ACCURACY_MULT
       end
    end
    

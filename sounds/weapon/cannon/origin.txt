@@ -58,3 +58,7 @@ cannon_hit3.wav
 flak_fire.wav
 flak_hit.wav
 shell_gun.wav
+
+Galaxy Angel:
+vulcan.wav
+vulcan_heavy.wav

@@ -44,3 +44,8 @@ torp_land.wav - Kanoba & Golgotha
 UFO:Alien Invasion(modified):
 heatray_fire1.wav 
 heatray_fire2.wav
+
+Galaxy Angel:
+energy1.wav
+energy2.wav
+energy3.wav

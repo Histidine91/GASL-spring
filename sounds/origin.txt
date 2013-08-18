@@ -23,3 +23,5 @@ Pretty much everything not listed here, including subfolders
 
 Galaxy Angel:
 spirit_full.wav
+flier.wav
+debriefing.wav

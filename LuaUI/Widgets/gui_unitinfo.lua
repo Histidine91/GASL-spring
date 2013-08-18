@@ -14,8 +14,6 @@ function widget:GetInfo()
 end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
--- TODO: merge duplicate weapons
-
 local MIN_HEIGHT = 80
 local MIN_WIDTH = 200
 
@@ -26,6 +24,22 @@ local DAMAGETYPE_IMAGES = {
 	energy = "LuaUI/Images/damage_energy.png",
 }
 
+local function tobool(val)
+	local t = type(val)
+	if (t == 'nil') then
+		return false
+	elseif (t == 'boolean') then
+		return val
+	elseif (t == 'number') then
+		return (val ~= 0)
+	elseif (t == 'string') then
+		return ((val ~= '0') and (val ~= 'false'))
+	end
+	return false
+end
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Chili classes
 local Chili
 local Button
@@ -82,16 +96,16 @@ for i=1,#WeaponDefs do
 	weaponData[i] = {
 		name = wd.description,
 		desc = customParams.description,
+		hidden = tobool(customParams.hidden),
 		damage = wd.customParams.statsdamage or wd.damages[0],
-		burstSize = wd.salvoSize or 1,
-		projectiles = wd.projectiles or 1,
+		projectiles = tonumber(wd.customParams.statsprojectiles) or ((wd.projectiles or 1) * (wd.salvoSize or 1)),
 		reloadTime = wd.reload or 1,
 		accuracy = (wd.accuracy or 0) + (wd.sprayangle or 0),
 		range = wd.range,
 		damageType = customParams.damagetype or "kinetic",
 		ap = tonumber(customParams.ap),
 		critChance = customParams.critchance,
-		special = customParams.special,
+		special = tobool(customParams.special),
 	}
 end
 --------------------------------------------------------------------------------
@@ -153,7 +167,7 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 		bottom = 0,
 	}
 	local dmgString = "Damage: "..data.damage
-	local projectiles = data.burstSize * data.projectiles
+	local projectiles = data.projectiles
 	if projectiles > 1 then
 		dmgString = dmgString .. " x "..projectiles
 	end
@@ -228,7 +242,9 @@ local function CreateWeaponPanels(data, parent)
 	local weaponIDs = {}
 	for i=1,#data.weapons do
 		local weaponID = data.weapons[i]
-		weaponIDs[weaponID] = (weaponIDs[weaponID] or 0) + 1
+		if (not weaponData[weaponID].hidden) then
+			weaponIDs[weaponID] = (weaponIDs[weaponID] or 0) + 1
+		end
 	end
 	-- make sure duplicates are only sorted once
 	local index = 1

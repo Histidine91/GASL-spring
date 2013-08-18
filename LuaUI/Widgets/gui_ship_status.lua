@@ -35,6 +35,8 @@ local buttonColorBlue = {0,0.2,1,1}
 local buttonAlphaDeselected = 0.4
 local pingColor1 = {1,0.2,0.2,0.7}
 local pingColor2 = {1,0.2,0.2,0.5}
+local swirlColor1 = {1,1,0.5,0.5}
+local swirlColor2 = {1,1,0.5,0.2}
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -70,6 +72,7 @@ local UPDATE_FREQUENCY = 0.25
 local DAMAGE_WARNING_PERIOD = 0.7
 local DAMAGE_WARNING_MIN_SIZE_MOD = 0.3
 local DAMAGE_WARNING_SIZE_RATIO = 0.5	-- inner ring vs. outer ring
+local SPIRIT_SWIRL_PERIOD = 1
 
 local angelDefs = {
   [UnitDefNames.luckystar.id] = {hasSpirit = true},
@@ -106,6 +109,7 @@ options = {}
 local unitsByID = {}	-- [unitID] = index
 local units = {} -- [index] = {unitID, unitDefID, panel, button, image, [healthbar] = ProgressBar, [energybar] = ProgressBar, [spiritbar] = ProgressBar, [suppressionbar] = ...}
 local overlayPhase = 0
+local spiritSwirls = {}	-- [unitID] = phase
 
 --local gamestart = GetGameFrame() > 1
 
@@ -114,6 +118,8 @@ local overlayPhase = 0
 -------------------------------------------------------------------------------
 -- FUNCTIONS
 -------------------------------------------------------------------------------
+-- drawing stuff
+
 local vsx, vsy   = widgetHandler:GetViewSizes()
 
 function widget:ViewResize(viewSizeX, viewSizeY)
@@ -156,6 +162,17 @@ local function SpiritGlow()
 	gl.Vertex(BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
 	gl.Vertex(BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
 	gl.Vertex(-BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
+end
+
+local function SpiritSwirl(vx, vy)
+	gl.Color(swirlColor2)
+	gl.Vertex(0,0,0)
+	gl.Color(swirlColor1)
+	gl.Vertex(-vx, -vy, 0)
+	gl.Vertex(vx, -vy, 0)
+	gl.Vertex(vx, vy, 0)
+	gl.Vertex(-vx, vy, 0)
+	gl.Vertex(-vx, -vy, 0)
 end
 -------------------------------------------------------------------------------
 -- helper funcs
@@ -469,6 +486,7 @@ local function RemoveUnit(unitID)
 		end
 	end
 	unitsByID[unitID] = nil
+	spiritSwirls[unitID] = nil
 end
 
 local function InitializeUnits()
@@ -507,6 +525,12 @@ local function SetCurrentStack(stackName)
 	end
 end
 
+local function SpiritFull(unitID)
+	if unitsByID[unitID] then
+		spiritSwirls[unitID] = 1
+	end
+end
+
 local function DrawWarningFlash(x, y)
 	--TODO make display list ?
 	gl.PushMatrix()
@@ -523,6 +547,17 @@ local function DrawSpiritGlow(x,y)
 	gl.Translate(x,y,0)
 	gl.Color(1,1,0.4,0.7*math.sin(overlayPhase*math.pi))
 	gl.BeginEnd(GL.QUADS, SpiritGlow)
+	gl.PopMatrix()
+end
+
+local function DrawSpiritSwirl(x,y,phase)
+	local size = (phase*5 + 1)
+	local vx = BUTTON_OVERLAY_X*size
+	local vy = BUTTON_OVERLAY_X*size
+	gl.PushMatrix()
+	gl.Translate(x,y,0)
+	gl.Rotate(phase*180,0,0,1)
+	gl.BeginEnd(GL.TRIANGLE_FAN, SpiritSwirl, vx, vy, phase)
 	gl.PopMatrix()
 end
 -------------------------------------------------------------------------------
@@ -560,7 +595,14 @@ end
 local timer = 0
 function widget:Update(dt)
 	overlayPhase = (overlayPhase + dt/DAMAGE_WARNING_PERIOD)%1
-
+	for unitID, phase in pairs(spiritSwirls) do
+		if phase <= 0 then
+			spiritSwirls[unitID] = nil
+		else
+			spiritSwirls[unitID] = phase - dt/SPIRIT_SWIRL_PERIOD
+		end
+	end
+	
 	timer = timer + dt
 	if timer < UPDATE_FREQUENCY then
 		return
@@ -576,18 +618,20 @@ function widget:DrawScreen()
 	for i=1,#units do
 		local unitData = units[i]
 		if unitData.parent == currentStack and (not unitData.isDead) then
+			local x, y = unitData.button:LocalToScreen(BUTTON_WIDTH/2, BUTTON_HEIGHT/2)
+			y = screen0.height - y
 			if currentStack ~= stack_enemy then
 				local health = unitData.healthbar.value
 				if health <= 0.3 then
-					local x, y = unitData.button:LocalToScreen(BUTTON_WIDTH/2, BUTTON_HEIGHT/2)
-					y = screen0.height - y
 					DrawWarningFlash(x, y)
 				end
 			end
 			if unitData.spiritbar and unitData.spiritbar.value == 100 then
-				local x, y = unitData.button:LocalToScreen(BUTTON_WIDTH/2, BUTTON_HEIGHT/2)
-				y = screen0.height - y
 				DrawSpiritGlow(x, y)
+			end
+			local swirlPhase = spiritSwirls[unitData.unitID]
+			if swirlPhase then
+				DrawSpiritSwirl(x, y, swirlPhase)
 			end
 		end
 		
@@ -739,4 +783,10 @@ function widget:Initialize()
 	self:ViewResize(viewSizeX, viewSizeY)
 	
 	InitializeUnits()
+	
+	widgetHandler:RegisterGlobal("SpiritFullEvent", SpiritFull)
+end
+
+function widget:Shutdown()
+	widgetHandler:DeregisterGlobal("SpiritFullEvent")
 end

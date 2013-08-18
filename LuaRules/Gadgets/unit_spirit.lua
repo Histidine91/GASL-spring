@@ -24,6 +24,11 @@ if gadgetHandler:IsSyncedCode() then
 local spSetUnitRulesParam = Spring.SetUnitRulesParam
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+local INITIAL_SPIRIT = 0	-- don't change this except for testing
+-- make sure these values matche the ones in unit_morale
+-- FIXME: should probably use a global config for these...
+local BASE_MORALE = 50
+local MORALE_DAMAGE_SCALE_FACTOR = 0.5
 
 local spiritDefs = {
   [UnitDefNames.luckystar.id] = true,
@@ -56,8 +61,9 @@ local function SetSpirit(unitID, unitDefID, unitTeam, newSpirit)
     spSetUnitRulesParam(unitID, "spirit", newSpirit)
     if currSpirit < 100 and newSpirit == 100 then
       GG.EventWrapper.AddEvent("spiritFull", 10, unitID, unitDefID, unitTeam)
-      SendToUnsynced("spirit_max", unitID)	-- handled by unit script with CEG
+      SendToUnsynced("spirit_full", unitID)	-- handled by unit script with CEG
       GG.SetSpecialWeaponEnabled(unitID, unitDefID, unitTeam, true)
+      Spring.PlaySoundFile("sounds/spirit_full.wav", 1.0, "ui")
     end
     spSetUnitRulesParam(unitID, "spirit", newSpirit)
   end
@@ -71,9 +77,19 @@ local function CalculateSpiritChange(unitDefID, damage)
   return damage/health * power / 20
 end
 
-local function AddSpirit(unitID, unitDefID, unitTeam, targetDefID, damage)
+local function AddSpirit(unitID, unitDefID, unitTeam, targetID, targetDefID, damage)
   local currSpirit = spiritUnits[unitID].spirit
-  local newSpirit = currSpirit + CalculateSpiritChange(targetDefID, damage)
+  -- high morale reduces damage taken, which in turn reduces spirit gain
+  -- this reverses that effect
+  if unitID == targetID then
+    local morale = GG.GetMorale(unitDefID)
+    local diffMorale = morale - BASE_MORALE
+    local mult = diffMorale/BASE_MORALE * DAMAGE_SCALE_FACTOR
+    damage = damage / (1-mult)	-- FIXME: might want to protect against div0
+  end
+  
+  local delta = CalculateSpiritChange(targetDefID, damage)
+  local newSpirit = currSpirit + delta
   SetSpirit(unitID, unitDefID, unitTeam, newSpirit)
 end
 
@@ -84,17 +100,17 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
     return
   end
   if spiritUnits[unitID] then
-    AddSpirit(unitID, unitDefID, unitTeam, unitDefID, damage)
+    AddSpirit(unitID, unitDefID, unitTeam, unitID, unitDefID, damage)
   end
   if spiritUnits[attackerID] then
-    AddSpirit(attackerID, attackerDefID, attackerTeam, unitDefID, damage)
+    AddSpirit(attackerID, attackerDefID, attackerTeam, unitID, unitDefID, damage)
   end
 end
 
 function gadget:UnitCreated(unitID, unitDefID, unitTeam)
   if spiritDefs[unitDefID] then
-    spiritUnits[unitID] = {unitDefID = unitDefID, unitTeam = unitTeam, allyTeam = Spring.GetUnitAllyTeam(unitID), spirit = 0}
-    spSetUnitRulesParam(unitID, "spirit", 0)
+    spiritUnits[unitID] = {unitDefID = unitDefID, unitTeam = unitTeam, allyTeam = Spring.GetUnitAllyTeam(unitID), spirit = INITIAL_SPIRIT}
+    spSetUnitRulesParam(unitID, "spirit", INITIAL_SPIRIT)
   end
 end
 
@@ -198,7 +214,7 @@ local function SpawnFeather(unitID, data)
   Lups.AddParticles(fx.class,fx.options)
 end
 
-local function MaxSpirit(_, unitID)
+local function SpiritFull(_, unitID)
   local fx = burst
   local data = MakeRealTable(SYNCED.spiritUnits[unitID])
   
@@ -207,6 +223,8 @@ local function MaxSpirit(_, unitID)
   fx.options.team      = data.unitTeam
   fx.options.allyTeam  = data.allyTeam
   Lups.AddParticles(fx.class,fx.options)
+  
+  Script.LuaUI.SpiritFullEvent(unitID)
 end
 
 local function GameFrame(_, n)
@@ -229,12 +247,12 @@ end
 
 function gadget:Initialize()
   gadgetHandler:AddSyncAction("spirit_GameFrame", GameFrame)
-  gadgetHandler:AddSyncAction("spirit_max", MaxSpirit)
+  gadgetHandler:AddSyncAction("spirit_full", SpiritFull)
 end
 
 function gadget:Shutdown()
   gadgetHandler:RemoveSyncAction("spirit_GameFrame")
-  gadgetHandler:RemoveSyncAction("spirit_max")
+  gadgetHandler:RemoveSyncAction("spirit_full")
 end
 
 --------------------------------------------------------------------------------

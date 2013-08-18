@@ -83,9 +83,11 @@ local function AddSpirit(unitID, unitDefID, unitTeam, targetID, targetDefID, dam
   -- this reverses that effect
   if unitID == targetID then
     local morale = GG.GetMorale(unitDefID)
-    local diffMorale = morale - BASE_MORALE
-    local mult = diffMorale/BASE_MORALE * DAMAGE_SCALE_FACTOR
-    damage = damage / (1-mult)	-- FIXME: might want to protect against div0
+    if morale then
+      local diffMorale = morale - BASE_MORALE
+      local mult = diffMorale/BASE_MORALE * MORALE_DAMAGE_SCALE_FACTOR
+      damage = damage / (1-mult)	-- FIXME: might want to protect against div0
+    end
   end
   
   local delta = CalculateSpiritChange(targetDefID, damage)

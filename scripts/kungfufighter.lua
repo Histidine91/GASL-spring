@@ -67,6 +67,16 @@ local function FeatherLoop()
     end
 end
 
+local function DebugMissiles()
+    while true do
+	for i=1,3 do
+	    EmitSfx(piece("missile_l"..i), 1026)
+	    EmitSfx(piece("missile_r"..i), 1026)
+	end
+	Sleep(300)
+    end
+end
+
 function script.Create()
     Turn(pod_L, z_axis, math.rad(12))
     Turn(pod_R, z_axis, math.rad(-12))
@@ -83,11 +93,12 @@ function script.Create()
     
     for i=2,3 do
 	local angle = math.rad(22.5*(i-1))
-	Turn(piece("missile_l"..i), y_axis, -angle)
-	Turn(piece("missile_r"..i), y_axis, angle)
+	Turn(piece("missile_l"..i), y_axis, angle)
+	Turn(piece("missile_r"..i), y_axis, -angle)
     end
     
     StartThread(FeatherLoop)
+    --StartThread(DebugMissiles)
 end
 
 function script.MoveRate(rate)

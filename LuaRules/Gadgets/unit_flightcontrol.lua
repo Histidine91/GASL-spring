@@ -181,7 +181,7 @@ end
 
 local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distance, maxAngle)
 	local angleXZ = math.random(-100, 100)
-	local angleYZ = 0--math.random(-100, 100)*0.6
+	local angleYZ = 0	--math.random(-100, 100)*0.6
 	angleXZ = angleXZ * maxAngle/100 + initialHeading
 	angleYZ = angleYZ * maxAngle/100
 	
@@ -222,11 +222,11 @@ local function RequestNewTarget(unitID, unitDefID, addGUIEvent)
 	end
 end
 
-function GG.GetUnitSpeed(unitID)
+local function GetUnitSpeed(unitID)
 	return spacecraft[unitID] and spacecraft[unitID].speed
 end
 
-function GG.BreakOffTarget(unitID)
+local function BreakOffTarget(unitID)
 	local data = spacecraft[unitID]
 	if not data then
 		return
@@ -234,7 +234,7 @@ function GG.BreakOffTarget(unitID)
 	local unitDefID = data.unitDefID
 	local def = spacecraftDefs[unitDefID]
 	local cmd = data.commandCache
-	if not (commandCache and commandCache.id == CMD.ATTACK) then
+	if not (cmd and cmd.id == CMD.ATTACK) then
 		return
 	end
 	
@@ -280,6 +280,15 @@ function gadget:Initialize()
 		local unitTeam = Spring.GetUnitTeam(unitID)
 		gadget:UnitCreated(unitID, unitDefID, unitTeam)
 	end
+	
+	GG.FlightControl = {
+		GetUnitSpeed = GetUnitSpeed,
+		BreakOffTarget = BreakOffTarget,
+	}
+end
+
+function gadget:Shutdown()
+	GG.FlightControl = nil
 end
 
 function gadget:UnitCreated(unitID, unitDefID, team)

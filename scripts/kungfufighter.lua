@@ -18,7 +18,9 @@ local engine_L, engine_R = piece('engine_l', 'engine_r')
 local weapons = {
     {aimpoint = base, muzzles = {vulcanFlare_L, vulcanFlare_R}, index = 1, emit = 1026},	-- vulcan
     {aimpoint = fuselage, muzzles = {missile_L1, missile_R1, missile_L2, missile_R2, missile_L3, missile_R3}, index = 1},	-- missile
-    {aimpoint = hmissileFlare, muzzles = {hmissileFlare}, index = 1}	-- big missile
+    {aimpoint = hmissileFlare, muzzles = {hmissileFlare}, index = 1},	-- big missile
+    {aimpoint = arm_L, muzzles = {claw_L}, index = 1},	-- left claw
+    {aimpoint = arm_R, muzzles = {claw_R}, index = 1},	-- right claw
 }
 local gunRotate = 0
 
@@ -27,6 +29,7 @@ local gunRotate = 0
 --------------------------------------------------------------------------------
 local SIG_DAMAGE = 1
 local SIG_RESTORE = 2
+local SIG_SPECIAL = 4
 
 --------------------------------------------------------------------------------
 -- variables
@@ -67,6 +70,30 @@ local function FeatherLoop()
     end
 end
 
+local function AnchorClawThread()
+    Signal(SIG_SPECIAL)
+    SetSignalMask(SIG_SPECIAL)
+    isUsingSpecial = true
+    
+    EmitSfx(claw_L, 2051)
+    Hide(claw_L)
+    Sleep(1000)
+    EmitSfx(claw_R, 2052)
+    Hide(claw_R)
+    
+    Sleep(4000)
+    isUsingSpecial = false
+    Sleep(5000)
+    
+    Show(claw_L)
+    Show(claw_R)
+end
+
+function AnchorClawTrigger()
+    StartThread(AnchorClawThread)
+end
+
+--[[
 local function DebugMissiles()
     while true do
 	for i=1,3 do
@@ -76,6 +103,15 @@ local function DebugMissiles()
 	Sleep(300)
     end
 end
+
+local function DebugClaws()
+    while true do
+	EmitSfx(claw_L, 1026)
+	EmitSfx(claw_R, 1026)
+	Sleep(300)
+    end
+end
+]]
 
 function script.Create()
     Turn(pod_L, z_axis, math.rad(12))
@@ -98,7 +134,7 @@ function script.Create()
     end
     
     StartThread(FeatherLoop)
-    --StartThread(DebugMissiles)
+    --StartThread(DebugClaws)
 end
 
 function script.MoveRate(rate)
@@ -144,7 +180,10 @@ function script.Shot(num)
     end
 end
 
-function script.HitByWeapon()
+function script.HitByWeapon(x, z, weaponDefID, damage)
+    if isUsingSpecial then
+	return 0
+    end
     StartThread(DamageLoop)
 end
 

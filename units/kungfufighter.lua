@@ -63,11 +63,64 @@ local unitDef = {
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 90,
 		},
+		{
+			def = "ANCHORCLAW_L",
+			onlyTargetCategory = "NONE",
+		},
+		{
+			def = "ANCHORCLAW_R",
+			onlyTargetCategory = "NONE",
+		},
 	},
 	
 	weaponDefs = {
-		MISSILE_DOGFIGHT = 
-		{
+	
+		VULCAN_HEAVY_DUAL = {
+			name			= "Dual Heavy Vulcan Cannon",
+			areaOfEffect		= 8,
+			burst                   = 3,
+			burstRate               = 0.1,
+			
+			customParams	= {
+				ap = 62.5,
+				damagetype = "kinetic",
+				description = "Twin upscaled autocannons, boasting considerably greater firepower than the normal version. Best employed against lightly armored targets.",
+				critchance = 0.075,
+				energypershot = 12,
+			},
+			
+			craterMult		= 0,
+			craterBoost		= 0,
+			
+			damage = {
+				default = 20,
+			},
+			
+			duration		= .02,
+			explosiongenerator	= "custom:kinetic",
+			fallOffRate		= .05,
+			impactOnly		= 1,
+			impulsefactor		= 0,
+			impulseBoost		= 0,
+			intensity		= 1,
+			interceptedByShieldType = 1,
+			noSelfDamage		= true,
+			projectiles		= 2,
+			range			= 1350,
+			reloadtime		= .3,
+			rgbColor		= "1 0.5 0",
+			soundStart		= "weapon/cannon/vulcan_heavy",
+			soundHit		= "weapon/cannon/klighthit",
+			soundTrigger		= true,
+			sprayangle		= 400,
+			thickness		= .75,
+			tolerance		= 3000,
+			turret			= true,
+			weaponVelocity		= 850,
+			weaponType		= "LaserCannon",
+		},
+		
+		MISSILE_DOGFIGHT = {
 			name 		= "Dogfight Missile",
 			areaofeffect	= 32,
 			avoidfriendly 	= false,
@@ -114,7 +167,7 @@ local unitDef = {
 			startVelocity	= 100,
 			tolerance	= 3000,
 			tracks		= true,
-			turret		= false,
+			turret		= true,
 			turnrate	= 12800,
 			weaponAcceleration = 25,
 			weaponType 	= "MissileLauncher",
@@ -122,53 +175,7 @@ local unitDef = {
 			wobble		= 20000,
 		},
 		
-		VULCAN_HEAVY_DUAL = {
-			name			= "Dual Heavy Vulcan Cannon",
-			areaOfEffect		= 8,
-			burst                   = 3,
-			burstRate               = 0.1,
-			
-			customParams	= {
-				ap = 62.5,
-				damagetype = "kinetic",
-				description = "Twin upscaled autocannons, boasting considerably greater firepower than the normal version. Best employed against lightly armored targets.",
-				critchance = 0.075,
-				energypershot = 12,
-			},
-			
-			craterMult		= 0,
-			craterBoost		= 0,
-			
-			damage = {
-				default = 20,
-			},
-			
-			duration		= .02,
-			explosiongenerator	= "custom:kinetic",
-			fallOffRate		= .05,
-			impactOnly		= 1,
-			impulsefactor		= 0,
-			impulseBoost		= 0,
-			intensity		= 1,
-			interceptedByShieldType = 1,
-			noSelfDamage		= true,
-			projectiles		= 2,
-			range			= 1350,
-			reloadtime		= .3,
-			rgbColor		= "1 0.5 0",
-			soundStart		= "weapon/cannon/klightfire",
-			soundHit		= "weapon/cannon/klighthit",
-			soundTrigger            = true,
-			sprayangle		= 400,
-			thickness		= .75,
-			tolerance		= 3000,
-			turret			= false,
-			weaponVelocity		= 850,
-			weaponType		= "LaserCannon",
-		},
-		
-		MISSILE_HARPOON = 
-		{
+		MISSILE_HARPOON = {
 			name 		= "Harpoon Missile",
 			areaofeffect	= 96,
 			avoidfriendly 	= false,
@@ -212,12 +219,100 @@ local unitDef = {
 			startVelocity	= 100,
 			tolerance	= 3000,
 			tracks		= true,
-			turret		= false,
+			turret		= true,
 			turnrate	= 9000,
 			weaponAcceleration = 20,
 			weaponType 	= "MissileLauncher",
 			weaponVelocity	= 250,
 			wobble		= 20000,
+		},
+		
+		ANCHORCLAW_L = {
+			name 		= "Anchor Claw",
+			areaofeffect	= 96,
+			avoidfriendly 	= false,
+			
+			customParams	= {
+				ap = 100,
+				damagetype = "kinetic",
+				description = "Twin grappling claws with gravitic manipulators that smash enemies into a pulp.",
+				suppression_noFlank = 1,
+				statsprojectiles = 2,
+				special = true,
+			},
+			
+			craterMult		= 0,
+			craterBoost		= 0,
+			
+			damage = {
+				default = 6000,
+			},
+			
+			explosiongenerator = "custom:death_med",
+			fixedLauncher	= true,
+			flightTime	= 25,
+			impulseFactor	= 0,
+			impulseBoost	= 0,
+			interceptedByShieldType = 4,
+			model		= "claw_l.s3o",
+			myGravity	= 0,
+			noSelfDamage	= true,
+			range		= 1600,
+			reloadTime	= 1,
+			smoketrail 	= false,
+			soundHit	= "explosion/ex_med7",
+			--soundStart	= "weapon/missile/missile_fire",
+			startVelocity	= 300,
+			tolerance	= 3000,
+			tracks		= true,
+			turret		= true,
+			turnrate	= 11000,
+			weaponType 	= "MissileLauncher",
+			weaponAcceleration = 100,
+			weaponVelocity	= 300,
+		},
+		
+		ANCHORCLAW_R = {
+			name 		= "Anchor Claw",
+			areaofeffect	= 96,
+			avoidfriendly 	= false,
+			
+			customParams	= {
+				ap = 100,
+				damagetype = "kinetic",
+				suppression_noFlank = 1,
+				hidden = true,
+			},
+			
+			craterMult		= 0,
+			craterBoost		= 0,
+			
+			damage = {
+				default = 6000,
+			},
+			
+			explosiongenerator = "custom:death_med",
+			fixedLauncher	= true,
+			flightTime	= 25,
+			impulseFactor	= 0,
+			impulseBoost	= 0,
+			interceptedByShieldType = 4,
+			model		= "claw_r.s3o",
+			myGravity	= 0,
+			noSelfDamage	= true,
+			range		= 1600,
+			reloadTime	= 1,
+			smoketrail 	= false,
+			soundHit	= "explosion/ex_med7",
+			--soundStart	= "weapon/missile/missile_fire",
+			startVelocity	= 300,
+			tolerance	= 3000,
+			tracks		= true,
+			turret		= true,
+			turnrate	= 11000,
+			weaponType 	= "MissileLauncher",
+			weaponAcceleration = 100,
+			weaponVelocity	= 300,
 		},
 	},
 

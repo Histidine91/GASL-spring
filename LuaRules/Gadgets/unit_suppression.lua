@@ -96,6 +96,9 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 		local dotUp, dotFront = GetAttackerVector(unitID, attackerID)
 		suppressionDelta = suppressionDelta - suppressionDeltaBase*dotFront*FLANKING_MOD
 	end
+	if suppressionDelta < 0 then
+		suppressionDelta = 0
+	end
 	
 	local oldSuppression = units[unitID].suppression
 	local newSuppression = math.min(oldSuppression + suppressionDelta, 1)

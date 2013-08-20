@@ -33,8 +33,8 @@ local buttonColorGreen = {0,1,0.2,1}
 local buttonColorYellow = {1,1,0,1}
 local buttonColorBlue = {0,0.2,1,1}
 local buttonAlphaDeselected = 0.4
-local pingColor1 = {1,0.2,0.2,0.7}
-local pingColor2 = {1,0.2,0.2,0.5}
+local damageColor1 = {1,0.2,0.2,0.7}
+local damageColor2 = {1,0.2,0.2,0.5}
 local swirlColor1 = {1,1,0.5,0.5}
 local swirlColor2 = {1,1,0.5,0.2}
 
@@ -72,6 +72,7 @@ local UPDATE_FREQUENCY = 0.25
 local DAMAGE_WARNING_PERIOD = 0.7
 local DAMAGE_WARNING_MIN_SIZE_MOD = 0.3
 local DAMAGE_WARNING_SIZE_RATIO = 0.5	-- inner ring vs. outer ring
+local SPIRIT_SWIRL_SIZE_RATIO = 0.2
 local SPIRIT_SWIRL_PERIOD = 1
 
 local angelDefs = {
@@ -127,32 +128,32 @@ function widget:ViewResize(viewSizeX, viewSizeY)
   vsy = viewSizeY
 end
 
-local function DamagePing(vx,vy)
-	gl.Color(pingColor1)
-	gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
-	gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
-	gl.Color(pingColor2)
+local function PingOrSwirl(vx, vy, color1, color2, sizeRatio)
+	gl.Color(color1)
+	gl.Vertex(-vx*sizeRatio,vy*sizeRatio,0)
+	gl.Vertex(vx*sizeRatio,vy*sizeRatio,0)
+	gl.Color(color2)
 	gl.Vertex(vx,vy,0)
 	gl.Vertex(-vx,vy,0)
 	
-	gl.Color(pingColor1)
-	gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
-	gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
-	gl.Color(pingColor2)
+	gl.Color(color1)
+	gl.Vertex(vx*sizeRatio,vy*sizeRatio,0)
+	gl.Vertex(vx*sizeRatio,-vy*sizeRatio,0)
+	gl.Color(color2)
 	gl.Vertex(vx,-vy,0)
 	gl.Vertex(vx,vy,0)
 	
-	gl.Color(pingColor1)
-	gl.Vertex(vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
-	gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
-	gl.Color(pingColor2)
+	gl.Color(color1)
+	gl.Vertex(vx*sizeRatio,-vy*sizeRatio,0)
+	gl.Vertex(-vx*sizeRatio,-vy*sizeRatio,0)
+	gl.Color(color2)
 	gl.Vertex(-vx,-vy,0)
 	gl.Vertex(vx,-vy,0)
 	
-	gl.Color(pingColor1)
-	gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,-vy*DAMAGE_WARNING_SIZE_RATIO,0)
-	gl.Vertex(-vx*DAMAGE_WARNING_SIZE_RATIO,vy*DAMAGE_WARNING_SIZE_RATIO,0)
-	gl.Color(pingColor2)
+	gl.Color(color1)
+	gl.Vertex(-vx*sizeRatio,-vy*sizeRatio,0)
+	gl.Vertex(-vx*sizeRatio,vy*sizeRatio,0)
+	gl.Color(color2)
 	gl.Vertex(-vx,vy,0)
 	gl.Vertex(-vx,-vy,0)
 end
@@ -164,16 +165,6 @@ local function SpiritGlow()
 	gl.Vertex(-BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
 end
 
-local function SpiritSwirl(vx, vy)
-	gl.Color(swirlColor2)
-	gl.Vertex(0,0,0)
-	gl.Color(swirlColor1)
-	gl.Vertex(-vx, -vy, 0)
-	gl.Vertex(vx, -vy, 0)
-	gl.Vertex(vx, vy, 0)
-	gl.Vertex(-vx, vy, 0)
-	gl.Vertex(-vx, -vy, 0)
-end
 -------------------------------------------------------------------------------
 -- helper funcs
 
@@ -538,7 +529,7 @@ local function DrawWarningFlash(x, y)
 	local size = DAMAGE_WARNING_MIN_SIZE_MOD+(1-DAMAGE_WARNING_MIN_SIZE_MOD)*overlayPhase
 	local vx = BUTTON_OVERLAY_X*size
 	local vy = BUTTON_OVERLAY_Y*size
-	gl.BeginEnd(GL.QUADS, DamagePing, vx, vy)
+	gl.BeginEnd(GL.QUADS, PingOrSwirl, vx, vy, damageColor1, damageColor2, DAMAGE_WARNING_SIZE_RATIO)
 	gl.PopMatrix()
 end
 
@@ -557,7 +548,7 @@ local function DrawSpiritSwirl(x,y,phase)
 	gl.PushMatrix()
 	gl.Translate(x,y,0)
 	gl.Rotate(phase*180,0,0,1)
-	gl.BeginEnd(GL.TRIANGLE_FAN, SpiritSwirl, vx, vy, phase)
+	gl.BeginEnd(GL.QUADS, PingOrSwirl, vx, vy, swirlColor1, swirlColor2, SPIRIT_SWIRL_SIZE_RATIO)
 	gl.PopMatrix()
 end
 -------------------------------------------------------------------------------

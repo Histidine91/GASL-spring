@@ -14,6 +14,8 @@ function widget:GetInfo()
 end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+include("Configs/unitinfo.lua")
+
 local MIN_HEIGHT = 80
 local MIN_WIDTH = 200
 
@@ -58,11 +60,6 @@ local screen0
 
 local vsx, vsy
 
-local pilotData = {	-- FIXME
-	[UnitDefNames.luckystar.id] = {name = "Milfeulle Sakuraba", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/milfeulle_normal.png"},
-	[UnitDefNames.kungfufighter.id] = {name = "Ranpha Franboise", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/ranpha_normal.png"},
-	[UnitDefNames.happytrigger.id] = {name = "Forte Stollen", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/forte_normal.png"},
-}
 local shipData = {}
 local weaponData = {}
 

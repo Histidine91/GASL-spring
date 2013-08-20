@@ -8,7 +8,7 @@ function gadget:GetInfo()
     author    = "KingRaptor (L.J. Lim)",
     date      = "2013.08.13",
     license   = "GNU GPL, v2 or later",
-    layer     = 0,
+    layer     = 1,
     enabled   = true  --  loaded by default?
   }
 end

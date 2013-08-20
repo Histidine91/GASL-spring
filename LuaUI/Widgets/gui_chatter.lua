@@ -31,6 +31,7 @@ local PANEL_HEIGHT = 48
 local PANEL_HEIGHT_MINOR = 24
 local NAME_WIDTH = 80
 local TIME_KEEP_WINDOW_OPEN = 6
+local CHATTER_DELAY_PER_UNIT = 5*30
 
 local commands = {	-- TODO
 	[CMD.ATTACK] = true,
@@ -66,6 +67,9 @@ local fakewindow
 local scrollPanel
 local stackPanel
 local image
+--------------------------------------------------------------------------------
+-- variables
+local lastChatterByUnit = {}	-- [unitID] = {gameframe=n, priority=x}
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -94,6 +98,10 @@ local function ShowWindow()
 		screen0:AddChild(window)
 	end
 	timer_opened = spGetTimer()
+end
+
+local function SetUnitLastChatter(unitID, priority)
+	lastChatterByUnit[unitID] = {priority = priority, gameframe = gameframe}
 end
 
 local function CreateEventPanel(params)
@@ -170,10 +178,6 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 		Spring.Log(widget:GetInfo().name, LOG.WARNING, "missing definition for event " .. eventType)
 		return
 	end
-	if (eventDef.lastEvent + eventDef.maxPeriod > gameframe) and (not force) then
-		--Spring.Echo("meh", eventDef.lastEvent, gameframe)
-		return
-	end
 	if not unitID then
 		return
 	end
@@ -186,28 +190,37 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 	local priority = (isEnemy and eventDef.priorityEnemy) or eventDef.priority or eventDef.priorityFunc(eventDef, params, isEnemy)
 	local chance = math.random() * 100
 	
-	if force or ((chance-eventDef.queueRating) < priority) then
+	-- prevents one unit from hogging the mike with minor events
+	local limitChatter = false
+	local lastChatter = lastChatterByUnit[unitID]
+	if lastChatter and ((lastChatter.gameframe + CHATTER_DELAY_PER_UNIT) > gameframe) then
+		limitChatter = (lastChatter.priority > priority)
+	end
+	limitChatter = limitChatter or (eventDef.lastEvent + eventDef.maxPeriod > gameframe)
+	
+	if force or ( ((chance-eventDef.queueRating) < priority) and (not limitChatter)) then
+		-- print full event
 		local eventParams = GetEventDialogue(eventType, unitID, unitDefID)
 		if eventParams then
 			CreateEventPanel(eventParams)
 			eventDef.queueRating = 0
 			eventDef.lastEvent = gameframe
+			SetUnitLastChatter(unitID, priority)
 		end
 	else
+		-- increase chance of future event being reported
 		if magnitude and magnitude ~= 0 then
 			eventDef.queueRating = eventDef.queueRating + magnitude*eventDef.magnitudeQueueMult
 		end
+		-- print minor event
 		if eventDef.allowMinorEvent and (not isEnemy) then
 			local eventParams = GetEventDialogue(eventType, unitID, unitDefID, true)
 			if eventParams then
 				CreateEventPanel(eventParams)
+				SetUnitLastChatter(unitID, priority)
 			end
 		end
 	end
-end
-
--- is this needed?
-local function AddItem()
 end
 
 --------------------------------------------------------------------------------

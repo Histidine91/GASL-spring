@@ -72,4 +72,8 @@ effectUnitDefs = {
 	--{class='AirJet', options={color={1,0.6,0.2}, width=2, length=25, piece="engine"}},
 	{class='Ribbon', options={width=1, size=128, piece="engine"}},
   },
+  yngtiger = {
+	{class='Ribbon', options={width=1, size=128, piece="exhaust_l"}},
+	{class='Ribbon', options={width=1, size=128, piece="exhaust_r"}},
+  },  
 }

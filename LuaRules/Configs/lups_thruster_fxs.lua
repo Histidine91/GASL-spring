@@ -32,8 +32,12 @@ local tbl = {
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
   },
   yngcommando = {
-    {class='StaticParticles', options=MergeTable(coronaRed, {pos={0,0,3}, size=20, piece="engine"}, true)},
+    {class='StaticParticles', options=MergeTable(coronaRed, {size=20, piece="engine"}, true)},
   },
+  yngtiger = {
+    {class='StaticParticles', options=MergeTable(coronaRed, {size=20, piece="exhaust_l"}, true)},
+    {class='StaticParticles', options=MergeTable(coronaRed, {size=20, piece="exhaust_r"}, true)},
+  },  
 }
 local tbl2 = {}
 

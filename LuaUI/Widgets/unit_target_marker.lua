@@ -15,16 +15,11 @@ end
 local spGetUnitTeam		= Spring.GetUnitTeam
 local spGetUnitDefID		= Spring.GetUnitDefID
 local spGetUnitCommands		= Spring.GetUnitCommands
-local spGetUnitPosition		= Spring.GetUnitPosition
+local spGetUnitViewPosition		= Spring.GetUnitViewPosition
 local spGetCameraState		= Spring.GetCameraState
 local spGetVisibleUnits 	= Spring.GetVisibleUnits
 local spWorldToScreenCoords	= Spring.WorldToScreenCoords
 local spIsUnitAllied		= Spring.IsUnitAllied
-
-local function GetUnitPosition(unitID)
-	local _,_,_,x,y,z = spGetUnitPosition(unitID, true)
-	return x,y,z
-end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -123,7 +118,7 @@ function widget:DrawScreen(vsx,vsy)
 		local unitTeam = spGetUnitTeam(unitID)
 		local unitDefID = spGetUnitDefID(unitID)
 		if true then	--if unitID ~= selectedUnit then
-			local x,y,z = GetUnitPosition(unitID)
+			local x,y,z = spGetUnitViewPosition(unitID)
 			if x and y and z then
 				local dist = GetTwoPointDistance(x,y,z,cam.px, cam.py, cam.pz)
 				local size = (baseDistance/(dist^0.5)) or 1
@@ -131,7 +126,7 @@ function widget:DrawScreen(vsx,vsy)
 					--local isTarget = bla
 					local color = colors.cyan
 				
-					local x,y,z = GetUnitPosition(unitID)
+					local x,y,z = spGetUnitViewPosition(unitID)
 					local sx,sy,sz=spWorldToScreenCoords(x,y,z)
 					--if echoFreq > 120 then
 					--	Spring.Echo(sx,sy,sz)
@@ -177,7 +172,7 @@ function widget:DrawScreen(vsx,vsy)
 					gl.PopMatrix()
 				end
 				if unitID == currentTarget then
-					local x,y,z = GetUnitPosition(unitID)
+					local x,y,z = spGetUnitViewPosition(unitID)
 					local sx,sy,sz=spWorldToScreenCoords(x,y,z)
 					gl.PushMatrix()
 					gl.Translate(sx,sy,0)

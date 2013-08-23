@@ -51,12 +51,19 @@ local tbl = {
     {class='StaticParticles', options=MergeTable(fx.staticLightSkyBlue, {size=100})},
     {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
+  happytrigger_phalanx_sb = {
+    {class='StaticParticles', options=MergeTable(fx.staticLightSkyBlue, {size=100})},
+    {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  },
   kungfufighter_anchorclaw_l = {
     {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
   kungfufighter_anchorclaw_r = {
     {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
+  --energybomb = {
+  --  {class='Ribbon', options={width=3, size=4, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  --}
 }
 local tbl2 = {}
 

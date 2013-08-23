@@ -15,29 +15,42 @@ local phalanx_L, phalanxArm_L, phalanx_R, phalanxArm_R = piece('phalanx_l', 'pha
 local engine_L, engine_R = piece('engine_l', 'engine_r')
 
 local weapons = {
+    -- normal
     {aimpoint = base, muzzles = {railgunFlare_L, railgunFlare_R}, index = 1, emit = 1026},	-- railgun
     {aimpoint = laser, muzzles = {laserFlare}, index = 1},	-- laser
     {aimpoint = base, muzzles = {missileflare_L, missileflare_R}, index = 1},	-- missile
-    {aimpoint = base, muzzles = {}, index = 1}	-- phalanx
+    {aimpoint = base, muzzles = {}, index = 1},	-- phalanx
+    -- special
+    {aimpoint = base, muzzles = {railgunFlare_L, railgunFlare_R}, index = 1, emit = 1026},	-- railgun
+    {aimpoint = laser, muzzles = {laserFlare}, index = 1},	-- laser
+    {aimpoint = base, muzzles = {missileflare_L, missileflare_R}, index = 1},	-- missile
+    {aimpoint = base, muzzles = {}, index = 1},	-- phalanx
 }
 do
     local muzzles = weapons[4].muzzles
+    local muzzles2 = weapons[8].muzzles
     for i=1,8 do
 	muzzles[#muzzles+1] = piece("phalanx_l"..i)
 	muzzles[#muzzles+1] = piece("phalanx_r"..i)
+	muzzles2[#muzzles2+1] = piece("phalanx_l"..i)
+	muzzles2[#muzzles2+1] = piece("phalanx_r"..i)
+    end
+    
+    for i=1,8 do
+	weapons[i].special = (i > 4)
     end
 end
-
-local gunRotate = 0
 
 --------------------------------------------------------------------------------
 -- constants
 --------------------------------------------------------------------------------
 local SIG_DAMAGE = 1
+local SIG_SPECIAL = 4
 
 --------------------------------------------------------------------------------
 -- variables
 --------------------------------------------------------------------------------
+local isUsingSpecial = false
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -56,7 +69,7 @@ local function DamageLoop()
 end
 
 --[[
-local function Ping()
+local function DebugPhalanx()
     while true do
 	for i=1,8 do
 	    EmitSfx(piece("phalanx_l"..i), 1026)
@@ -66,6 +79,27 @@ local function Ping()
     end
 end
 ]]
+
+local function StrikeBurstThread()
+    Signal(SIG_SPECIAL)
+    SetSignalMask(SIG_SPECIAL)
+    isUsingSpecial = true
+    Turn(phalanxArm_L, z_axis, math.rad(-24), math.rad(240))
+    Turn(phalanxArm_R, z_axis, math.rad(24), math.rad(240))
+    Turn(phalanx_L, y_axis, math.rad(-90), math.rad(360))
+    Turn(phalanx_R, y_axis, math.rad(90), math.rad(360))
+    Sleep(5000)
+    
+    Turn(phalanxArm_L, z_axis, math.rad(-12), math.rad(80))
+    Turn(phalanxArm_R, z_axis, math.rad(12), math.rad(80))
+    Turn(phalanx_L, y_axis, 0, math.rad(120))
+    Turn(phalanx_R, y_axis, 0, math.rad(120))
+    isUsingSpecial = false
+end
+
+function StrikeBurstTrigger()
+    StartThread(StrikeBurstThread)
+end
 
 local function FeatherLoop()
     while true do
@@ -97,7 +131,7 @@ function script.Create()
 	Turn(piece("phalanx_r"..i), y_axis, -angle2)
     end
     
-    --StartThread(Ping)
+    --StartThread(DebugPhalanx)
     StartThread(FeatherLoop)
 end
 
@@ -119,7 +153,7 @@ end
 
 function script.AimWeapon(num)
     GG.UpdateWeaponAccuracy(unitID, unitDefID, num)
-    return num == 1 or num == 4
+    return weapons[num].special == isUsingSpecial
 end
 
 function script.Shot(num)
@@ -134,6 +168,9 @@ function script.Shot(num)
 end
 
 function script.HitByWeapon()
+    if isUsingSpecial then
+	return 0
+    end
     StartThread(DamageLoop)
 end
 

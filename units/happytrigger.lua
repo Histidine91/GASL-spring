@@ -55,7 +55,6 @@ local unitDef = {
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 10,
 		},
-		--nil,	-- hyper cannon goes here?
 		{
 			def = "MISSILE",
 			onlyTargetCategory = "TARGET",
@@ -68,7 +67,30 @@ local unitDef = {
 			onlyTargetCategory = "TARGET",
 			badTargetCategory = "ARMORED",
 		},
-		
+		{
+			def = "RAILGUN_SB",
+			onlyTargetCategory = "TARGET",
+			weaponMainDir = "0 0 1",
+			maxAngleDif = 10,
+		},
+		{
+			def = "LASER_SB",
+			onlyTargetCategory = "TARGET",
+			weaponMainDir = "0 0 1",
+			maxAngleDif = 10,
+		},
+		{
+			def = "MISSILE_SB",
+			onlyTargetCategory = "TARGET",
+			badTargetCategory = "ARMORED",
+			weaponMainDir = "0 0 1",
+			maxAngleDif = 120,
+		},
+		{
+			def = "PHALANX_SB",
+			onlyTargetCategory = "TARGET",
+			badTargetCategory = "ARMORED",
+		},
 	},
 	
 	weaponDefs = {
@@ -103,7 +125,7 @@ local unitDef = {
 			noSelfDamage            = true,
 			projectiles             = 2,
 			range                   = 1500,
-			reloadtime              = 6,
+			reloadTime              = 6,
 			soundHit                = [[weapon/cannon/kheavyfire]],
 			soundStart              = [[weapon/cannon/medplasma_fire]],
 			sprayangle		= 250,
@@ -148,7 +170,7 @@ local unitDef = {
 			minIntensity	= 1,
 			noSelfDamage	= true,
 			range		= 1750,
-			reloadtime	= 4,
+			reloadTime	= 4,
 			rgbColor 	= "0.5 1 0.5",
 			soundHit	= nil,
 			soundStart 	= "weapon/laser/small_laser_fire2",
@@ -303,6 +325,33 @@ local unitDef = {
 		suppressionmod = 0.8,
 	},
 }
+
+Spring.Utilities = Spring.Utilities or {}
+VFS.Include("LuaRules/Utilities/tablefunctions.lua")
+
+local specialWeapons = {
+	RAILGUN_SB = {
+		source = "RAILGUN",
+		properties = {name = "Assault Railgun SB", projectiles = 1, reloadTime = 0.5, customParams = {special = true}}
+	},
+	LASER_SB = {
+		source = "LASER",
+		properties = {name = "Beam Laser SB", reloadTime = 1, customParams = {special = true}}
+	},
+	MISSILE_SB = {
+		source = "MISSILE",
+		properties = {name = "Standard Missile SB", burst = 12, burstRate = 0.36, reloadTime = 10, customParams = {special = true}}
+	},
+	PHALANX_SB = {
+		source = "PHALANX",
+		properties = {name = "Phalanx Seeker SB", burst = 24, burstRate = 0.2, reloadTime = 10, customParams = {special = true, seekerttl = 45}}
+	},
+}
+local weaponDefs = unitDef.weaponDefs
+for weaponName, data in pairs(specialWeapons) do
+	local newWeapon = Spring.Utilities.CopyTable(weaponDefs[data.source], true)
+	weaponDefs[weaponName] = Spring.Utilities.MergeTable(data.properties, newWeapon, true)
+end
 
 unitDef.unitname = unitName
 return lowerkeys({ [unitName] = unitDef })

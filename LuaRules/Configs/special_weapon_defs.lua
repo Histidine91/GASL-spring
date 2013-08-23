@@ -42,10 +42,27 @@ specialWeapons = {
 			tooltip = color_skyblue.."Special Attack\008\nSmashes a foe with twin crushing blows",
 		},
 		scriptFunction = "AnchorClawTrigger"
-	}
+	},
+	strikeburst = {
+		minRange = 600,
+		maxRange = 1500,
+		maxAngle = math.rad(5),
+		cmdDesc = {
+			id      = CMD_STRIKE_BURST,
+			name    = "Strike Burst",
+			action  = "strikeburst",
+			cursor  = "DGun",
+			texture = "LuaUI/Images/Commands/Bold/action.png",
+			type    = CMDTYPE.ICON_UNIT,
+			tooltip = color_skyblue.."Special Attack\008\nGo to maximum rate of fire on all weapons, concentrated on a single target",
+		},
+		scriptFunction = "StrikeBurstTrigger"
+	},
+	
 }
 
 unitDefsWithSpecials = {
 	[UnitDefNames.luckystar.id] = "hypercannon",
 	[UnitDefNames.kungfufighter.id] = "anchorclaw",
+	[UnitDefNames.happytrigger.id] = "strikeburst",
 }

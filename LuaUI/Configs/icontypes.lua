@@ -32,6 +32,11 @@ local icontypes = {
 		size=2.4,
 	},
 	
+	yngcommando = {
+		bitmap="icons/yngcommando.png",
+		size=2.0,
+	},
+	
 	--small ships
 	dagger = {
 		bitmap="icons/dagger.png",

@@ -909,25 +909,23 @@ end
 
 
 function gadgetHandler:RegisterCMDID(gadget, id)
-  if (id < 30000) then
-    Spring.Echo('Gadget (' .. gadget.ghInfo.name .. ') ' ..
-                'tried to register a CMD_ID < 30000')
-    Script.Kill('Bad CMD_ID code: ' .. id)
+  if not LOG_SECTION then
+	LOG_SECTION = "ERROR"
   end
-  if (id >= 40000) then
-    Spring.Echo('Gadget (' .. gadget.ghInfo.name .. ') ' ..
-                'tried to register a CMD_ID >= 40000')
-    Script.Kill('Bad CMD_ID code: ' .. id)
+  if (id < 1000) then
+    Spring.Log(LOG_SECTION, LOG.ERROR, 'Gadget (' .. gadget.ghInfo.name .. ') ' ..
+                'tried to register a reserved CMD_ID')
+    Script.Kill('Reserved CMD_ID code: ' .. id)
   end
+
   if (self.CMDIDs[id] ~= nil) then
-    Spring.Echo('Gadget (' .. gadget.ghInfo.name .. ') ' ..
+    Spring.Log(LOG_SECTION, LOG.ERROR, 'Gadget (' .. gadget.ghInfo.name .. ') ' ..
                 'tried to register a duplicated CMD_ID')
     Script.Kill('Duplicate CMD_ID code: ' .. id)
   end
+
   self.CMDIDs[id] = gadget
 end
-
-
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -1139,7 +1137,8 @@ end
 function gadgetHandler:AllowCommand(unitID, unitDefID, unitTeam,
                                     cmdID, cmdParams, cmdOptions, cmdTag, synced)
   for _,g in ipairs(self.AllowCommandList) do
-    if (not g:AllowCommand(unitID, unitDefID, unitTeam,
+
+	if (not g:AllowCommand(unitID, unitDefID, unitTeam,
                            cmdID, cmdParams, cmdOptions, cmdTag, synced)) then
       return false
     end
@@ -1393,12 +1392,19 @@ end
 
 
 function gadgetHandler:UnitDamaged(unitID, unitDefID, unitTeam,
-                                   damage, paralyzer, weaponID,
+                                   damage, paralyzer, weaponID, projectileID, 
                                    attackerID, attackerDefID, attackerTeam)
+		
+  if Game.version:find('91.0') then
+    attackerTeam = attackerDefID
+    attackerDefID = attackerID
+    attackerID = projectileID
+  end
+  
   for _,g in ipairs(self.UnitDamagedList) do
     g:UnitDamaged(unitID, unitDefID, unitTeam,
                   damage, paralyzer, weaponID,
-                  attackerID, attackerDefID, attackerTeam)
+                  attackerID, attackerDefID, attackerTeam, projectileID)
   end
   return
 end
@@ -1889,26 +1895,33 @@ function gadgetHandler:GetViewSizes()
   --return self.xViewSize, self.yViewSize	-- base
 end
 
-function gadgetHandler:RegisterCMDID(gadget, id)
-  if (id < 30000) then
-    Spring.Echo('Gadget (' .. gadget.ghInfo.name .. ') ' ..
-                'tried to register a CMD_ID < 30000')
-    Script.Kill('Bad CMD_ID code: ' .. id)
-  end
-  if (id >= 40000) then
-    Spring.Echo('Gadget (' .. gadget.ghInfo.name .. ') ' ..
-                'tried to register a CMD_ID >= 40000')
-    Script.Kill('Bad CMD_ID code: ' .. id)
-  end
-  if (self.CMDIDs[id] ~= nil) then
-    Spring.Echo('Gadget (' .. gadget.ghInfo.name .. ') ' ..
-                'tried to register an already used CMD_ID')	-- ours
---				'tried to register a CMD_ID >= 40000')	-- base
-    Script.Kill('Duplicate CMD_ID code: ' .. id)
-  end
-  self.CMDIDs[id] = gadget
-end
+local AllowCommand_WantedCommand = {}
+local AllowCommand_WantedUnitDefID = {}
 
+function gadgetHandler:AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag, synced) 	-- ours
+--function gadgetHandler:AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag, synced)	-- base
+  for _,g in ipairs(self.AllowCommandList) do
+	if not AllowCommand_WantedCommand[g] then
+		AllowCommand_WantedCommand[g] = (g.AllowCommand_GetWantedCommand and g:AllowCommand_GetWantedCommand()) or true
+	end
+	if not AllowCommand_WantedUnitDefID[g] then
+		AllowCommand_WantedUnitDefID[g] = (g.AllowCommand_GetWantedUnitDefID and g:AllowCommand_GetWantedUnitDefID()) or true
+	end
+	local wantedCommand = AllowCommand_WantedCommand[g]
+	local wantedUnitDefID = AllowCommand_WantedUnitDefID[g]
+
+	--if g:GetBadCommand() then
+	--	Spring.Echo(g:GetBadCommand())
+	--end
+	if ((wantedCommand == true) or wantedCommand[cmdID]) and
+		((wantedUnitDefID == true) or wantedUnitDefID[unitDefID]) and
+		(not g:AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag, synced)) then	-- ours
+	--if (not g:AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag, synced)) then	-- base
+      return false
+    end
+  end
+  return true
+end
 
 -- ours
 function gadgetHandler:RecvFromSynced(cmd,...)
@@ -2076,3 +2089,4 @@ end
 --------------------------------------------------------------------------------
 
 gadgetHandler:Initialize()
+

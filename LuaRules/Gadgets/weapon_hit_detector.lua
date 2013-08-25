@@ -44,13 +44,12 @@ end
 function gadget:Initialize()
 end
 
-function gadget:UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID, attackerID, attackerDefID, attackerTeam, projectileID)
+function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID, attackerID, attackerDefID, attackerTeam, projectileID)
 	if activeProjectiles[projectileID] then
 		local data = activeProjectiles[projectileID]
 		--GG.EventWrapper.AddEvent("weaponHit", data.damage/20, data.targetID, data.targetDefID, data.targetTeam, data.unitID, data.unitDefID, data.unitTeam)
 		activeProjectiles[projectileID] = nil
 	end
-	return damage
 end
 
 function gadget:ProjectileCreated(proID, proOwnerID, weaponID)

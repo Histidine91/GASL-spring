@@ -78,7 +78,7 @@ function GG.SetUnitSuppression(unitID, value)
 end
 
 function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID,
-                            attackerID, attackerDefID, attackerTeam)
+                            attackerID, attackerDefID, attackerTeam, projectileID)
 	if not (weaponID and units[unitID]) then
 		return
 	end

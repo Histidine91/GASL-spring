@@ -44,7 +44,7 @@ function gadget:ProjectileDestroyed(proID)
 	clawProjectiles[proID] = nil
 end
 
-function gadget:UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID, attackerID, attackerDefID, attackerTeam, projectileID)
+function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID, attackerID, attackerDefID, attackerTeam, projectileID)
 	--TODO: impact CEG, impulse
 end
 

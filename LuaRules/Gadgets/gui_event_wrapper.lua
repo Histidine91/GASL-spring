@@ -47,7 +47,7 @@ local function AddEvent(eventType, magnitude, unitID, unitDefID, unitTeam, unitI
 end
 
 function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID,
-                            attackerID, attackerDefID, attackerTeam)
+                            attackerID, attackerDefID, attackerTeam, projectileID)
 	-- TODO striate into low/moderate/severe, or let widget handle?
 	local health, maxHealth = Spring.GetUnitHealth(unitID)
 	local healthFraction, healthFractionOld = health/maxHealth, (health + damage)/maxHealth

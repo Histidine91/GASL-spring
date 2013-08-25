@@ -39,17 +39,15 @@ local SUPPRESSION_LEVELS = {
 	{0.25, "minor"}
 }
 
-local suppressionModByUnitDefID = {}
-local unflankable = {}
+local suppressionMod = {}
+local flankingResist = {}
 local weapons = {}
 local units = {}	-- [unitID] = {suppression = (0 to 1), frame = gameframe, target = unitID}
 local gameframe = 0
 
 for i=1,#UnitDefs do
-	suppressionModByUnitDefID[i] = tonumber(UnitDefs[i].customParams.suppressionmod) or 1
-	if UnitDefs[i].customParams.unflankable then
-		unflankable[i] = true
-	end
+	suppressionMod[i] = tonumber(UnitDefs[i].customParams.suppressionmod) or 1
+	flankingResist[i] = tonumber(UnitDefs[i].customParams.suppressionflankingresist or 1)
 end
 
 for i=1,#WeaponDefs do
@@ -83,7 +81,7 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 		return
 	end
 	
-	local suppressionDelta = weapons[weaponID].suppression * suppressionModByUnitDefID[unitDefID]
+	local suppressionDelta = weapons[weaponID].suppression * suppressionMod[unitDefID]
 	local suppressionDeltaBase = suppressionDelta
 	local target = units[unitID].target
 	if target == attackerID then
@@ -92,9 +90,9 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 		suppressionDelta = suppressionDelta * NO_TARGET_MOD
 	end
 	-- flanking effects
-	if attackerID and not (unflankable[unitDefID] or weapons[weaponID].noFlank) then
+	if attackerID and not (weapons[weaponID].noFlank) then
 		local dotUp, dotFront = GetAttackerVector(unitID, attackerID)
-		suppressionDelta = suppressionDelta - suppressionDeltaBase*dotFront*FLANKING_MOD
+		suppressionDelta = suppressionDelta - suppressionDeltaBase*dotFront*FLANKING_MOD*flankingResist[unitDefID]
 	end
 	if suppressionDelta < 0 then
 		suppressionDelta = 0

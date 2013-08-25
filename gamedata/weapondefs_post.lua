@@ -85,6 +85,7 @@ for _, weaponDef in pairs(WeaponDefs) do
     weaponDef.collideground = false
     
     weaponDef.targetborder = 1
+    weaponDef.cylindertargeting = 0
     weaponDef.heightmod = 1
-    weaponDef.heightboostfactor = 0
+    --weaponDef.heightboostfactor = 0	-- only used for cannons
 end

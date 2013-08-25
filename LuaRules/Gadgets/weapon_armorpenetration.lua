@@ -68,7 +68,7 @@ function gadget:UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, w
 		if (wep.ap > 0) and (not critical) then
 			-- energy AP doesn't reduce effective armor below 100
 			if armor > 100 then
-				armor = armor - ap
+				armor = armor - wep.ap
 				if armor < 100 then
 					armor = 100
 				end

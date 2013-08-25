@@ -54,7 +54,7 @@ function gadget:GameFrame(n)
 		for proID, proOwnerID in pairs(schedule) do
 			local targetID = GG.SpecialWeapon.GetTarget(proOwnerID)
 			if targetID and type(targetID) == "number" and (not Spring.GetUnitIsDead(targetID)) then
-				Spring.SetProjectileTarget(proID, targetID, 'u')
+				Spring.SetProjectileTarget(proID, targetID, string.byte('u'))
 			else
 				-- TODO: reseek
 			end

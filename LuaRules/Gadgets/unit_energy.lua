@@ -14,9 +14,7 @@ function gadget:GetInfo()
 end
 
 --------------------------------------------------------------------------------
--- TODO add resupply command
 --------------------------------------------------------------------------------
-
 if (not gadgetHandler:IsSyncedCode()) then
   return false  --  silent removal
 end
@@ -30,6 +28,8 @@ local ENERGY_LEVELS = {
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+-- N.B. -1 energy means infinite
+
 local defs = {}
 local units = {}
 
@@ -45,8 +45,11 @@ local function GetUnitEnergy(unitID, unitDefID)
 end
 
 local function UseUnitEnergy(unitID, unitDefID, usage)
+  if defs[unitDefID] == -1 then
+    return true, nil, -1
+  end
   if (not units[unitID]) or (units[unitID] < usage) then	-- not enough energy
-    return false
+    return false, nil, defs[unitDefID]
   end
   
   local oldAmount = units[unitID]
@@ -74,7 +77,7 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function gadget:UnitCreated(unitID, unitDefID, unitTeam)
-  if defs[unitDefID] then
+  if defs[unitDefID] and defs[unitDefID] ~= -1 then
     units[unitID] = defs[unitDefID]
     spSetUnitRulesParam(unitID, "energy", 1)
   end

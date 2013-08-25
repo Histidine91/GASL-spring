@@ -57,7 +57,6 @@ function widget:Shutdown()
 end
 
 function widget:DrawWorldPreUnit(vsx,vsy)
-   if 
    local units = spGetVisibleUnits(nil, nil, true)
 
    gl.LineStipple('')

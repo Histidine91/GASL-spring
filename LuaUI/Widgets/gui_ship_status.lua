@@ -85,8 +85,10 @@ local hasEnergyDefs = {}
 local suppressionImmuneDefs = {}
 
 for i=1,#UnitDefs do
-	local energy = UnitDefs[i].customParams.energy
-	hasEnergyDefs[i] = tonumber(energy)
+	local energy = tonumber(UnitDefs[i].customParams.energy)
+	if energy ~= -1 then
+		hasEnergyDefs[i] = energy
+	end
 	suppressionImmuneDefs[i] = UnitDefs[i].customParams.suppressionimmune
 end
 

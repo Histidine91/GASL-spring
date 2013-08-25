@@ -64,6 +64,7 @@ local pilotDefsPre = {
 			weaponMiss = {
 				{image = portraits.milfeulle_stressed, text = "Awww~\nNo fair dodging like that~"},
 				{image = portraits.milfeulle_oh, text = "My attack missed..."},
+				{image = portraits.milfeulle_oh, text = "The enemy evaded."},
 			},
 			spiritFull = {
 				{image = portraits.milfeulle_happy, text = "Tact, I'm ready to fire the Hyper Cannon!"},
@@ -77,7 +78,7 @@ local pilotDefsPre = {
 				{image = portraits.milfeulle_normal, text = "Lucky Star, roger."},
 			},
 			specialWeapon = {
-				{image = portraits.milfeulle_veryhappy, text = "Now it's my turn!\nHyper Cannon, fire!"},
+				{image = portraits.milfeulle_veryhappy, text = "Now it's my turn to strike!\nHyper Cannon, fire!"},
 				{image = portraits.milfeulle_aggressive, text = "Eei!\nHyper Cannon!"},
 			},
 		}
@@ -90,6 +91,7 @@ local pilotDefsPre = {
 			},
 			kill = {
 				{image = portraits.ranpha_veryhappy, text = "Target destroyed!\nOhohohohoho!"},
+				{image = portraits.ranpha_relaxed, text = "Shot them down.\nMy enemy is no more."},
 			},
 			unitDamaged_severe = {
 				{image = portraits.ranpha_pain, text = "Kung-fu Fighter, status critical!\nCan't I get those repairs already?!"},
@@ -111,6 +113,7 @@ local pilotDefsPre = {
 			},
 			criticalHit_received = {
 				{image = portraits.ranpha_pain, text = "Gah!\nThat was a nasty blow..."},
+				{image = portraits.ranpha_pain, text = "Kyaa!\nDamn, I was hit."},
 			},
 			unitSuppressed_severe = {
 				{image = portraits.ranpha_pain, text = "Huff... huff...\nThere's just too many of them..."},
@@ -135,6 +138,7 @@ local pilotDefsPre = {
 			weaponMiss = {
 				{image = portraits.ranpha_oh, text = "No way, I missed?!"},
 				{image = portraits.ranpha_worried, text = "They evaded it.\nGot to be chance..."},
+				{image = portraits.ranpha_aggressive, text = "My aim was off.\nIt won't be next time!"},
 			},
 			weaponEvaded = {
 				{image = portraits.ranpha_normal, text = "Evasion successful!"},
@@ -187,6 +191,7 @@ local pilotDefsPre = {
 			},
 			criticalHit = {
 				{image = portraits.forte_excited, text = "Do ya feel lucky, punk? Do ya?"},
+				{image = portraits.forte_excited, text = "Good, a clean hit!\nDid you see that, Tact?"},
 			},
 			criticalHit_received = {
 				{image = portraits.forte_pain, text = "Urgh! That was stronger than anticipated..."},
@@ -217,6 +222,7 @@ local pilotDefsPre = {
 				{image = portraits.forte_serious, text = "Tch, they evaded...\nI'll have to try again."},
 				{image = portraits.forte_oh, text = "They dodged that barrage?\nWhat an enemy."},
 				{image = portraits.forte_what, text = "You skittish punk!\nI won't let you get away!"},
+				{image = portraits.forte_what, text = "They dodged it.\nThe next one won't miss."},
 			},
 			weaponEvaded = {
 				{image = portraits.forte_happy, text = "Too slow, buddy.\nYou'll have to try harder than that!"},
@@ -243,6 +249,7 @@ local pilotDefsPre = {
 			},
 		}
 	},
+	-- incomplete
 	--[[
 	trickmaster = {
 		name = "Mint",
@@ -304,13 +311,13 @@ local pilotDefsPre = {
 				{image = portraits.mint_normal, text = "Enemy attack has been evaded.\nTheir aiming is naive."},
 			},
 			spiritFull = {
-				{image = portraits.forte_excited, text = "I'm all powered up!\nTime for the bad guys to feel pain!"},
-				{image = portraits.forte_excited, text = "Well, well!\nLooks like I just ran out of gum!"},
+				{image = portraits.mint_angry, text = "I cannot go easy on you... Are you prepared?"},
+				{image = portraits.mint_aggressive, text = "Systems fully tuned!\nAll Fliers on standby!"},
 				minor = colors.skyblue .. "Trick Master\008 has " .. colors.yellow .. "maxed spirit\008!"
 			},
 			engagingEnemy = {
 				{image = portraits.forte_normal, text = "Target on radar.\nMoving to engage."},
-				{image = portraits.forte_normal, text = "Target acquired.\nHappy Trigger is oscar mike."}
+				{image = portraits.mint_normal, text = "Target acquired. You cannot escape the Trick Master's radar."}
 			},
 			commandReceived = {
 				{image = portraits.forte_normal, text = "Yes, sir."},
@@ -346,6 +353,7 @@ local pilotDefsPre = {
 			},
 			criticalHit = {
 				{image = portraits.vanilla_normal text = "I hit the center of the target...\nI was successful, Tact."},
+				{image = portraits.vanilla_normal, text = "Harvester, attack on the target was successful."},
 			},
 			criticalHit_received = {
 				{image = portraits.forte_pain, text = "Urgh! That was stronger than anticipated..."},
@@ -405,7 +413,7 @@ local pilotDefsPre = {
 				{image = portraits.chitose_pain, text = "Unit #6, no longer combat-capable!"},
 			},
 			kill = {
-				{image = portraits.forte_normal, text = "Splash one bandit.\nOn to the next."},
+				{image = portraits.chitose_angry, text = "Sharpshooter, target has been defeated."},
 				{image = portraits.forte_excited, text = "One bad guy down!\nWho's next?"},
 			},
 			unitDamaged_severe = {
@@ -423,6 +431,8 @@ local pilotDefsPre = {
 			},
 			criticalHit = {
 				{image = portraits.chitose_happy, text = "Full of holes, aren't you?\nI Hit the bulls-eye."},
+				{image = portraits.chitose_aggressive, text = "Perfect hit!\nDo not take Unit #6 lightly."},
+				{image = portraits.chitose_happy, text = "A good hit.\nI'll keep trying my best."},
 			},
 			criticalHit_received = {
 				{image = portraits.forte_pain, text = "Urgh! That was stronger than anticipated..."},
@@ -450,9 +460,8 @@ local pilotDefsPre = {
 				minor = colors.midnightblue .. "Sharpshooter\008 down to " .. colors.yellow .. "50% energy\008!"
 			},
 			weaponMiss = {
-				{image = portraits.mint_sigh, text = "It's no good... my attack has been evaded."},
-				{image = portraits.mint_worried, text = "Did they just evade my attack?\nI can't take them lightly."},
-				{image = portraits.mint_surprised, text = "Umm... I missed?\nNo, I should say they evaded!"},
+				{image = portraits.chitose_surprised, text = "Oh, a miss... I need to stay calm."},
+				{image = portraits.chitose_surprised, text = "No way. Why didn't it hit?"},
 			},
 			weaponEvaded = {
 				{image = portraits.chitose_happy, text = "Your aiming is naive.\nEvasion successful."},
@@ -471,7 +480,7 @@ local pilotDefsPre = {
 				{image = portraits.forte_normal, text = "Happy Trigger, roger."},
 			},
 			specialWeapon = {
-				{image = portraits.mint_aggressive, text = "I'm really going to enjoy this.\nFlier Dance!"},
+				{image = portraits.chitose_aggressive, text = "Judgement!\nFatal Arrow!"},
 			},
 		}
 	},

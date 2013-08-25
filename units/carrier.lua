@@ -33,18 +33,17 @@ local unitDef = {
 	turnRate = 220,
 
 	-- Construction
-	LevelGround = false,
+	levelGround = false,
 
 	-- Sight/Radar
-	RadarDistance = 1350,
-	SightDistance = 900,
+	sightDistance = 1500,
 	noChaseCategory = "NOCHASE",
 	stealth = true,
 
 	-- Weapons
 	weapons = {
 		{
-			name = "KLight",
+			name = "NEEDLER_FIGHTER",
 			onlyTargetCategory = "TARGET",
 			weaponMainDir = "0 0 1",
 			MaxAngleDif = 270,
@@ -52,33 +51,17 @@ local unitDef = {
 		},
 	
 		{
-			name = "KLight",
+			name = "NEEDLER_FIGHTER",
 			onlyTargetCategory = "TARGET",
 			weaponMainDir = "0 0 -1",
 			maxAngleDif = 270,
 			badTargetCategory = "LARGE",
 		},
 		{
-			name = "KLight",
+			name = "NEEDLER_FIGHTER",
 			onlyTargetCategory = "TARGET",
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 270,
-			badTargetCategory = "LARGE",
-		},
-	
-		{
-			name = "GStandard",
-			onlyTargetCategory = "LARGE",
-		},
-	
-		{
-			name = "TStandard",
-			onlyTargetCategory = "LARGE",
-			--badTargetCategory = "SMALL",
-		},
-	
-		{
-			name = "GFlak",
 			badTargetCategory = "LARGE",
 		},
 	},
@@ -102,11 +85,19 @@ local unitDef = {
 	},
 	
 	customParams = {
-		builds = 1.0,
 		type = "large",
+		helptext = "An escort carrier for supporting small wings of fighters in the field. Lightly armored and armed for its size.",
 		cost = 3000,
-		buildtime = 40,
 		occupationStrength = 2,
+		combatrange = 1000,
+		inertiafactor = 0.995,
+		armor = 150,
+		ecm = 40,
+		energy = -1,
+		resupply = 200,
+		attackspeedstate = 0,
+		suppressionmod = 0.25,
+		suppressionflankingresist = 0.4,
 	},
 }
 

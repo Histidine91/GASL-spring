@@ -8,13 +8,9 @@
 --------------------------------------------------------------------------------
 
 local sideData = {
-  [1] = {
-    name      = 'Full Carrier',
+  {
+    name      = 'Faction',
     startunit = 'carrier',
-  },
-  [2] = {
-    name      = 'Battle Carrier',
-    startunit = 'supportcarrier',
   },
 }
 

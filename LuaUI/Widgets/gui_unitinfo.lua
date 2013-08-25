@@ -455,7 +455,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		}
 	end
 	local maxEnergy = data.energy
-	if maxEnergy then
+	if maxEnergy and maxEnergy ~= -1 then
 		local energy = Spring.GetUnitRulesParam(unitID, "energy")
 		local panel_energy = Panel:New{
 			parent = panel_ship_stats;

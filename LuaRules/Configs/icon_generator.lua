@@ -33,7 +33,7 @@ factionColors = {
   arm     = {0.05, 0.96, 0.95},   --// arm
   core    = {0.05, 0.96, 0.95},   --// core
   chicken = {1.0,0.8,0.2},   --// chicken
-  unknown = {0.05, 0.96, 0.95},   --// unknown
+  unknown = {0.1, 0.5, 0.8},   --// unknown
 }
 
 

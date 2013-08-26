@@ -78,7 +78,7 @@ local unitDef = {
 		resupplyrange = 200,
 		attackspeedstate = 0,
 		suppressionmod = 0.4,
-		suppressionflankingresist = 0.5,
+		suppressionflankingmod = 0.5,
 	},
 }
 

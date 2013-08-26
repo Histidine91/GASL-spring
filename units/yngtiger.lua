@@ -80,6 +80,7 @@ local unitDef = {
 		armor = 60,
 		--ecm = 0,
 		canresupply = true,
+		suppressionmod = 1.4,
 	},
 }
 

@@ -40,20 +40,20 @@ local SUPPRESSION_LEVELS = {
 }
 
 local suppressionMod = {}
-local flankingResist = {}
+local flankingMod = {}
 local weapons = {}
 local units = {}	-- [unitID] = {suppression = (0 to 1), frame = gameframe, target = unitID}
 local gameframe = 0
 
 for i=1,#UnitDefs do
 	suppressionMod[i] = tonumber(UnitDefs[i].customParams.suppressionmod) or 1
-	flankingResist[i] = tonumber(UnitDefs[i].customParams.suppressionflankingresist or 1)
+	flankingMod[i] = tonumber(UnitDefs[i].customParams.suppressionflankingmod or 1)
 end
 
 for i=1,#WeaponDefs do
 	local wd = WeaponDefs[i]
 	local damage = wd.damages[0]
-	weapons[i] = {damage = damage, suppression = wd.customParams and wd.customParams.suppression or damage*0.02/100, noFlank = tobool(wd.customParams.suppression_noflank)}
+	weapons[i] = {damage = damage, suppression = wd.customParams and wd.customParams.suppression or damage*0.01/100, noFlank = tobool(wd.customParams.suppression_noflank)}
 end
 
 --------------------------------------------------------------------------------
@@ -71,6 +71,9 @@ local function GetAttackerVector(unitID, attackerID)
 end
 
 function GG.SetUnitSuppression(unitID, value)
+	if not units[unitID] then
+		return
+	end
 	units[unitID].suppression = value
 	spSetUnitRulesParam(unitID, "suppression", value, {inlos = true})
 end
@@ -92,7 +95,7 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 	-- flanking effects
 	if attackerID and not (weapons[weaponID].noFlank) then
 		local dotUp, dotFront = GetAttackerVector(unitID, attackerID)
-		suppressionDelta = suppressionDelta - suppressionDeltaBase*dotFront*FLANKING_MOD*flankingResist[unitDefID]
+		suppressionDelta = suppressionDelta - suppressionDeltaBase*dotFront*FLANKING_MOD*flankingMod[unitDefID]
 	end
 	if suppressionDelta < 0 then
 		suppressionDelta = 0

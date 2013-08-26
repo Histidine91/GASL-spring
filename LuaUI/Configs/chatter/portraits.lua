@@ -14,6 +14,7 @@ local portraitList = {	--VFS.DirList(PORTRAIT_DIR)
 	"ranpha_normal",
 	"ranpha_happy",
 	"ranpha_veryhappy",
+	"ranpha_relaxed",
 	"ranpha_serious",
 	"ranpha_oh",
 	"ranpha_worried",
@@ -47,6 +48,25 @@ local portraitList = {	--VFS.DirList(PORTRAIT_DIR)
 	"chitose_surprised",
 	"chitose_aggressive",
 	"chitose_pain",
+	
+	"tact_normal",
+	"tact_aggressive",
+	"tact_angry",
+	
+	"lester_normal",
+	"lester_serious",
+	"lester_bitter",
+	"lester_amused",
+	"lester_aggressive",
+	
+	"almo_normal",
+	"almo_happy",
+	"almo_shocked",
+	
+	"coco_normal",
+	"coco_happy",
+	"coco_surprised",
+	"coco_shocked",
 }
 
 portraits = {}

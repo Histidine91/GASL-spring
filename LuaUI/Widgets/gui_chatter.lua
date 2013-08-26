@@ -102,6 +102,22 @@ local function ShowWindow()
 	timer_opened = spGetTimer()
 end
 
+local function CreateImage(params)
+	if image then
+		image:Dispose()
+	end
+	image = Image:New{
+		parent = fakewindow,
+		width = IMAGE_WIDTH,
+		height = IMAGE_HEIGHT,
+		y = 4;
+		x = 5;
+		keepAspect = true,
+		file = params.image,
+		color = (params.warningOverlay) and {1,0.6,0.6,1} or {1,1,1,1},
+	}
+end
+
 local function SetUnitLastChatter(unitID, priority)
 	lastChatterByUnit[unitID] = {priority = priority, gameframe = gameframe}
 end
@@ -138,9 +154,9 @@ local function CreateEventPanel(params)
 		backgroundColor = {0,0,0,0},
 	}
 	if params.image then
-		image.file = params.image
-		image.color = (params.warningOverlay) and {1,0.6,0.6,1} or {1,1,1,1}
-		image:Invalidate()
+		CreateImage(params)
+	elseif not params.minor then
+		Spring.Log(widget.GetInfo().name, "warning", "Missing image for event " .. params.eventType .. ", pilot " .. params.name .. " with text \"" .. params.text .. "\"" )
 	end
 	stackPanel:AddChild(panel, nil, 1)
 	table.insert(chatItems, 1, {panel = panel, name = nameLabel, textBox = textBox, image = params.image})
@@ -171,7 +187,7 @@ local function GetEventDialogue(eventType, unitID, unitDefID, minor)
 	local choice = math.random(#items)
 	local selected = items[choice]
 	local text, image, sound = selected.text, selected.image, selected.sound
-	return {name = selected.name or data.name, text = text, image = image, sound = sound}
+	return {name = selected.name or data.name, text = text, image = image, sound = sound, eventType = eventType}
 end
 
 local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, unitID2, unitDefID2, unitTeam2, force)
@@ -308,15 +324,7 @@ function widget:Initialize()
 		itemMargin = {0, 0, 0, 0},
 	}
 	
-	image = Image:New{
-		parent = fakewindow,
-		width = IMAGE_WIDTH,
-		height = IMAGE_HEIGHT,
-		y = 4;
-		x = 5;
-		keepAspect = true,
-		file = nil;
-	}
+	CreateImage({})
 	HideWindow()
 	widgetHandler:RegisterGlobal("ChatterEvent", ProcessEvent)
 end

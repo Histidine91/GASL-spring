@@ -75,9 +75,14 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
--- all weapons can shoot through "water" and "land"
+
 for _, weaponDef in pairs(WeaponDefs) do
     --Spring.Echo(weaponDef.name)
+    if weaponDef.weapontype == "BeamLaser" then
+	weaponDef.sweepfire = false
+    end
+    
+    -- all weapons can shoot through "water" and "land"
     weaponDef.waterweapon = true
     --weaponDef.firesubmersed = true
     weaponDef.canattackground = false

@@ -3,7 +3,7 @@
 function gadget:GetInfo()
 	return {
 		name = "Seeker Handler",
-		desc = "Handles some seeker weapons",
+		desc = "Special functions for some seeker weapons",
 		author = "KingRaptor (L.J. Lim)",
 		date = "2013-05-18",
 		license = "GNU GPL, v2 or later",
@@ -20,19 +20,30 @@ end
 --------------------------------------------------------------------------------
 -- SYNCED
 --------------------------------------------------------------------------------
+local spGetUnitTeam		= Spring.GetUnitTeam
+local spGetUnitPosition 	= Spring.GetUnitPosition
+local spGetProjectilePosition 	= Spring.GetProjectilePosition
+local spGetUnitsInSphere 	= Spring.GetUnitsInSphere
+local spAreTeamsAllied		= Spring.AreTeamsAllied
+
 local seekerDefs = {}
-local seekerProjectiles = {}
-local loseLockSchedule = {}
+local seekerProjectiles = {}	-- [projectileID] = {weapon = weaponID, target = unitID, unit = unitID}
+local loseLockSchedule = {}	-- [gameframe] = {projectile1, projectile2, ...}
+local retargetSchedule = {}	-- [gameframe] = {projectile1, projectile2, ...}
+local seekersByTarget = {}	-- [targetID] = {projectile1, projectile2, ...}
+
 local gameframe = 0
 
 for i=1,#WeaponDefs do
 	local wd = WeaponDefs[i]
-	if wd.customParams and wd.customParams.seekerttl then
+	if wd.customParams and wd.customParams.seekerttl or wd.customParams.retarget then
 		Script.SetWatchWeapon(i, true)
 		seekerDefs[i] = {
 			ttl = wd.customParams.seekerttl,
 			accuracy = wd.customParams.seekeraccuracy,
-			speed = wd.customParams.seekerspeed or wd.projectilespeed
+			speed = wd.customParams.seekerspeed or wd.projectilespeed,
+			retarget = tonumber(wd.customParams.retarget),
+			retargetTime = tonumber(wd.customParams.retargettime),
 		}
 	end
 end
@@ -40,8 +51,8 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function GetScatterImpactPoint(projectileID, targetID, maxSpread, speed)
-	local _,_,_,x,y,z = Spring.GetUnitPosition(targetID, true)
-	local x1, y1, z1 = Spring.GetProjectilePosition(projectileID)
+	local _,_,_,x,y,z = spGetUnitPosition(targetID, true)
+	local x1, y1, z1 = spGetProjectilePosition(projectileID)
 	
 	if not (x and y and z) then
 		return
@@ -68,11 +79,65 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-function gadget:Initialize()
+local function RegisterSeekerTarget(proID, weaponID, unitID, targetID, seekToTarget)
+	seekerProjectiles[proID].target = targetID
+	seekersByTarget[targetID] = seekersByTarget[targetID] or {}
+	seekersByTarget[targetID][proID] = true
+	if seekToTarget then
+		Spring.SetProjectileTarget(proID, targetID, string.byte('u'))
+	end
+	local loseLockTime = seekerDefs[weaponID].ttl
+	if loseLockTime then
+		loseLockTime = loseLockTime + gameframe
+		loseLockSchedule[loseLockTime] = loseLockSchedule[loseLockTime] or {}
+		loseLockSchedule[loseLockTime][proID] = {weaponID = weaponID, unitID = unitID}
+	end
 end
 
-function gadget:UnitCreated(unitID)
-	--Spring.Echo("bla", unitID)
+local function DeregisterSeekerTarget(proID, targetID)
+	if not targetID then
+		return
+	end
+	local seekers = seekersByTarget[targetID]
+	if seekers then
+		seekers[proID] = nil
+	end
+	seekerProjectiles[proID].target = nil
+end
+
+local function RetargetProjectile(proID)
+	local px, py, pz = spGetProjectilePosition(proID)
+	local weaponID = seekerProjectiles[proID].weapon
+	local def = seekerDefs[weaponID]
+	local units = spGetUnitsInSphere(px, py, pz, def.retarget)
+	for i=1,#units do
+		local team = spGetUnitTeam(units[i])
+		if not spAreTeamsAllied(team, seekerProjectiles[proID].team) then
+			RegisterSeekerTarget(proID, weaponID, seekerProjectiles[proID].unit, units[i], true)
+		end
+	end
+end
+
+local function ScatterProjectile(proID)
+
+end
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
+	local seekers = seekersByTarget[unitID]
+	if not seekers then
+		return
+	end
+	for proID in pairs(seekers) do
+		DeregisterSeekerTarget(proID, unitID)
+		local def = seekerDefs[seekerProjectiles[proID].weapon]
+		if def.retarget then
+			local retargetTime = gameframe + (def.retargetTime or 1)
+			retargetSchedule[retargetTime] = retargetSchedule[retargetTime] or {}
+			retargetSchedule[retargetTime][proID] = true
+		end
+	end
+	seekersByTarget[unitID] = nil
 end
 
 function gadget:GameFrame(n)
@@ -81,7 +146,7 @@ function gadget:GameFrame(n)
 		for proID, proData in pairs(loseLockSchedule[n]) do
 			if seekerProjectiles[proID] then	-- check if table entry still exists (make sure it hasn't died on us in the meantime)
 				local weaponID = proData.weaponID
-				local targetID, type = Spring.GetProjectileTarget(proID)
+				local targetID = seekerProjectiles[proID].target
 				if targetID then
 					local unitID = proData.unitID
 					local unitDefID = Spring.GetUnitDefID(unitID)
@@ -92,23 +157,34 @@ function gadget:GameFrame(n)
 						Spring.SetProjectileTarget(proID, tx, ty, tz)
 					end
 				end
-				seekerProjectiles[proID] = nil
+				--seekerProjectiles[proID] = nil
 			end
 		end
 		loseLockSchedule[n] = nil
 	end
+	if retargetSchedule[n] then
+		for proID, proData in pairs(retargetSchedule[n]) do
+			if seekerProjectiles[proID] then
+				RetargetProjectile(proID)
+			end
+		end
+		retargetSchedule[n] = nil
+	end
+	
 end
 
 function gadget:ProjectileCreated(proID, proOwnerID, weaponID)
 	if seekerDefs[weaponID] then
-		seekerProjectiles[proID] = true;
-		local loseLockTime = gameframe + seekerDefs[weaponID].ttl
-		loseLockSchedule[loseLockTime] = loseLockSchedule[loseLockTime] or {}
-		loseLockSchedule[loseLockTime][proID] = {weaponID = weaponID, unitID = proOwnerID}
+		seekerProjectiles[proID] = {weapon = weaponID, team = Spring.GetUnitTeam(proOwnerID), unit = proOwnerID}
+		local targetType, targetID = Spring.GetProjectileTarget(proID)
+		seekerProjectiles[proID].target = targetID
+		RegisterSeekerTarget(proID, weaponID, proOwnerID, targetID, false)
 	end
 end	
 
 function gadget:ProjectileDestroyed(proID)
+	local targetID = seekerProjectiles[proID] and seekerProjectiles[proID].target
+	DeregisterSeekerTarget(proID, targetID)
 	seekerProjectiles[proID] = nil
 end
 

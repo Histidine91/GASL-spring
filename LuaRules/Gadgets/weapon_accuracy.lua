@@ -59,18 +59,18 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function GetAccMult(unitID, unitDefID, targetID, targetDefID, params)
-   params = params or {useSuppression = true, useMorale = true}
+   params = params or {useSuppression = true, useECM = true, useMoraleDefender = true}
    
    local ecmMod = 0
    if params.useECM then
       ecmMod = targetDefID and ecmDefs[targetDefID] or 0
    end
    
-   local moraleMod = 0
-   if params.useMorale then
-      local morale = GG.GetMorale(unitDefID)
+   local moraleDefenderMod = 0
+   if params.useMoraleDefender then
+      local morale = GG.GetMorale(targetDefID)
       if morale then
-	 moraleMod = (morale - BASE_MORALE)/BASE_MORALE * MORALE_ACCURACY_MULT
+	 moraleDefenderMod = (morale - BASE_MORALE)/BASE_MORALE * MORALE_ACCURACY_MULT
       end
    end
    
@@ -82,7 +82,7 @@ local function GetAccMult(unitID, unitDefID, targetID, targetDefID, params)
       end
    end
       
-   local accMult = 1 + ecmMod + suppressionMod + moraleMod
+   local accMult = 1 + ecmMod + suppressionMod + moraleDefenderMod
    return accMult
 end
 GG.GetAccMult = GetAccMult
@@ -99,7 +99,7 @@ local function UpdateWeaponAccuracy(unitID, unitDefID, i)
    if unitData.env then
       targetID = GG.UnitScript.CallAsUnit(unitID, unitData.env.GetWeaponTarget, i)
       if targetID then
-	 local targetDefID = spGetUnitDefID(targetID)
+	 targetDefID = spGetUnitDefID(targetID)
       end
    end
      

@@ -56,7 +56,7 @@ function gadget:ProjectileCreated(proID, proOwnerID, weaponID)
 	if not weaponDamages[weaponID] then
 		return
 	end
-	local targetID, targetType = spGetProjectileTarget(proID)
+	local targetType, targetID = spGetProjectileTarget(proID)
 	local targetDefID, targetTeam
 	if targetID and (targetType == "u") then
 		targetDefID = spGetUnitDefID(targetID)

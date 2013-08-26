@@ -36,6 +36,14 @@ local icontypes = {
 		bitmap="icons/yngcommando.png",
 		size=2.0,
 	},
+	yngtiger = {
+		bitmap="icons/yngtiger.png",
+		size=2.0,
+	},
+	enclavestar = {
+		bitmap="icons/enclavestar.png",
+		size=3.0,
+	},
 	
 	--small ships
 	dagger = {

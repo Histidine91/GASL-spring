@@ -6,7 +6,7 @@ local unitDef = {
 	-- Required Tags
 	power = 1200,
 	mass = 1000,
-	icontype = "carrier",
+	icontype = "enclavestar",
 	category = "LARGE ARMORED WEAK TARGET ANY",
 	footprintX = 6,
 	footprintZ = 6,
@@ -63,7 +63,7 @@ local unitDef = {
 	},
 	customParams  =  {
 		shortname = "Enclave Star",
-		helptext = "These large vessels form the home of the Neinzul enclave mind-hives, and provide manufacturing and support facilities for the Younglings.",
+		helptext = "These large vessels form the home of the Neinzul enclave mind-hives, and provide manufacturing and support facilities for the Younglings. Lightly armed and armored for its size.",
 		type = "large",
 		role = "support",
 		cost = 4000,

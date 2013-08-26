@@ -6,7 +6,7 @@ local unitDef = {
 	-- Required Tags
 	power = 65,
 	mass = 50,
-	icontype = "sword",
+	icontype = "yngtiger",
 	category = "SMALL WEAK TARGET ANY",
 	footprintX = 1,
 	footprintZ = 1,

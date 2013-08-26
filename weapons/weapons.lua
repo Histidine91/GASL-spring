@@ -103,8 +103,6 @@ return {
       critchance = 0.075,
       jammable = true,
       eccm = 25,
-      retarget = 500,
-      retargettime = 15,
     },
     
     craterMult		= 0,
@@ -117,7 +115,7 @@ return {
     dance 		= 10,
     explosiongenerator	= "custom:missile",
     fixedLauncher	= true,
-    flightTime		= 20,
+    flightTime		= 16,
     impulseFactor	= 0,
     impulseBoost	= 0,
     interceptedByShieldType = 4,

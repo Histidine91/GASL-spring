@@ -341,11 +341,11 @@ local specialWeapons = {
 	},
 	MISSILE_SB = {
 		source = "MISSILE",
-		properties = {name = "Standard Missile SB", burst = 12, burstRate = 0.36, reloadTime = 10, customParams = {special = true}}
+		properties = {name = "Standard Missile SB", burst = 12, burstRate = 0.36, reloadTime = 10, customParams = {special = true, retarget = 800, retargettime = 30}}
 	},
 	PHALANX_SB = {
 		source = "PHALANX",
-		properties = {name = "Phalanx Seeker SB", burst = 24, burstRate = 0.2, reloadTime = 10, customParams = {special = true, seekerttl = 45}}
+		properties = {name = "Phalanx Seeker SB", burst = 24, burstRate = 0.2, reloadTime = 10, customParams = {special = true, seekerttl = 45, retarget = 800, retargettime = 30}}
 	},
 }
 local weaponDefs = unitDef.weaponDefs

@@ -95,9 +95,11 @@ local function StrikeBurstThread()
     Turn(phalanx_L, y_axis, 0, math.rad(120))
     Turn(phalanx_R, y_axis, 0, math.rad(120))
     isUsingSpecial = false
+    GG.FlightControl.SetChaseTarget(unitID, nil)
 end
 
-function StrikeBurstTrigger()
+function StrikeBurstTrigger(params)
+    GG.FlightControl.SetChaseTarget(unitID, params[1])
     StartThread(StrikeBurstThread)
 end
 

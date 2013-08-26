@@ -212,14 +212,14 @@ local function ResupplyUnit(fighterID, carrierID)
 	-- now perform repairs
 	local health, maxHealth = Spring.GetUnitHealth(fighterID)
 	local energyRequired = (maxHealth - health) * ENERGY_PER_UNIT_HEALTH
-	local success, energyLeft = GG.Energy.UseUnitEnergy(carrierID, energyToTransfer)
+	local success, energyLeft = GG.Energy.UseUnitEnergy(carrierID, energyRequired)
 	if success then
 		Spring.SetUnitHealth(fighterID, maxHealth)
 	else
 		Spring.SetUnitHealth(fighterID, health + energyLeft*ENERGY_PER_UNIT_HEALTH)
 		GG.Energy.SetUnitEnergy(carrierID, 0)
 	end
-	
+	GG.SetUnitSuppression(fighterID, 0)
 	GG.EventWrapper.AddEvent("resupply", 1, fighterID, fighterDefID, Spring.GetUnitTeam(fighterID), carrierID, spGetUnitDefID(carrierDefID), Spring.GetUnitTeam(carrierID))
 	if Spring.GetUnitStates(fighterID)["repeat"] then 
 		--spGiveOrderToUnit(fighterID, CMD_RESUPPLY, {carrierID}, {"shift"})

@@ -102,7 +102,9 @@ local function DeregisterSeekerTarget(proID, targetID)
 	if seekers then
 		seekers[proID] = nil
 	end
-	seekerProjectiles[proID].target = nil
+	if seekerProjectiles[proID] then
+		seekerProjectiles[proID].target = nil
+	end
 end
 
 local function RetargetProjectile(proID)

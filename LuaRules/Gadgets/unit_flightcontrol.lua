@@ -572,7 +572,7 @@ function gadget:GameFrame(f)
 		local wantedPitch, wantedHeading
 		local speed = 0
 		local moveGoal = data.moveGoal
-		local energy = GG.Energy and GG.Energy.GetUnitEnergy(unitID, unitDefID)
+		local energy = GG.Energy and GG.Energy.GetUnitEnergy(unitID)
 		if energy and energy == 0 then	-- stranded!
 			-- make no changes to our facing or speed
 		else
@@ -630,9 +630,9 @@ function gadget:GameFrame(f)
 				end
 				local energyUsage = BASE_THRUSTER_ENERGY_USAGE*(speed + deltaV*ACCELERATION_ENERGY_USAGE_MULT)/maxSpeed*def.thrusterEnergyUse
 				if energyUsage > 0 then
-					local enoughEnergyLeft = GG.Energy.UseUnitEnergy(unitID, unitDefID, energyUsage)
+					local enoughEnergyLeft = GG.Energy.UseUnitEnergy(unitID, energyUsage)
 					if not enoughEnergyLeft then
-						GG.Energy.SetUnitEnergy(unitID, unitDefID, 0)	-- drain the last drop of fuel
+						GG.Energy.SetUnitEnergy(unitID, 0)	-- drain the last drop of fuel
 					end
 				end
 			end

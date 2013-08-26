@@ -20,6 +20,7 @@ if (not gadgetHandler:IsSyncedCode()) then
 end
 
 local spSetUnitRulesParam = Spring.SetUnitRulesParam
+local spGetUnitDefID = Spring.GetUnitDefID
 
 local ENERGY_LEVELS = {
   {0.3, "critical"},
@@ -40,11 +41,13 @@ for i=1,#UnitDefs do
   end
 end
 
-local function GetUnitEnergy(unitID, unitDefID)
+local function GetUnitEnergy(unitID)
+  local unitDefID = spGetUnitDefID(unitID)
   return units[unitID], defs[unitDefID]
 end
 
-local function UseUnitEnergy(unitID, unitDefID, usage)
+local function UseUnitEnergy(unitID, usage)
+  local unitDefID = spGetUnitDefID(unitID)
   if defs[unitDefID] == -1 then
     return true, nil, -1
   end
@@ -69,7 +72,8 @@ local function UseUnitEnergy(unitID, unitDefID, usage)
   return true, newAmount, defs[unitDefID]
 end
 
-local function SetUnitEnergy(unitID, unitDefID, newAmount)
+local function SetUnitEnergy(unitID, newAmount)
+  local unitDefID = spGetUnitDefID(unitID)
   units[unitID] = newAmount
   spSetUnitRulesParam(unitID, "energy", newAmount/defs[unitDefID])
   return true, newAmount, defs[unitDefID]

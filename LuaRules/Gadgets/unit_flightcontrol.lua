@@ -278,6 +278,12 @@ local function SetUnitHeading(unitID, heading)
 	spacecraft[unitID].heading = NormalizeHeading(heading)
 end
 
+local function SetChaseTarget(unitID, targetID)
+	if not spacecraft[unitID] then
+		return
+	end
+	spacecraft[unitID].forceChaseTarget = targetID
+end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function gadget:Initialize()
@@ -319,6 +325,7 @@ function gadget:Initialize()
 		GetUnitSpeed = GetUnitSpeed,
 		SetUnitSpeed = SetUnitSpeed,
 		SetUnitHeading = SetUnitHeading,
+		SetChaseTarget = SetChaseTarget,
 		BreakOffTarget = BreakOffTarget,
 	}
 end
@@ -345,6 +352,7 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 				commandCache = nil,
 				commandCacheTTL = 0,
 				timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER,
+				forceChaseTarget = nil,
 			}
 			spacecraft[unitID].heading = NormalizeHeading(spacecraft[unitID].heading)
 			cmdSetAttackSpeed.params[1] = spacecraft[unitID].attackSpeedState
@@ -430,6 +438,11 @@ function gadget:GameFrame(f)
 		if data.commandCache and ((f+unitID)%3 == 0) then
 			local command = data.commandCache
 			local cmdID = command.id
+			local orbitTarget = def.orbitTarget
+			if data.forceChaseTarget then
+				cmdID = CMD.ATTACK
+				--orbitTarget = false
+			end
 			if specialCMDs[cmdID] then
 				local ux, uy, uz = GetUnitMidPos(unitID)
 				local tx, ty, tz
@@ -464,7 +477,7 @@ function gadget:GameFrame(f)
 				local tx, ty, tz = GetUnitMidPos(command.params[1])
 				data.wantedSpeed = def.speed
 				data.moveGoal = {tx, ty, tz}
-			elseif def.orbitTarget or cmdID == CMD.GUARD then
+			elseif orbitTarget or cmdID == CMD.GUARD then
 				local targetID = command.params[1]
 				if targetID and spValidUnitID(targetID) then
 					local distance = spGetUnitSeparation(unitID, targetID, false)
@@ -490,7 +503,7 @@ function gadget:GameFrame(f)
 					end
 				end
 			elseif cmdID == CMD.ATTACK then
-				local targetID = command.params[1]
+				local targetID = data.forceChaseTarget or command.params[1]
 				if targetID and spValidUnitID(targetID) then
 					local distance = spGetUnitSeparation(unitID, targetID, false)
 					local targetDefID = spGetUnitDefID(targetID)

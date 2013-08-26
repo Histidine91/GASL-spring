@@ -87,10 +87,15 @@ local function HyperCannonLoop()
 	Sleep(33)
     end
     isUsingSpecial = false
+    GG.FlightControl.SetChaseTarget(unitID, nil)
 end
 
-function HyperCannonTrigger()
+function HyperCannonTrigger(params)
     StartThread(HyperCannonLoop)
+    --Spring.GiveOrderToUnit(unitID, CMD.INSERT, {0, CMD.ATTACK, params[1]}, {"alt"})
+    --Spring.GiveOrderToUnit(unitID, CMD.ATTACK, params, 0)
+    GG.FlightControl.SetChaseTarget(unitID, params[1])
+    GG.FireHyperCannon(unitID)
 end
 --[[
 local function DebugPhalanx()

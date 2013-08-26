@@ -277,10 +277,11 @@ local unitDef = {
 		HYPERCANNON = {
 			name		= "Hyper Cannon",
 			accuracy	= 0,
-			areaOfEffect	= 48,
+			areaOfEffect	= 96,
 			beamDecay	= 0.85,
 			beamTTL		= 6,
 			beamTime	= 0.03,
+			collideEnemy	= false,
 			
 			customParams	= {
 				ap = 0,
@@ -288,17 +289,18 @@ local unitDef = {
 				description = "An immensely powerful beam that wipes anything in its path.",
 				critchance = 0.05,
 				special = true,
-				statsdamage = 100*30*5
+				statsdamage = 100*30*5,
+				statsrange = 2000,
 			},
 			
 			craterMult		= 0,
 			craterBoost		= 0,
 			
 			damage = {
-				default = 100,
+				default = 0.0001,
 			},
 			
-			explosiongenerator = "custom:graser_pink",
+			--explosiongenerator = "custom:graser_pink",
 			impactOnly 	= true,
 			impulsefactor	= 0,
 			impulseBoost	= 0,

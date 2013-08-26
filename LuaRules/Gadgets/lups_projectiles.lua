@@ -61,11 +61,13 @@ function gadget:Initialize()
 	end
 end
 
+--[[
 function gadget:Shutdown()
-for weaponID in pairs(weapons) do
+	for weaponID in pairs(weapons) do
 		Script.SetWatchWeapon(weaponID, false)
 	end
 end
+]]
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

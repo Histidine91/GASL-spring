@@ -41,9 +41,9 @@ local cmds = {
 local replaceList = {}
 
 function gadget:AllowCommand(u, ud, team, cmd, param, opt, tag, synced)
-	if cmd == CMD_ATTACK or cmd == CMD_MANUALFIRE then
+	--[[if cmd == CMD_ATTACK or cmd == CMD_MANUALFIRE then
 		if #param > 1 then return false end	-- disable attack orders on ground
-	end
+	end]]
 	if cmds[cmd] then
 		local overwrite = not opt.shift
 		local y = param[2]

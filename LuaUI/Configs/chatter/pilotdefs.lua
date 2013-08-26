@@ -495,7 +495,71 @@ local pilotDefsPre = {
 		}
 	},
 	]]
+	elsior = {
+		name = "Tact",
+		dialogue = {
+			death = {
+				{name = "Almo", image = portraits.almo_shocked, text = "Critical systems failure!\nPrimary engine overloading!"},
+			},
+			kill = {
+				{name = "Lester", image = portraits.lester_amused, text = "Target destroyed!\nWe survived somehow, Tact."},
+			},
+			unitDamaged_severe = {
+				{name = "Almo", image = portraits.almo_shocked, text = "It's too dangerous! Commander, please recall the Angel Wing!"},
+				{name = "Almo", image = portraits.almo_shocked, text = "Breach in starboard fusion chamber!"},
+				{image = portraits.tact_angry, text = "No, we can't die here!\nI won't allow it!"},
+				minor = colors.yellow .. "Elsior\008 is " .. colors.red .. "75% damaged\008!"
+			},
+			unitDamaged_moderate = {
+				{name = "Lester", image = portraits.lester_bitter, text = "We can't keep going like this.\nTact, get us out of the line of fire!"},
+				{name = "Almo", image = portraits.almo_surprised, text = "Commander, we're taking heavy damage!\nGet the Angel Wing to cover us!"},
+				{name = "Almo", image = portraits.almo_surprised, text = "We're under heavy fire!\nDamage control teams are reaching capacity!"},
+				minor = colors.yellow .. "Elsior\008 is " .. colors.orange .. "50% damaged\008!"
+			},
+			unitDamaged_minor = {
+				{name = "Almo", image = portraits.almo_normal, text = "Minor damage sustained.\nSir, please be more careful."},
+				{name = "Lester", image = portraits.lester_serious, text = "The ship's taking damage.\nTact, mind the field of battle."},
+				minor = colors.yellow .. "Elsior\008 is " .. colors.yellow .. "20% damaged\008!"
+			},
+			criticalHit = {
+				{name = "Lester", image = portraits.lester_serious, text = "Good hit on target! Keep up the fire!"},
+				{name = "Coco", image = portraits.coco_happy, text = "Alright! A direct hit!"},
+			},
+			criticalHit_received = {
+				{image = portraits.tact_stressed, text = "Gah!\nThat was a nasty hit..."},
+				{name = "Lester", image = portraits.lester_bitter, text = "Tch... that left a nasty hole in our hull."},
+			},
+			unitSuppressed_severe = {
+				{name = "Almo", image = portraits.almo_shocked, text = "Kyaa!\nWe're getting overwhelmed!"},
+				minor = colors.yellow .. "Elsior\008 is " .. colors.red .. "80% suppressed\008!"
+			},
+			unitSuppressed_moderate = {
+				{name = "Lester", image = portraits.lester_bitter, text = "Under heavy fire. The crew isn't taking it well..."},
+				{image = portraits.tact_stressed, text = "Everyone, hang in there!\nWe're not going to roll over from this!"},
+				{image = portraits.coco_surprised, text = "Uwaah!\nSo much fire..."},
+				minor = colors.yellow .. "Elsior\008 is " .. colors.orange .. "50% suppressed\008!"
+			},
+			unitSuppressed_minor = {
+				{iname = "Coco", image = portraits.coco_normal, text = "Under intense enemy fire...\nI hope we can pull through this..."},
+				minor = colors.yellow .. "Elsior\008 is " .. colors.yellow .. "25% suppressed\008!"
+			},
+			unitEnergy_critical = {
+				{name = "Lester", image = portraits.lester_serious, text = "We're dangerously low on energy.\nTact, call your targets carefully."},
+				minor = colors.yellow .. "Elsior\008 down to " .. colors.orange .. "30% energy\008!"
+			},
+			unitEnergy_low = {
+				{name = "Almo", image = portraits.almo_normal, text = "Energy levels down to 50%."},
+				minor = colors.yellow .. "Elsior\008 down to " .. colors.yellow .. "55% energy\008!"
+			},
+			weaponMiss = {
+				{name = "Lester", image = portraits.lester_aggressive, text = "Gunner, where are you looking?!\nCan't you see the enemy!?"},
+				{name = "Coco", image = portraits.coco_surprised, text = "No way... our attack missed?!"},
+				{image = tact_angry, text = "Ah, our attack missed!\nGet ready for the return fire!"},
+			},
+		}
+	},
 }
+pilotDefsPre.placeholdersior = pilotDefsPre.elsior
 
 pilotDefs = {}
 

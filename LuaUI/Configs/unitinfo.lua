@@ -6,9 +6,11 @@ local pilotsByName = {
     harvester = {name = "Vanilla H", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/vanilla_normal.png"},
     sharpshooter = {name = "Karasuma Chitose", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/chitose_normal.png"},
     elsior = {name = "Tact Meyers", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/tact_normal.png"},
+    placeholdersior = {name = "Tact Meyers", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/tact_normal.png"},
     
     yngcommando = {name = "Neinzul Youngling", affiliation = "Roaming Enclave"},
     yngtiger = {name = "Neinzul Youngling", affiliation = "Roaming Enclave"},
+    enclavestar = {name = "Enclave Mind-Hive", affiliation = "Roaming Enclave"},
 }
 
 pilotData = {}

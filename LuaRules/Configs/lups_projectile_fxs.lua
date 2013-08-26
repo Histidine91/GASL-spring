@@ -56,16 +56,20 @@ local tbl = {
     {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
   kungfufighter_anchorclaw_l = {
-    {class='StaticParticles', options=MergeTable(fx.staticLightRed, {size=100})},
+    {class='StaticParticles', options=MergeTable(fx.staticLightRed, {size=150})},
     {class='Ribbon', options={width=3, size=64, color={1, 0.1, 0.1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
   kungfufighter_anchorclaw_r = {
-    {class='StaticParticles', options=MergeTable(fx.staticLightRed, {size=100})},
+    {class='StaticParticles', options=MergeTable(fx.staticLightRed, {size=150})},
     {class='Ribbon', options={width=3, size=64, color={1, 0.1, 0.1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
   --energybomb = {
   --  {class='Ribbon', options={width=3, size=4, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   --}
+  placeholdersior_plasmalance = {
+    {class='StaticParticles', options=MergeTable(fx.staticLightSkyBlue, {size=150})},
+    {class='Ribbon', options={width=5, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  },
 }
 local tbl2 = {}
 

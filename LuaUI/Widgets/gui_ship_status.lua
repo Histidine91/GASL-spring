@@ -79,6 +79,7 @@ local angelDefs = {
   [UnitDefNames.luckystar.id] = {hasSpirit = true},
   [UnitDefNames.kungfufighter.id] = {hasSpirit = true},
   [UnitDefNames.happytrigger.id] = {hasSpirit = true},
+  [UnitDefNames.placeholdersior.id] = {hasSpirit = false},
 }
 
 local hasEnergyDefs = {}

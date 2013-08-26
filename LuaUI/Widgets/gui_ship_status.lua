@@ -89,7 +89,7 @@ for i=1,#UnitDefs do
 	if energy ~= -1 then
 		hasEnergyDefs[i] = energy
 	end
-	suppressionImmuneDefs[i] = UnitDefs[i].customParams.suppressionimmune
+	suppressionImmuneDefs[i] = UnitDefs[i].customParams.suppressionmod == "0"
 end
 
 local exceptionList = {}

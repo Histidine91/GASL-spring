@@ -179,17 +179,27 @@ local function GetNewHeading(old, wanted, turnrate)
 	return new, dir
 end
 
-local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distance, maxAngle)
+local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distance, minAngle, maxAngle)
 	local angleXZ = math.random(-100, 100)
-	local angleYZ = 0	--math.random(-100, 100)*0.6
+	
+	-- tend to send units back to y = 0
+	local minY, maxY = -60, 60
+	if ty < 0 then
+		minY = math.min(minY - ty/5, 30)
+		minY = math.floor(minY)
+	elseif ty > 0 then
+		maxY = math.max(maxY - ty/5, -30)
+	end
+	local angleYZ = math.random(minY, maxY)
+	
 	angleXZ = angleXZ * maxAngle/100 + initialHeading
 	angleYZ = angleYZ * maxAngle/100
 	
 	local px = tx + math.sin(angleXZ)*distance
-	local py = ty + math.sin(angleYZ)*distance --* 0.4
+	local py = ty --+ math.sin(angleYZ)*distance --* 0.4
 	local pz = tz + math.cos(angleXZ)*distance
 	
-	py = py - ty/10		-- tend to send units back to y = 0
+	--py = py - ty/10		
 	
 	--Spring.Echo(px - tx, py - ty, pz - tz)
 	return {px, py, pz}
@@ -222,8 +232,21 @@ local function RequestNewTarget(unitID, unitDefID, addGUIEvent)
 	end
 end
 
+-- GG functions
 local function GetUnitSpeed(unitID)
 	return spacecraft[unitID] and spacecraft[unitID].speed
+end
+
+local function SetUnitSpeed(unitID, speed)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	data.speed = speed
+	local vx = math.sin(data.heading) * speed
+	local vy = math.sin(data.pitch) * speed
+	local vz = math.cos (data.heading) * speed
+	data.velocity = {vx, vy, vz}
 end
 
 local function BreakOffTarget(unitID)
@@ -243,10 +266,18 @@ local function BreakOffTarget(unitID)
 	local heading = spGetUnitHeading(unitID)
 	heading = NormalizeHeading(heading)
 	local tx, ty, tz = GetUnitMidPos(targetID)
-	data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.maxAvoidanceAngle)
+	data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 	data.lastDistance = distance
 	data.wantedSpeed = def.speed
 end
+
+local function SetUnitHeading(unitID, heading)
+	if not spacecraft[unitID] then
+		return
+	end
+	spacecraft[unitID].heading = NormalizeHeading(heading)
+end
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function gadget:Initialize()
@@ -258,17 +289,20 @@ function gadget:Initialize()
 			speed = ud.speed/30,
 			combatSpeed = tonumber(customParams.combatspeed) or 0.6*ud.speed/30,
 			combatRange = tonumber(customParams.combatrange) or 1000,
+			minimumRange = tonumber(customParams.minimumrange) or 0,
 			turnrate = ud.turnRate/30/360/pi,
 			acceleration = tonumber(customParams.acceleration) or 0.5,	-- unused
 			brakerate = tonumber(customParams.brakerate) or 1,		-- unused
 			inertiaFactor = tonumber(customParams.inertiafactor) or INERTIA_FACTOR,
 			avoidDistance = tonumber(customParams.avoiddistance) or ud.xsize*15 + 200,
-			maxAvoidanceAngle = math.rad(tonumber(customParams.maxavoidanceangle) or 60),
+			minAvoidanceAngle = math.rad(tonumber(customParams.minavoidanceangle) or 0),
+			maxAvoidanceAngle = math.rad(tonumber(customParams.maxavoidanceangle) or 90),
 			rollAngle = tonumber(customParams.rollangle) or 0,
 			rollSpeed = tonumber(customParams.rollspeed) or ud.turnRate/30/360/pi * 0.25,
 			orbitTarget = customParams.orbittarget,
 			hasEnergy = customParams.energy and true,
 			thrusterEnergyUse = customParams.thrusterenergyuse or 1,
+			initAttackSpeedState = tonumber(customParams.attackspeedstate or 1)
 			--standoff = (customParams.standoff and true) or false,	-- unimplemented
 		}
 		--Spring.Echo(ud.name, ud.xsize, spacecraftDefs[i].avoidDistance)
@@ -283,6 +317,8 @@ function gadget:Initialize()
 	
 	GG.FlightControl = {
 		GetUnitSpeed = GetUnitSpeed,
+		SetUnitSpeed = SetUnitSpeed,
+		SetUnitHeading = SetUnitHeading,
 		BreakOffTarget = BreakOffTarget,
 	}
 end
@@ -291,6 +327,7 @@ function gadget:Shutdown()
 	GG.FlightControl = nil
 end
 
+local up = false
 function gadget:UnitCreated(unitID, unitDefID, team)
 	if team ~= Spring.GetGaiaTeamID() then
 		if spacecraftDefs[unitDefID] then
@@ -303,13 +340,14 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 				moveGoal = nil,
 				speed = 0,
 				wantedSpeed = 0,
-				attackSpeedState = 1,
+				attackSpeedState = spacecraftDefs[unitDefID].initAttackSpeedState,
 				velocity = {0,0,0},
 				commandCache = nil,
 				commandCacheTTL = 0,
 				timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER,
 			}
 			spacecraft[unitID].heading = NormalizeHeading(spacecraft[unitID].heading)
+			cmdSetAttackSpeed.params[1] = spacecraft[unitID].attackSpeedState
 			Spring.InsertUnitCmdDesc(unitID, cmdSetAttackSpeed)
 			
 			Spring.SetUnitBlocking(unitID, true, true)
@@ -317,6 +355,8 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 			--Spring.SetUnitPosition(u,x,0,z)
 			Spring.MoveCtrl.Enable(unitID)
 			Spring.MoveCtrl.SetPosition(unitID,x,0,z)
+			--Spring.MoveCtrl.SetPosition(unitID,x,up and 150 or 0,z)
+			up = not up
 		end
 	end
 end
@@ -412,13 +452,18 @@ function gadget:GameFrame(f)
 						
 						local heading = spGetUnitHeading(unitID)
 						heading = NormalizeHeading(heading)
-						data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.maxAvoidanceAngle)
+						data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 					else
 						data.behavior = 2
 						data.wantedSpeed = GetWantedSpeed(distance, data, def)
 						data.moveGoal = {tx, ty, tz}
 					end
 				end
+			elseif cmdID == CMD_RESUPPLY then
+				data.behavior = 2
+				local tx, ty, tz = GetUnitMidPos(command.params[1])
+				data.wantedSpeed = def.speed
+				data.moveGoal = {tx, ty, tz}
 			elseif def.orbitTarget or cmdID == CMD.GUARD then
 				local targetID = command.params[1]
 				if targetID and spValidUnitID(targetID) then
@@ -439,7 +484,7 @@ function gadget:GameFrame(f)
 						local heading = spGetUnitHeading(unitID)/65536*2*math.pi
 						heading = NormalizeHeading(heading)
 						local tx, ty, tz = GetUnitMidPos(targetID)
-						data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, orbitDistance, def.maxAvoidanceAngle)
+						data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, orbitDistance, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 						data.wantedSpeed = ((cmdID == CMD.GUARD) or (def.combatSpeed < targetData.wantedSpeed)) and def.speed or def.combatSpeed
 						data.behavior = 3
 					end
@@ -455,12 +500,13 @@ function gadget:GameFrame(f)
 						-- too close, switch to avoid behavior
 						data.moveGoal = {GetUnitMidPos(targetID)}
 						data.wantedSpeed = GetWantedSpeed(distance, data, def)
-						if distance < (targetDef.avoidDistance or 0) or (distance < MIN_AVOID_DISTANCE) then
+						local avoidDistance = math.max(def.minimumRange, targetDef.avoidDistance, MIN_AVOID_DISTANCE)
+						if distance < avoidDistance then
 							data.behavior = 3
 							local heading = spGetUnitHeading(unitID)
 							heading = NormalizeHeading(heading)
 							local tx, ty, tz = GetUnitMidPos(targetID)
-							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.maxAvoidanceAngle)
+							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 							data.lastDistance = distance
 							data.wantedSpeed = def.speed
 							--Spring.Echo(unitID .. " last distance = " .. distance)

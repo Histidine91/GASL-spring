@@ -15,13 +15,13 @@ return {
     craterBoost		= 0,
 
     damage = {
-      default=10,
+      default = 10,
     },
     
     duration		= .02,
     explosiongenerator	= "custom:kinetic",
     fallOffRate		= .05,
-    impactOnly		= 1,
+    impactOnly		= true,
     impulsefactor	= 0,
     impulseBoost	= 0,
     intensity		= 1,
@@ -137,5 +137,7 @@ return {
     weaponType 		= "MissileLauncher",
     weaponVelocity	= 400,
     wobble		= 22000,
-  },  
+  },
+  
+  NOWEAPON = {}
 }

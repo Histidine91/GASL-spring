@@ -93,7 +93,7 @@ for i=1,#WeaponDefs do
 	weaponData[i] = {
 		name = wd.description,
 		desc = customParams.description,
-		hidden = tobool(customParams.hidden),
+		hidden = tobool(customParams.hidden) or wd.name == "noweapon",
 		damage = wd.customParams.statsdamage or wd.damages[0],
 		projectiles = tonumber(wd.customParams.statsprojectiles) or ((wd.projectiles or 1) * (wd.salvoSize or 1)),
 		reloadTime = wd.reload or 1,

@@ -323,6 +323,7 @@ local unitDef = {
 		energy = 15000,
 		thrusterenergyuse = 1.4,
 		suppressionmod = 0.8,
+		canresupply = true,
 	},
 }
 

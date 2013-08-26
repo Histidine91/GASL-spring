@@ -79,6 +79,7 @@ local unitDef = {
 		maxavoidanceangle = 150,
 		armor = 60,
 		--ecm = 0,
+		canresupply = true,
 	},
 }
 

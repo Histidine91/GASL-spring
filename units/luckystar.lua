@@ -119,8 +119,7 @@ local unitDef = {
 			weaponType	= "BeamLaser",
 		},
 		
-		MISSILE = 
-		{
+		MISSILE = {
 			name 		= "Standard Missile",
 			areaofeffect	= 64,
 			avoidfriendly 	= false,
@@ -174,8 +173,7 @@ local unitDef = {
 			wobble		= 22000,
 		},
 		
-		PHALANX = 
-		{
+		PHALANX = {
 			name 		= "Phalanx Seeker",
 			areaofeffect	= 8,
 			avoidfriendly 	= false,
@@ -352,6 +350,7 @@ local unitDef = {
 		ecm = 25,
 		energy = 10000,
 		thrusterenergyuse = 1,
+		canresupply = true,
 	},
 }
 

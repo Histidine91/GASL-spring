@@ -77,6 +77,7 @@ local unitDef = {
 		rollangle = math.rad(30),
 		armor = 50,
 		ecm = 10,
+		canresupply = true,
 	},
 }
 

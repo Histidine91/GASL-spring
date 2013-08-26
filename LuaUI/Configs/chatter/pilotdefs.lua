@@ -70,6 +70,10 @@ local pilotDefsPre = {
 				{image = portraits.milfeulle_happy, text = "Tact, I'm ready to fire the Hyper Cannon!"},
 				minor = colors.pink .. "Lucky Star\008 has " .. colors.yellow .. "maxed spirit\008!"
 			},
+			resupply = {
+				{image = portraits.milfeulle_happy, text = "Lucky Star, resupply complete."},
+				minor = colors.pink .. "Lucky Star\008 has " .. colors.green .. "completed resupply\008!"
+			},
 			engagingEnemy = {
 				{image = portraits.milfeulle_oh, text = "According to the radar, the enemy is... over there!"}
 			},
@@ -150,6 +154,10 @@ local pilotDefsPre = {
 				{image = portraits.ranpha_happy, text = "Anchor Claw, launch preparations complete!\nTact, what do you want me to hit?"},
 				{image = portraits.ranpha_veryhappy, text = "Yes! Yes! Yes!\nVoltage to the max!"},
 				minor = colors.red .. "Kung-Fu Fighter\008 has " .. colors.yellow .. "maxed spirit\008!"
+			},
+			resupply = {
+				{image = portraits.ranpha_starryeyed, text = "Resupply complete.\nYou sure know the way to a girl's heart..."},
+				minor = colors.red .. "Kung-Fu Fighter\008 has " .. colors.green .. "completed resupply\008!"
 			},
 			engagingEnemy = {
 				{image = portraits.ranpha_normal, text = "Target on radar.\nMoving to intercept."},
@@ -234,6 +242,8 @@ local pilotDefsPre = {
 			},
 			resupply = {
 				{image = portraits.forte_normal, text = "Unit #4, energy restored.\nI'm ready to rumble again."},
+				{image = portraits.forte_happy, text = "You saved me, Tact.\nNow it's my turn to save you!"},
+				minor = colors.violet .. "Happy Trigger\008 has " .. colors.green .. "completed resupply\008!"
 			},
 			engagingEnemy = {
 				{image = portraits.forte_normal, text = "Target on radar.\nMoving to engage."},

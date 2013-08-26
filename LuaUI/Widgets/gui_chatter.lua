@@ -22,6 +22,7 @@ local spDiffTimers   = Spring.DiffTimers
 --  CONFIG
 --------------------------------------------------------------------------------
 VFS.Include("LuaUI/Configs/chatter/general.lua")
+VFS.Include("LuaRules/Configs/customcmds.h.lua")
 
 local WINDOW_WIDTH = 540
 local WINDOW_HEIGHT = 144
@@ -39,6 +40,7 @@ local commands = {	-- TODO
 	[CMD.MOVE] = true,
 	[CMD.PATROL] = true,
 	[CMD.GUARD] = true,
+	[CMD_RESUPPLY] = true,
 }
 
 local maxItems = 12	-- TODO delegate to Epic Menu

@@ -61,10 +61,10 @@ local function SpawnYoungling(unitDefID)
     local team = Spring.GetUnitTeam(unitID)
     local newUnit = Spring.CreateUnit(unitDefID, x, y, z, 0, team)
     local heading = Spring.GetHeadingFromVector(dx, dz)
-    --Spring.MoveCtrl.SetPosition(unitID,x,y,z)
+    Spring.MoveCtrl.SetPosition(unitID,x,y,z)
     GG.FlightControl.SetUnitHeading(newUnit, heading/32768 * math.pi)
     GG.FlightControl.SetUnitSpeed(newUnit, 4)
-    Spring.GiveOrderToUnit(newUnit, CMD.FIGHT, {x-45+math.random(90), y, z-45+math.random(90)}, 0)
+    --Spring.GiveOrderToUnit(newUnit, CMD.FIGHT, {x-45+math.random(90), y, z-45+math.random(90)}, 0)
     
     bayIndex = bayIndex + 1
     if bayIndex > #bays then

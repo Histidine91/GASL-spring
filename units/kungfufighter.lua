@@ -345,6 +345,7 @@ local unitDef = {
 		ecm = 25,
 		suppressionmod = 0.75,
 		energy = 10000,
+		canresupply = true,
 	},
 }
 

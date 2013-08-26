@@ -131,12 +131,14 @@ function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
 		return
 	end
 	for proID in pairs(seekers) do
-		DeregisterSeekerTarget(proID, unitID)
-		local def = seekerDefs[seekerProjectiles[proID].weapon]
-		if def.retarget then
-			local retargetTime = gameframe + (def.retargetTime or 1)
-			retargetSchedule[retargetTime] = retargetSchedule[retargetTime] or {}
-			retargetSchedule[retargetTime][proID] = true
+		if seekerProjectiles[proID] then
+			DeregisterSeekerTarget(proID, unitID)
+			local def = seekerDefs[seekerProjectiles[proID].weapon]
+			if def.retarget then
+				local retargetTime = gameframe + (def.retargetTime or 1)
+				retargetSchedule[retargetTime] = retargetSchedule[retargetTime] or {}
+				retargetSchedule[retargetTime][proID] = true
+			end
 		end
 	end
 	seekersByTarget[unitID] = nil

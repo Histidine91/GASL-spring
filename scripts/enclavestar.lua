@@ -75,7 +75,7 @@ end
 local function EnclaveSpawnLoop()
     Signal(SIG_SPAWN)
     SetSignalMask(SIG_SPAWN)
-    Sleep(3000)--(20000)
+    Sleep(60000)
     while true do
 	local selected
 	local rand = math.random()
@@ -147,8 +147,8 @@ function script.Killed(recentDamage, maxHealth)
     Sleep(100)
     EmitSfx(bay2, 1024)
     Sleep(150)
-    EmitSfx(fuselage, 1026)
+    EmitSfx(hull, 1026)
     Sleep(1000)
-    EmitSfx(fuselage, 1025)
+    EmitSfx(hull, 1025)
 end
 

@@ -1,6 +1,6 @@
 local defs = {
-	{unitDefID = UnitDefNames.yngcommando.id, chance = 1, cooldown = 30000},
-	{unitDefID = UnitDefNames.yngtiger.id, chance = 1, cooldown = 45000},
+	{unitDefID = UnitDefNames.yngcommando.id, chance = 1, cooldown = 60000},
+	{unitDefID = UnitDefNames.yngtiger.id, chance = 1, cooldown = 90000},
 }
 
 local sumOfChance = 0

@@ -180,8 +180,7 @@ local unitDef = {
 			weaponType	= "BeamLaser",
 		},
 		
-		MISSILE = 
-		{
+		MISSILE = {
 			name 		= "Standard Missile",
 			areaofeffect	= 64,
 			avoidfriendly 	= false,
@@ -236,8 +235,7 @@ local unitDef = {
 			wobble		= 22000,
 		},
 		
-		PHALANX = 
-		{
+		PHALANX = {
 			name 		= "Phalanx Seeker",
 			areaofeffect	= 8,
 			avoidfriendly 	= false,

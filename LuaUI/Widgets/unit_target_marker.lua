@@ -103,7 +103,6 @@ function widget:Update(dt)
 	rotAngle = (rotAngle + (dt*360)/ROTATION_PERIOD)%360
 end
 
---local echoFreq = 0
 function widget:DrawScreen(vsx,vsy)
 	--[[
 	if not selectedUnit then
@@ -123,15 +122,11 @@ function widget:DrawScreen(vsx,vsy)
 				local dist = GetTwoPointDistance(x,y,z,cam.px, cam.py, cam.pz)
 				local size = (baseDistance/(dist^0.5)) or 1
 				if (dist < maxDistance) and (dist > minDistance) then
-					--local isTarget = bla
+					size = size*footprint[unitDefID]^0.5
 					local color = colors.cyan
 				
 					local x,y,z = spGetUnitViewPosition(unitID)
 					local sx,sy,sz=spWorldToScreenCoords(x,y,z)
-					--if echoFreq > 120 then
-					--	Spring.Echo(sx,sy,sz)
-					--	echoFreq = 0
-					--end
 					local isAllied = spIsUnitAllied(unitID)
 					-- team coloration
 					if not isAllied then
@@ -140,35 +135,7 @@ function widget:DrawScreen(vsx,vsy)
 					gl.Color(color)
 					gl.PushMatrix()
 					gl.Translate(sx,sy,0)
-					
-					-- target square
-					--gl.CallList(diamond)
 					gl.BeginEnd(GL.LINE_LOOP,Square,size)
-					
-					-- range display
-					--[[
-					if ((dist < rangeInfoRange) or isWantedTarget) and not isAllied then
-						local str
-						if dist > 400 then
-							str = ("%.1f"):format(dist/(1000/scaleMult)).." km"
-						else
-							str = math.ceil(dist*scaleMult).." m"
-						end
-						gl.Text(str, ssize*size + 2, -ssize*size, 14)
-					end
-					
-					
-					-- health display
-					local hp,mhp= Spring.GetUnitHealth(u)
-					if hp < mhp then
-						gl.Text(math.floor(100*hp/mhp).."%",0,0,14,"c")
-					end
-					
-					--name display
-					if ((dist < nameRange) or isWantedTarget) and UnitDefs[ud].customParams.label then
-						gl.Text(UnitDefs[ud].customParams.label,0,ssize*size + 2,16,"c")
-					end
-					]]
 					gl.PopMatrix()
 				end
 				if unitID == currentTarget then

@@ -1845,12 +1845,20 @@ function widget:Initialize()
 	end
 	OverviewAction()
 	
-	WG.GetThirdPersonTrackUnit = function() return thirdPerson_trackunit end
-	WG.SetThirdPersonTrackUnit = function(unitID)
-	  thirdPerson_trackunit = unitID
-	  TrackUnit(unitID)
-	end
-	WG.IsOverviewMode = function() return overview_mode end
+	WG.COFC = {
+	  GetThirdPersonTrackUnit = function() return thirdPerson_trackunit end,
+	  SetThirdPersonTrackUnit = function(unitID)
+	    thirdPerson_trackunit = unitID
+	    TrackUnit(unitID)
+	  end,
+	  SetThirdPersonTrackParams = function(params)
+	    local tcam = overview_mode and trackCamOverview or trackCam
+	    tcam.dist = params.dist or tcam.dist
+	    tcam.heading = params.heading or tcam.heading
+	    tcam.pitch = params.pitch or tcam.pitch
+	  end,
+	  IsOverviewMode = function() return overview_mode end,
+	}
 end
 
 function widget:Shutdown()
@@ -1869,9 +1877,7 @@ function widget:Shutdown()
 		WG.crude.SetHotkey("mousestate",epicmenuHkeyComp[4])
 	end
 	
-	WG.GetThirdPersonTrackUnit = nil
-	WG.SetThirdPersonTrackUnit = nil
-	WG.IsOverviewMode = nil
+	WG.COFC = nil
 end
 
 function widget:TextCommand(command)

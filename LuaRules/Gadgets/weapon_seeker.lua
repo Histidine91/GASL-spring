@@ -151,7 +151,7 @@ function gadget:GameFrame(n)
 			if seekerProjectiles[proID] then	-- check if table entry still exists (make sure it hasn't died on us in the meantime)
 				local weaponID = proData.weaponID
 				local targetID = seekerProjectiles[proID].target
-				if targetID then
+				if targetID and (not Spring.GetUnitIsDead(targetID)) then
 					local unitID = proData.unitID
 					local unitDefID = Spring.GetUnitDefID(unitID)
 					local targetDefID = Spring.GetUnitDefID(targetID)

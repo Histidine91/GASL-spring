@@ -253,8 +253,8 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 			if units[index].isDead then
 				return
 			end
-			if WG.SetThirdPersonTrackUnit then
-				WG.SetThirdPersonTrackUnit(unitID)
+			if WG.COFC.SetThirdPersonTrackUnit then
+				WG.COFC.SetThirdPersonTrackUnit(unitID)
 			end
 		end},
 		tooltip = "\255\0\255\0" .. UnitDefs[unitDefID].humanName .. "\008\n"..

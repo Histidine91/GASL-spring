@@ -52,6 +52,7 @@ local portraitList = {	--VFS.DirList(PORTRAIT_DIR)
 	"tact_normal",
 	"tact_aggressive",
 	"tact_angry",
+	"tact_stressed",
 	
 	"lester_normal",
 	"lester_serious",

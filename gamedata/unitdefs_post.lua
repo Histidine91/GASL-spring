@@ -80,17 +80,6 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
--- Cost multipier
-
-local costMult = Spring.GetModOptions().costmult or 1
-if costMult ~= 1 then
-	for name, ud in pairs(UnitDefs) do
-		if ud.customparams then ud.customparams["cost"] = math.ceil(ud.customparams["cost"] * costMult) end
-	end
-end	
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
 -- Set reverse velocities, disables turninplace for small units, enables float
 -- Also no smoothmesh
 
@@ -121,19 +110,16 @@ end
 
 -- All units stealthed, disable radar
 for name, ud in pairs(UnitDefs) do
-	--ud.radardistance = 0
-	ud.stealth = true
-end 
+    ud.radardistance = 0
+    --ud.stealth = true
+end
+
+-- all units can see really far
+for name, ud in pairs(UnitDefs) do
+    ud.sightdistance = 99999
+end
 
 -- Per-piece colvols
 for name, ud in pairs(UnitDefs) do
 	--ud.usepiececollisionvolumes = true
 end 
-		
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- enable Eclipse
-if tobool(Spring.GetModOptions().enableeclipse)then
-    UnitDefs.eclipse.customparams["nobuild"] = nil
-end

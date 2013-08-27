@@ -331,11 +331,11 @@ VFS.Include("LuaRules/Utilities/tablefunctions.lua")
 local specialWeapons = {
 	RAILGUN_SB = {
 		source = "RAILGUN",
-		properties = {name = "Assault Railgun SB", projectiles = 1, reloadTime = 0.5, customParams = {special = true}}
+		properties = {name = "Assault Railgun SB", projectiles = 1, reloadTime = 0.5, range = 1750, customParams = {special = true, statsprojectiles = 10}}
 	},
 	LASER_SB = {
 		source = "LASER",
-		properties = {name = "Beam Laser SB", reloadTime = 1, customParams = {special = true}}
+		properties = {name = "Beam Laser SB", reloadTime = 1, range = 2000, customParams = {special = true, statsprojectiles = 5}}
 	},
 	MISSILE_SB = {
 		source = "MISSILE",
@@ -343,7 +343,7 @@ local specialWeapons = {
 	},
 	PHALANX_SB = {
 		source = "PHALANX",
-		properties = {name = "Phalanx Seeker SB", burst = 24, burstRate = 0.2, reloadTime = 10, customParams = {special = true, seekerttl = 45, retarget = 800, retargettime = 30}}
+		properties = {name = "Phalanx Seeker SB", burst = 24, burstRate = 0.2, range = 1650, reloadTime = 10, customParams = {special = true, seekerttl = 45, retarget = 800, retargettime = 30}}
 	},
 }
 local weaponDefs = unitDef.weaponDefs

@@ -289,7 +289,7 @@ local unitDef = {
 				description = "An immensely powerful beam that wipes anything in its path.",
 				critchance = 0.05,
 				special = true,
-				statsdamage = 100*30*5,
+				statsdamage = 200*30*5,
 				statsrange = 2000,
 			},
 			
@@ -311,7 +311,7 @@ local unitDef = {
 			minIntensity	= 1,
 			noExplode	= true,
 			noSelfDamage	= true,
-			range		= 2000,
+			range		= 3000,
 			reloadtime	= 10,
 			rgbColor 	= "1 0.2 0.8",
 			soundHit	= nil,

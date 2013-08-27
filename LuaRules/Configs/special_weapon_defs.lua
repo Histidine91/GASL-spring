@@ -14,8 +14,8 @@ specialCMDs = {
 
 specialWeapons = {
 	hypercannon = {
-		minRange = 500,
-		maxRange = 2000,
+		minRange = 800,
+		maxRange = 3000,
 		maxAngle = math.rad(5),
 		cmdDesc = {
 			id      = CMD_HYPER_CANNON,
@@ -30,7 +30,7 @@ specialWeapons = {
 	},
 	anchorclaw = {
 		minRange = 300,
-		maxRange = 1400,
+		maxRange = 1500,
 		maxAngle = math.rad(30),
 		cmdDesc = {
 			id      = CMD_ANCHOR_CLAW,
@@ -45,7 +45,7 @@ specialWeapons = {
 	},
 	strikeburst = {
 		minRange = 600,
-		maxRange = 1500,
+		maxRange = 1750,
 		maxAngle = math.rad(5),
 		cmdDesc = {
 			id      = CMD_STRIKE_BURST,

@@ -25,8 +25,8 @@ local spGetUnitRadius	= Spring.GetUnitRadius
 --local spGetUnitSeparation = Spring.GetUnitSeparation
 
 local PIECE_NAME = "laserflare"
-local DAMAGE_PER_FRAME = 100
-local BEAM_RANGE = 2000
+local DAMAGE_PER_FRAME = 200
+local BEAM_RANGE = 3000
 local BEAM_WIDTH = 60
 local BEAM_LIFETIME = 30*5
 local WEAPON_ID = WeaponDefNames.luckystar_hypercannon.id

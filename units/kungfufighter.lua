@@ -231,6 +231,7 @@ local unitDef = {
 			name 		= "Anchor Claw",
 			areaofeffect	= 96,
 			avoidfriendly 	= false,
+			burnblow	= true,
 			
 			customParams	= {
 				ap = 100,
@@ -239,18 +240,20 @@ local unitDef = {
 				suppression_noFlank = 1,
 				statsprojectiles = 2,
 				special = true,
+				retarget = 1000,
+				retargettime = 15,
 			},
 			
 			craterMult		= 0,
 			craterBoost		= 0,
 			
 			damage = {
-				default = 6000,
+				default = 12000,
 			},
 			
 			explosiongenerator = "custom:death_med",
 			fixedLauncher	= true,
-			flightTime	= 25,
+			flightTime	= 16,
 			impulseFactor	= 0,
 			impulseBoost	= 0,
 			interceptedByShieldType = 4,
@@ -276,24 +279,27 @@ local unitDef = {
 			name 		= "Anchor Claw",
 			areaofeffect	= 96,
 			avoidfriendly 	= false,
+			burnblow	= true,
 			
 			customParams	= {
 				ap = 100,
 				damagetype = "kinetic",
 				suppression_noFlank = 1,
 				hidden = true,
+				retarget = 1000,
+				retargettime = 15,
 			},
 			
 			craterMult		= 0,
 			craterBoost		= 0,
 			
 			damage = {
-				default = 6000,
+				default = 12000,
 			},
 			
 			explosiongenerator = "custom:death_med",
 			fixedLauncher	= true,
-			flightTime	= 25,
+			flightTime	= 16,
 			impulseFactor	= 0,
 			impulseBoost	= 0,
 			interceptedByShieldType = 4,

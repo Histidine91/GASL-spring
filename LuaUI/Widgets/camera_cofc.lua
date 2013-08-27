@@ -1198,7 +1198,6 @@ local function PeriodicWarning()
 	end
 end
 --==End camera control function^^ (functions that actually do camera control)
-
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local updateTimer = 0
@@ -1851,6 +1850,7 @@ function widget:Initialize()
 	  thirdPerson_trackunit = unitID
 	  TrackUnit(unitID)
 	end
+	WG.IsOverviewMode = function() return overview_mode end
 end
 
 function widget:Shutdown()
@@ -1871,6 +1871,7 @@ function widget:Shutdown()
 	
 	WG.GetThirdPersonTrackUnit = nil
 	WG.SetThirdPersonTrackUnit = nil
+	WG.IsOverviewMode = nil
 end
 
 function widget:TextCommand(command)

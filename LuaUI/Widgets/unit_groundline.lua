@@ -57,6 +57,11 @@ function widget:Shutdown()
 end
 
 function widget:DrawWorldPreUnit(vsx,vsy)
+   if WG.IsOverviewMode then
+      if not WG.IsOverviewMode() then
+	 return
+      end
+   end
    local units = spGetVisibleUnits(nil, nil, true)
 
    gl.LineStipple('')

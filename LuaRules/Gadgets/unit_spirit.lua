@@ -97,7 +97,7 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID, attackerID, attackerDefID, attackerTeam)
+function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID, attackerID, attackerDefID, attackerTeam, projectileID)
   if invalidWeapons[weaponID] then
     return
   end
@@ -105,7 +105,7 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
     AddSpirit(unitID, unitDefID, unitTeam, unitID, unitDefID, damage)
   end
   if spiritUnits[attackerID] then
-    AddSpirit(attackerID, attackerDefID, attackerTeam, unitID, unitDefID, damage)
+    AddSpirit(attackerID, attackerDefID, attackerTeam, unitID, unitDefID, damage*0.5)
   end
 end
 

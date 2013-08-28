@@ -137,7 +137,7 @@ local unitDef = {
 				critchance = 0.075,
 				energypershot = 180,
 				jammable = true,
-				eccm = 20,
+				--eccm = 20,
 			},
 			
 			craterMult		= 0,
@@ -185,11 +185,12 @@ local unitDef = {
 				damagetype = "energy",
 				description = "A general-purpose homing energy weapon.",
 				minimumrange = 500,
-				seekerttl = 60,
+				--seekerttl = 60,
 				seekeraccuracy = 25,
 				suppression_noFlank = 1,
 				critchance = 0.05,
 				energypershot = 80,
+				jammable = true,
 			},
 			
 			craterMult		= 0,

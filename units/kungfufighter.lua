@@ -138,7 +138,7 @@ local unitDef = {
 				critchance = 0.075,
 				energypershot = 270,
 				jammable = true,
-				eccm = 15,
+				--eccm = 15,
 			},
 			
 			craterMult		= 0,
@@ -191,7 +191,7 @@ local unitDef = {
 				critchance = 0.1,
 				energypershot = 140,
 				jammable = true,
-				eccm = 40,
+				eccm = 10,
 			},
 			
 			craterMult		= 0,

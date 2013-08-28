@@ -104,7 +104,7 @@ return {
       suppression_noFlank = 1,
       critchance = 0.075,
       jammable = true,
-      eccm = 25,
+      --eccm = 25,
     },
     
     craterMult		= 0,

@@ -199,6 +199,11 @@ local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distanc
 	local py = ty + math.sin(angleYZ)*distance --* 0.4
 	local pz = tz + math.cos(angleXZ)*distance
 	
+	local gh = Spring.GetGroundHeight(px, pz)
+	if py < gh then
+		py = gh + 50
+	end
+	
 	--py = py - ty/10		
 	
 	--Spring.Echo(px - tx, py - ty, pz - tz)

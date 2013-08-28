@@ -77,8 +77,6 @@ local function GetScatterImpactPoint(projectileID, targetID, maxSpread, speed)
 	return tx, ty, tz
 end
 
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
 local function RegisterSeekerTarget(proID, weaponID, unitID, targetID, seekToTarget)
 	seekerProjectiles[proID].target = targetID
 	seekersByTarget[targetID] = seekersByTarget[targetID] or {}
@@ -120,9 +118,6 @@ local function RetargetProjectile(proID)
 	end
 end
 
-local function ScatterProjectile(proID)
-
-end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)

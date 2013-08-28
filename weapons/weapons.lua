@@ -9,6 +9,7 @@ return {
       ap = 50,
       damagetype = "kinetic",
       description = "Rapid-fire projectile weapon used by dogfighters. Accuracy and armor penetration are subpar.",
+      critchance = 0.05,
     },
     
     craterMult		= 0,
@@ -53,6 +54,7 @@ return {
       ap = 25,
       damagetype = "energy",
       description = "Low-velocity bolts that release a powerful plasma pulse upon impact.",
+      critchance = 0.05,
     },
     
     craterMult		= 0,
@@ -115,7 +117,7 @@ return {
     dance 		= 10,
     explosiongenerator	= "custom:missile",
     fixedLauncher	= true,
-    flightTime		= 16,
+    flightTime		= 15,
     impulseFactor	= 0,
     impulseBoost	= 0,
     interceptedByShieldType = 4,

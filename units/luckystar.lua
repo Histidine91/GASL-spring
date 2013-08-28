@@ -283,6 +283,8 @@ local unitDef = {
 			beamTTL		= 6,
 			beamTime	= 0.03,
 			collideEnemy	= false,
+			collideFriendly = false,
+			collideNeutral	= false,
 			
 			customParams	= {
 				ap = 0,
@@ -291,7 +293,8 @@ local unitDef = {
 				critchance = 0.05,
 				special = true,
 				statsdamage = 200*30*5,
-				statsrange = 2000,
+				statsrange = 3000,
+				nofriendlyfire = true,
 			},
 			
 			craterMult		= 0,

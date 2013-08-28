@@ -5,7 +5,7 @@
 function gadget:GetInfo()
   return {
     name      = "No Friendly Fire",
-    desc      = "Allows weapons to not damage allies",
+    desc      = "Adds the nofriendlyfire custom param",
     author    = "quantum",
     date      = "June 24, 2008",
     license   = "GNU GPL, v2 or later",
@@ -21,6 +21,14 @@ if (not gadgetHandler:IsSyncedCode()) then
   return false  --  silent removal
 end
 
+local noFFWeaponDefs = {}
+for i=1,#WeaponDefs do
+  local wd = WeaponDefs[i]
+  if wd.customParams and wd.customParams.nofriendlyfire then
+    noFFWeaponDefs[i] = true
+  end
+end
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
@@ -32,21 +40,17 @@ local spSetUnitHealth  = Spring.SetUnitHealth
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-local weaponNames = {"meteoremp"}
-local weaponIDs = {}
-for _,name in pairs(weaponNames) do
-	if WeaponDefNames[name] then weaponIDs[WeaponDefNames[name].id] = true end
-end
+
 
 function gadget:UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, 
                             weaponID, attackerID, attackerDefID, attackerTeam)
-  if (attackerDefID and 
-      weaponIDs[weaponID] and
-      --attackerID ~= unitID and
-      spAreTeamsAllied(unitTeam, attackerTeam)) then
-	return 0
-  end
-  return damage
+	if (weaponID and
+		noFFWeaponDefs[weaponID] and
+		attackerID ~= unitID and
+		((not attackerTeam) or spAreTeamsAllied(unitTeam, attackerTeam))) then
+		return 0
+	end
+	return damage
 end
 
 --------------------------------------------------------------------------------

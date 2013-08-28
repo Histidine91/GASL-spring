@@ -1,9 +1,9 @@
 function widget:GetInfo()
   return {
     name      = "Chili Widget Selector", --needs epic menu to dynamically update widget checkbox colors.
-    desc      = "v1.01 Chili Widget Selector", 
+    desc      = "v1.011 Chili Widget Selector", 
     author    = "CarRepairer",
-    date      = "2012-01-11", --2013-04-25 (add crude filter/search capability)
+    date      = "2012-01-11", --2013-06-11 (add crude filter/search capability)
     license   = "GNU GPL, v2 or later",
     layer     = -100000,
     handler   = true,
@@ -167,9 +167,8 @@ local function checkWidget(widget)
 		wcheck.font:SetColor(hilite_color)
 	end
 end
-WG.cws_checkWidget = function(widget)
-	checkWidget(widget)
-end
+
+WG.cws_checkWidget = function() end --function is declared in widget:Initialized()
 
 -- Kill Widgetlist window
 KillWidgetList = function()
@@ -206,20 +205,24 @@ MakeWidgetList = function()
 		if not data.alwaysStart then 
 			local name = name
 			local name_display = name .. (data.fromZip and ' (mod)' or '')
-			local data = data
+			data.basename = data.basename or ''
+			data.desc = data.desc or '' --become NIL if zipfile/archive corrupted
+			data.author = data.author or ''
 			local _, _, category = string.find(data.basename, "([^_]*)")
-			
+
 			local lowercase_name = name:lower()
 			local lowercase_category = category:lower()
 			local lowercase_display = name_display:lower()
 			local lowercase_desc = data.desc:lower()
 			local lowercase_author = data.author:lower()
+			
 			if filterUserInsertedTerm == "" or 
-				lowercase_name:find(filterUserInsertedTerm) or
-				lowercase_display:find(filterUserInsertedTerm) or
-				lowercase_desc:find(filterUserInsertedTerm) or
-				lowercase_author:find(filterUserInsertedTerm) or
-				lowercase_category:find(filterUserInsertedTerm) then
+			lowercase_name:find(filterUserInsertedTerm) or
+			lowercase_display:find(filterUserInsertedTerm) or
+			lowercase_desc:find(filterUserInsertedTerm) or
+			lowercase_author:find(filterUserInsertedTerm) or
+			lowercase_category:find(filterUserInsertedTerm) 
+			then
 			
 				if not groupDescs[category] then
 					category = 'ungrouped'
@@ -387,6 +390,9 @@ function widget:Initialize()
 		"unbindkeyset f11"
 	})
 	
+	WG.cws_checkWidget = function(widget)
+		checkWidget(widget)
+	end
 end
 
 function widget:ViewResize(vsx, vsy)

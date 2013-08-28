@@ -31,6 +31,10 @@ local icontypes = {
 		bitmap="icons/happytrigger.png",
 		size=2.4,
 	},
+	placeholdersior = {
+		bitmap="icons/placeholdersior.png",
+		size=4,
+	},
 	
 	yngcommando = {
 		bitmap="icons/yngcommando.png",

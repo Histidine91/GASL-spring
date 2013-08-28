@@ -127,7 +127,7 @@ local function ShouldDisplayNametag(unitID)
 	if setting == "none" then
 		return false
 	elseif setting == "selected" then
-		return (spIsUnitSelected(unitID) or WG.GetThirdPersonTrackUnit() == unitID or currentMouseOverUnit == unitID) and spIsUnitInView(unitID)
+		return (spIsUnitSelected(unitID) or (WG.COFC and WG.COFC.GetThirdPersonTrackUnit() == unitID) or currentMouseOverUnit == unitID) and spIsUnitInView(unitID)
 	else
 		return spIsUnitInView(unitID)
 	end

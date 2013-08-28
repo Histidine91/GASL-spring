@@ -116,7 +116,7 @@ end
 
 -- all units can see really far
 for name, ud in pairs(UnitDefs) do
-    ud.sightdistance = 99999
+    ud.sightdistance = 60000
 end
 
 -- default movestate

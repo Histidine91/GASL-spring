@@ -25,6 +25,7 @@ local spGetProjectilePosition	= Spring.GetProjectilePosition
 local spGetUnitDefID		= Spring.GetUnitDefID
 local spGetUnitPosition		= Spring.GetUnitPosition
 local spGetUnitIsDead		= Spring.GetUnitIsDead
+local spValidUnitID		= Spring.ValidUnitID
 
 local DEFLECTION_PER_POINT = 10
 local BASE_JAM_CHANCE = 0
@@ -131,7 +132,7 @@ function gadget:GameFrame(n)
 	if (n%JAMMER_CHECK_PERIOD) == 0 then
 		for proID, data in pairs(missiles) do
 			-- first check if our original target is dead and get new target if necessary
-			if not (data.target and not spGetUnitIsDead(data.target)) then
+			if not (data.target and spValidUnitID(data.target) and not spGetUnitIsDead(data.target)) then
 				data.target = nil
 			end
 			

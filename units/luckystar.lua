@@ -354,6 +354,7 @@ local unitDef = {
 		energy = 10000,
 		thrusterenergyuse = 1,
 		canresupply = true,
+		angel = true,
 	},
 }
 

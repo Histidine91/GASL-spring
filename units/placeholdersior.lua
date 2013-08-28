@@ -298,6 +298,7 @@ local unitDef = {
 		attackspeedstate = 0,
 		suppressionmod = 0.2,
 		suppressionflankingmod = 0.5,
+		angel = true,
 	},
 }
 

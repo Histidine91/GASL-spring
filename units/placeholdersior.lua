@@ -6,7 +6,7 @@ local unitDef = {
 	-- Required Tags
 	power = 4000,
 	mass = 8000,
-	icontype = "carrier",
+	icontype = "placeholdersior",
 	category = "LARGE CARRIER STRONG TARGET ANY",
 	footprintX = 8,
 	footprintZ = 8,
@@ -125,6 +125,7 @@ local unitDef = {
 				ap = 60,
 				damagetype = "energy",
 				description = "A powerful directed-energy weapon effective against even heavy targets.",
+				critchance = 0.075,
 			},
 			
 			craterMult		= 0,
@@ -223,6 +224,7 @@ local unitDef = {
 				ap = 70,
 				damagetype = "kinetic",
 				description = "A heavy rapid-fire kinetic weapon for defending big ships from small ones.",
+				critchance = 0.05,
 			},
 			
 			craterMult		= 0,

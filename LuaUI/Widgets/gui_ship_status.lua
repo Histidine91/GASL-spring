@@ -684,6 +684,7 @@ function widget:Initialize()
 		parent = window_status,
 		x = 0,
 		y = 32,
+		height = "100%",
 		width = "100%",
 		bottom = 0,
 		--backgroundColor = {0,0,0,0},
@@ -697,6 +698,7 @@ function widget:Initialize()
 		resizeItems = false,
 		orientation = 'vertical',
 		autosize = true,
+		autoArrangeV = true,
 	}
 	stack_ally = StackPanel:New{
 		--parent = scroll_main,
@@ -707,6 +709,7 @@ function widget:Initialize()
 		resizeItems = false,
 		orientation = 'vertical',
 		autosize = true,
+		autoArrangeV = true,
 	}
 	stack_neutral = StackPanel:New{
 		--parent = scroll_main,
@@ -717,6 +720,7 @@ function widget:Initialize()
 		resizeItems = false,
 		orientation = 'vertical',
 		autosize = true,
+		autoArrangeV = true,
 	}
 	stack_enemy = StackPanel:New{
 		--parent = scroll_main,
@@ -727,6 +731,7 @@ function widget:Initialize()
 		resizeItems = false,
 		orientation = 'vertical',
 		autosize = true,
+		autoArrangeV = true,
 	}
 	button_angels = Button:New{
 		parent = window_status;

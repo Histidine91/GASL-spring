@@ -322,6 +322,7 @@ function widget:Initialize()
 		autosize = true,
 		padding = {0,0,0,0},
 		itemMargin = {0, 0, 0, 0},
+		autoArrangeV = true,
 	}
 	
 	CreateImage({})

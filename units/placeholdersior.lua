@@ -93,14 +93,14 @@ local unitDef = {
 			onlyTargetCategory = "TARGET",
 			badTargetCategory = "LARGE",
 			mainDir = "0 1 0.2",
-			maxAngleDif = 240,
+			maxAngleDif = 210,
 		},
 		{
 			def = "AUTOCANNON",
 			onlyTargetCategory = "TARGET",
 			badTargetCategory = "LARGE",
 			mainDir = "0 1 -0.2",
-			maxAngleDif = 240,
+			maxAngleDif = 210,
 		},
 		--[[
 		{

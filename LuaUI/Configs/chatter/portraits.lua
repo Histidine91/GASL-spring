@@ -16,6 +16,7 @@ local portraitList = {	--VFS.DirList(PORTRAIT_DIR)
 	"ranpha_veryhappy",
 	"ranpha_relaxed",
 	"ranpha_serious",
+	"ranpha_angry",
 	"ranpha_oh",
 	"ranpha_worried",
 	"ranpha_starryeyed",

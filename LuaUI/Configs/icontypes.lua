@@ -34,6 +34,7 @@ local icontypes = {
 	placeholdersior = {
 		bitmap="icons/placeholdersior.png",
 		size=4,
+		distance = 1.5,
 	},
 	
 	yngcommando = {
@@ -47,6 +48,7 @@ local icontypes = {
 	enclavestar = {
 		bitmap="icons/enclavestar.png",
 		size=3.0,
+		distance = 1.25,
 	},
 	
 	--small ships

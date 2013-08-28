@@ -446,7 +446,7 @@ local helpText = {}
 local ls_x, ls_y, ls_z --lockspot position
 local ls_dist, ls_have, ls_onmap --lockspot flag
 local tilting
-local overview_mode, last_rx, last_ls_dist --overview_mode's variable
+local overview_mode, last_rx, last_ls_dist = false, nil, nil --overview_mode's variable
 local follow_timer = 0
 local epicmenuHkeyComp = {} --for saving & reapply hotkey system handled by epicmenu.lua
 
@@ -886,7 +886,7 @@ options.resetcam.OnChange = ResetCam
 
 -- TRACK UNIT
 local baseDelta = 1
-TrackUnit = function(unitID)
+TrackUnit = function(unitID, instant)
 	--spSendCommands("viewta")
 	local paused = select(3, spGetGameSpeed())
 	local cam = {}
@@ -944,7 +944,7 @@ TrackUnit = function(unitID)
 	local delta = (((cam.px - oldcam.px)^2 + (cam.py - oldcam.py)^2 + (cam.pz - oldcam.pz)^2)^0.5)
 	--Spring.Echo(cam.px, cam.py, cam.pz, cam.rx, cam.ry, cam.rz)
 	if delta <= 0 then delta = 0 end --CAM_TRACK_PERIOD end
-	spSetCameraState(cam, 0.2)
+	spSetCameraState(cam, instant and 0 or 0.2)
 	--Spring.SetCameraTarget(cam.px, cam.py, cam.pz, 0.5)
 end
 
@@ -1843,13 +1843,13 @@ function widget:Initialize()
 	if WG.SetWidgetOption then
 		WG.SetWidgetOption("Settings/Camera","Settings/Camera","Camera Type","COFC") --tell epicmenu.lua that we select COFC as our default camera (since we enabled it!)
 	end
-	OverviewAction()
+	--OverviewAction()
 	
 	WG.COFC = {
 	  GetThirdPersonTrackUnit = function() return thirdPerson_trackunit end,
-	  SetThirdPersonTrackUnit = function(unitID)
+	  SetThirdPersonTrackUnit = function(unitID, instant)
 	    thirdPerson_trackunit = unitID
-	    TrackUnit(unitID)
+	    TrackUnit(unitID, instant)
 	  end,
 	  SetThirdPersonTrackParams = function(params)
 	    local tcam = overview_mode and trackCamOverview or trackCam

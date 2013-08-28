@@ -244,9 +244,19 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 				return
 			end
 			SelectUnitArray({unitID}, shift)
-			if mouse == 1 then
-				local x, y, z = Spring.GetUnitPosition(unitID)
-				Spring.SetCameraTarget(x, y, z)
+			--if mouse == 1 then
+			--	local x, y, z = Spring.GetUnitPosition(unitID)
+			--	Spring.SetCameraTarget(x, y, z)
+			--end
+			if mouse == 2 and Spring.IsUnitSelected(unitID) then
+				local units = Spring.GetSelectedUnits()
+				local units2 = {}
+				for i=1,#units do
+					if units[i] ~= unitID then
+						units2[#units2+1] = units[i]
+					end
+				end
+				SelectUnitArray(units2, false)
 			end
 		end},
 		OnDblClick = { function()
@@ -258,8 +268,8 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 			end
 		end},
 		tooltip = "\255\0\255\0" .. UnitDefs[unitDefID].humanName .. "\008\n"..
-			"Left click: Select and go to\n"..
-			"Right click: Select\n"..
+			"Left click: Select\n"..
+			"Right click: Deselect\n"..
 			"Double-click: Lock camera (controllable units only)\n"..
 			"Shift+click: Append to current selection\n"..
 			"Alt+click: Open info window",
@@ -586,6 +596,11 @@ function widget:UnitTaken(unitID, unitDefID, unitTeam, newTeam)
 	widget:UnitDestroyed(unitID, unitDefID, unitTeam)
 end
 
+function widget:UnitEnteredLos(unitID, unitTeam)
+	local unitDefID = Spring.GetUnitDefID(unitID)
+	widget:UnitCreated( unitID,  unitDefID,  unitTeam)
+end
+
 local timer = 0
 function widget:Update(dt)
 	overlayPhase = (overlayPhase + dt/DAMAGE_WARNING_PERIOD)%1
@@ -664,7 +679,7 @@ function widget:Initialize()
 		x = 0,
 		bottom = 0,
 		width  = 160,
-		height = 320,
+		height = 480,
 		parent = Chili.Screen0,
 		draggable = false,
 		tweakDraggable = true,

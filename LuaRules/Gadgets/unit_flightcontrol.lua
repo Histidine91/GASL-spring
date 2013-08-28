@@ -185,10 +185,10 @@ local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distanc
 	-- tend to send units back to y = 0
 	local minY, maxY = -60, 60
 	if ty < 0 then
-		minY = math.min(minY - ty/5, 30)
+		minY = math.min(minY - ty*0.4, 30)
 		minY = math.floor(minY)
 	elseif ty > 0 then
-		maxY = math.max(maxY - ty/5, -30)
+		maxY = math.max(maxY - ty*0.4, -30)
 	end
 	local angleYZ = math.random(minY, maxY)
 	
@@ -196,7 +196,7 @@ local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distanc
 	angleYZ = angleYZ * maxAngle/100
 	
 	local px = tx + math.sin(angleXZ)*distance
-	local py = ty --+ math.sin(angleYZ)*distance --* 0.4
+	local py = ty + math.sin(angleYZ)*distance --* 0.4
 	local pz = tz + math.cos(angleXZ)*distance
 	
 	--py = py - ty/10		
@@ -223,7 +223,7 @@ local function RequestNewTarget(unitID, unitDefID, addGUIEvent)
 		return
 	end
 	local seekRange = (states.movestate == 1 and TARGET_SEEK_RANGE) or nil
-	local enemy = Spring.GetUnitNearestEnemy(unitID, TARGET_SEEK_RANGE)
+	local enemy = Spring.GetUnitNearestEnemy(unitID, seekRange)
 	if enemy then
 		Spring.GiveOrderToUnit(unitID, CMD.INSERT, {0, CMD.ATTACK, 0, enemy}, {"alt"})
 		if addGUIEvent then

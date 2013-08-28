@@ -57,8 +57,8 @@ function widget:Shutdown()
 end
 
 function widget:DrawWorldPreUnit(vsx,vsy)
-   if WG.IsOverviewMode then
-      if not WG.IsOverviewMode() then
+   if WG.COFC then
+      if not WG.COFC.IsOverviewMode() then
 	 return
       end
    end

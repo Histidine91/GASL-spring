@@ -33,7 +33,7 @@ local carrierDefs = {}
 for i=1,#UnitDefs do
 	local cp = UnitDefs[i].customParams
 	if tobool(cp.canresupply) then
-		fighterDefs[i] = {noAutoResupply = tobool(cp.noautoresupply)}
+		fighterDefs[i] = {noAutoResupply = tobool(cp.noautoresupply) or true}
 	end
 	if cp.resupplyrange then
 		carrierDefs[i] = {resupplyRange = tonumber(cp.resupplyrange)}
@@ -98,16 +98,8 @@ local scheduleResupplyRequest = {} -- [fighterID] = true	(used to avoid recursio
 
 _G.carriers = carriers
 
-function gadget:Initialize()
-	local unitList = Spring.GetAllUnits()
-	for i=1,#(unitList) do
-		local ud = spGetUnitDefID(unitList[i])
-		local team = spGetUnitTeam(unitList[i])
-		gadget:UnitCreated(unitList[i], ud, team)
-		gadget:UnitFinished(unitList[i], ud, team)
-	end
-end
-
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 local function MakeOptsWithShift(cmdOpt)
 	local opts = {"shift"} -- appending
 	if (cmdOpt.alt)   then opts[#opts+1] = "alt"   end
@@ -220,6 +212,10 @@ local function ResupplyUnit(fighterID, carrierID)
 		GG.Energy.SetUnitEnergy(carrierID, 0)
 	end
 	GG.SetUnitSuppression(fighterID, 0)
+	
+	local _,_,_,x,y,z = Spring.GetUnitPosition(fighterID, true)
+	Spring.SpawnCEG("resupply", x, y, z, 0, 1, 0, 20)
+	
 	GG.EventWrapper.AddEvent("resupply", 1, fighterID, fighterDefID, Spring.GetUnitTeam(fighterID), carrierID, spGetUnitDefID(carrierDefID), Spring.GetUnitTeam(carrierID))
 	if Spring.GetUnitStates(fighterID)["repeat"] then 
 		--spGiveOrderToUnit(fighterID, CMD_RESUPPLY, {carrierID}, {"shift"})
@@ -291,6 +287,19 @@ local function RequestResupply(unitID, team, forceNow)
 	end
 end
 GG.RequestResupply = RequestResupply
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+function gadget:Initialize()
+	local unitList = Spring.GetAllUnits()
+	for i=1,#(unitList) do
+		local ud = spGetUnitDefID(unitList[i])
+		local team = spGetUnitTeam(unitList[i])
+		gadget:UnitCreated(unitList[i], ud, team)
+		gadget:UnitFinished(unitList[i], ud, team)
+	end
+end
+
 
 function gadget:UnitCreated(unitID, unitDefID, team)
 	if fighterDefs[unitDefID] then

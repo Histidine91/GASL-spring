@@ -131,12 +131,12 @@ function gadget:GameFrame(n)
 	if (n%JAMMER_CHECK_PERIOD) == 0 then
 		for proID, data in pairs(missiles) do
 			-- first check if our original target is dead and get new target if necessary
-			if (not data.target) or spGetUnitIsDead(data.target) then
+			if not (data.target and not spGetUnitIsDead(data.target)) then
 				data.target = nil
 			end
 			
 			if data.target == nil then
-				local _, targetID = spGetProjectileTarget(targetID)
+				local _, targetID = spGetProjectileTarget(proID)
 				if targetID then
 					data.target = targetID
 				end

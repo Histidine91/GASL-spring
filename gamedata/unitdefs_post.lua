@@ -119,6 +119,12 @@ for name, ud in pairs(UnitDefs) do
     ud.sightdistance = 99999
 end
 
+-- default movestate
+for name, ud in pairs(UnitDefs) do
+    ud.movestate = ud.movestate or 2
+end
+
+
 -- Per-piece colvols
 for name, ud in pairs(UnitDefs) do
 	--ud.usepiececollisionvolumes = true

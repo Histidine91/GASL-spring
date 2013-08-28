@@ -284,6 +284,13 @@ local function SetChaseTarget(unitID, targetID)
 	end
 	spacecraft[unitID].forceChaseTarget = targetID
 end
+
+local function SetUnitPosition(unitID, x, y, z)
+	if not spacecraft[unitID] then
+		return
+	end
+	Spring.MoveCtrl.SetPosition(unitID, x, y, z)
+end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function gadget:Initialize()
@@ -325,6 +332,7 @@ function gadget:Initialize()
 		GetUnitSpeed = GetUnitSpeed,
 		SetUnitSpeed = SetUnitSpeed,
 		SetUnitHeading = SetUnitHeading,
+		SetUnitPosition = SetUnitPosition,
 		SetChaseTarget = SetChaseTarget,
 		BreakOffTarget = BreakOffTarget,
 	}

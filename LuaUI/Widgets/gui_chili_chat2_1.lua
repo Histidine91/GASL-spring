@@ -873,7 +873,7 @@ function widget:Initialize()
 		dockable = true,
 		name = "Chat",
 		y = 0,
-		right = 425, -- epic/resbar width
+		right = 16,
 		width  = screenWidth * 0.30,
 		height = screenHeight * 0.20,
 		--parent = screen0,

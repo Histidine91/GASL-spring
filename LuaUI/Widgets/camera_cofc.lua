@@ -1957,78 +1957,22 @@ function GroupRecallFix(key, modifier, isRepeat)
 			group = groupNumber[key]	
 		end
 		if (group ~= nil) then
-			local selectedUnit = spGetSelectedUnits()
+			local selectedUnits = spGetSelectedUnits()
 			local groupCount = spGetGroupList() --get list of group with number of units in them
-			if groupCount[group] ~= #selectedUnit then
+			if groupCount[group] ~= #selectedUnits then
 				return false
 			end
-			for i=1,#selectedUnit do
-				local unitGroup = spGetUnitGroup(selectedUnit[i])
+			for i=1,#selectedUnits do
+				local unitGroup = spGetUnitGroup(selectedUnits[i])
 				if unitGroup~=group then
 					return false
 				end
 			end
-			if previousKey == key and (spDiffTimers(spGetTimer(),previousTime) > 2) then
-				currentIteration = 0 --reset cycle if delay between 2 similar tap took too long.
-			end
-			previousKey = key
-			previousTime = spGetTimer()
-			
-			if options.enableCycleView.value and WG.recvIndicator then 
-				local slctUnitUnordered = {}
-				for i=1 , #selectedUnit do
-					local unitID = selectedUnit[i]
-					local x,y,z = spGetUnitPosition(unitID)
-					slctUnitUnordered[unitID] = {x,y,z}
-				end
-				selectedUnit = nil
-				local cluster, lonely = WG.recvIndicator.OPTICS_cluster(slctUnitUnordered, 600,2, Spring.GetMyTeamID(),300) --//find clusters with atleast 2 unit per cluster and with at least within 300-elmo from each other with 600-elmo detection range
-				if previousGroup == group then
-					currentIteration = currentIteration +1
-					if currentIteration > (#cluster + #lonely) then
-						currentIteration = 1
-					end
-				else
-					currentIteration = 1
-				end
-				if currentIteration <= #cluster then
-					local sumX, sumY,sumZ, unitCount,meanX, meanY, meanZ = 0,0 ,0 ,0 ,0,0,0
-					for unitIndex=1, #cluster[currentIteration] do
-						local unitID = cluster[currentIteration][unitIndex]
-						local x,y,z= slctUnitUnordered[unitID][1],slctUnitUnordered[unitID][2],slctUnitUnordered[unitID][3] --// get stored unit position
-						sumX= sumX+x
-						sumY = sumY+y
-						sumZ = sumZ+z
-						unitCount=unitCount+1
-					end
-					meanX = sumX/unitCount --//calculate center of cluster
-					meanY = sumY/unitCount
-					meanZ = sumZ/unitCount
-					Spring.SetCameraTarget(meanX, meanY, meanZ,0.5)
-				else
-					local unitID = lonely[currentIteration-#cluster]
-					local x,y,z= slctUnitUnordered[unitID][1],slctUnitUnordered[unitID][2],slctUnitUnordered[unitID][3] --// get stored unit position
-					Spring.SetCameraTarget(x,y,z,0.5)
-				end
-				cluster=nil
-				slctUnitUnordered = nil
-			else --conventional method:
-				local sumX, sumY,sumZ, unitCount,meanX, meanY, meanZ = 0,0 ,0 ,0 ,0,0,0
-				for i=1, #selectedUnit do
-					local unitID = selectedUnit[i]
-					local x,y,z= spGetUnitPosition(unitID)
-					sumX= sumX+x
-					sumY = sumY+y
-					sumZ = sumZ+z
-					unitCount=unitCount+1
-				end
-				meanX = sumX/unitCount --//calculate center
-				meanY = sumY/unitCount
-				meanZ = sumZ/unitCount
-				Spring.SetCameraTarget(meanX, meanY, meanZ,0.5) --is overriden by Spring.SetCameraTarget() at cache.lua.
-			end
-			previousGroup= group
+			local unitID = selectedUnits[math.random(1,#selectedUnits)]
+			thirdPerson_trackunit = unitID
+			TrackUnit(unitID, false)
 			return true
 		end
+		return false
 	end
 end

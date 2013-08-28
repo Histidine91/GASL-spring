@@ -121,8 +121,8 @@ function widget:DrawScreen(vsx,vsy)
 			if x and y and z then
 				local dist = GetTwoPointDistance(x,y,z,cam.px, cam.py, cam.pz)
 				local size = (baseDistance/(dist^0.5)) or 1
+				size = size*footprint[unitDefID]^0.5
 				if (dist < maxDistance) and (dist > minDistance) then
-					size = size*footprint[unitDefID]^0.5
 					local color = colors.cyan
 				
 					local x,y,z = spGetUnitViewPosition(unitID)
@@ -147,7 +147,7 @@ function widget:DrawScreen(vsx,vsy)
 					gl.Texture("LuaUI/Images/targetmarker.png")
 					gl.Rotate(rotAngle,0,0,1)
 					--gl.Billboard()
-					local texSize = size*footprint[unitDefID]^0.5
+					local texSize = size--*footprint[unitDefID]^0.5
 					gl.TexRect(-48*texSize, -48*texSize, 48*texSize, 48*texSize)
 					gl.PopMatrix()
 				end

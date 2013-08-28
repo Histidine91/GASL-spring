@@ -601,6 +601,12 @@ function widget:UnitEnteredLos(unitID, unitTeam)
 	widget:UnitCreated( unitID,  unitDefID,  unitTeam)
 end
 
+function widget:UnitLeftLos(unitID)
+	if unitsByID[unitID] then
+		RemoveUnit(unitID)
+	end
+end
+
 local timer = 0
 function widget:Update(dt)
 	overlayPhase = (overlayPhase + dt/DAMAGE_WARNING_PERIOD)%1

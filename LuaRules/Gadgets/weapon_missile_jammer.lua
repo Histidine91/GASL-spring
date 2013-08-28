@@ -137,8 +137,8 @@ function gadget:GameFrame(n)
 			end
 			
 			if data.target == nil then
-				local _, targetID = spGetProjectileTarget(proID)
-				if targetID then
+				local targetType, targetID = spGetProjectileTarget(proID)
+				if targetID and targetType == string.byte('u') then
 					data.target = targetID
 				end
 			end

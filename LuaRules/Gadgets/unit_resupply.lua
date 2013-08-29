@@ -216,7 +216,9 @@ local function ResupplyUnit(fighterID, carrierID)
 	local _,_,_,x,y,z = Spring.GetUnitPosition(fighterID, true)
 	Spring.SpawnCEG("resupply", x, y, z, 0, 1, 0, 20)
 	
-	GG.EventWrapper.AddEvent("resupply", 1, fighterID, fighterDefID, Spring.GetUnitTeam(fighterID), carrierID, spGetUnitDefID(carrierDefID), Spring.GetUnitTeam(carrierID))
+	GG.EventWrapper.AddEvent("resupply", 1, fighterID, fighterDefID, Spring.GetUnitTeam(fighterID), carrierID, carrierDefID, Spring.GetUnitTeam(carrierID))
+	GG.TrackRepairStats(carrierID, carrierDefID, fighterID, fighterDefID, maxHealth - health)
+	
 	if Spring.GetUnitStates(fighterID)["repeat"] then 
 		--spGiveOrderToUnit(fighterID, CMD_RESUPPLY, {carrierID}, {"shift"})
 		InsertCommand(fighterID, 99999, CMD_RESUPPLY, {targetCarrier})

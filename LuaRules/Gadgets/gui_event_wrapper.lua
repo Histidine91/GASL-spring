@@ -36,40 +36,8 @@ events to record:
 	+engaging new target
 ]]--
 
-local DAMAGE_LEVELS = {
-	{0.25, "severe"},
-	{0.5, "moderate"},
-	{0.8, "minor"}
-}
-
 local function AddEvent(eventType, magnitude, unitID, unitDefID, unitTeam, unitID2, unitDefID2, unitTeam2)
 	SendToUnsynced("WrapEvent", eventType, magnitude, unitID, unitDefID, unitTeam, unitID2, unitDefID2, unitTeam2)
-end
-
-function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID,
-                            attackerID, attackerDefID, attackerTeam, projectileID)
-	-- TODO striate into low/moderate/severe, or let widget handle?
-	local health, maxHealth = Spring.GetUnitHealth(unitID)
-	local healthFraction, healthFractionOld = health/maxHealth, (health + damage)/maxHealth
-	for i=1,#DAMAGE_LEVELS do
-		local params = DAMAGE_LEVELS[i]
-		if healthFraction <= params[1] and healthFractionOld > params[1] then
-			AddEvent("unitDamaged_" .. params[2], damage, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
-			break
-		end
-	end
-	--AddEvent("unitDamaged", damage, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
-end
-
-function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
-	local attackerID = Spring.GetUnitLastAttacker(unitID)
-	local attackerDefID, attackerTeam
-	if attackerID and attackerID > 0 then
-		attackerDefID = Spring.GetUnitDefID(attackerID)
-		attackerTeam = Spring.GetUnitTeam(attackerID)
-		AddEvent("kill", (UnitDefs[unitDefID].power^0.5)*2+10, attackerID, attackerDefID, attackerTeam, unitID, unitDefID, unitTeam)
-	end
-	AddEvent("death", (UnitDefs[unitDefID].power^0.5)*2+10, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
 end
 
 function gadget:Initialize()

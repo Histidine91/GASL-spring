@@ -34,7 +34,8 @@ local SIG_SPECIAL = 4
 --------------------------------------------------------------------------------
 -- variables
 --------------------------------------------------------------------------------
-
+local isUsingSpecial = false
+local dead = false
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function DamageLoop()
@@ -46,6 +47,11 @@ local function DamageLoop()
 	EmitSfx(pod_L, 1024)
 	if ((health/maxHealth) < 0.3) then
 	    EmitSfx(prong_R, 1024)
+	end
+	if dead then
+	    EmitSfx(pod_R, 1024)
+	    EmitSfx(prong_L, 1024)
+	    EmitSfx(fuselage, 1024)
 	end
 	Sleep(50)
     end
@@ -188,6 +194,10 @@ function script.HitByWeapon(x, z, weaponDefID, damage)
 end
 
 function script.Killed(recentDamage, maxHealth)
-    EmitSfx(fuselage, 1025)
+    dead = true
+    for i=1,8 do
+	EmitSfx(base, 1025)
+	Sleep(500)
+    end
+    EmitSfx(fuselage, 1028)
 end
-

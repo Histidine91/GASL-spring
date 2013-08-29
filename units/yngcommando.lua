@@ -62,6 +62,7 @@ local unitDef = {
 			"custom:damage_fire",
 			"custom:death_small",
 			"custom:gunmuzzle",
+			"custom:missile",
 		},
 	},
 	customParams  =  {

@@ -72,6 +72,13 @@ function script.HitByWeapon()
 end
 
 function script.Killed(recentDamage, maxHealth)
+    local severity = recentDamage/maxHealth
+    if severity < 1 then
+	for i=1,6 do
+	    EmitSfx(fuselage, 1027)
+	    Sleep(500)
+	end
+    end
     EmitSfx(fuselage, 1025)
 end
 

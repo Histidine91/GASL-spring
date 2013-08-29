@@ -150,5 +150,6 @@ function script.Killed(recentDamage, maxHealth)
     EmitSfx(hull, 1026)
     Sleep(1000)
     EmitSfx(hull, 1025)
+    Sleep(1000)
 end
 

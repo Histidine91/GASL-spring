@@ -57,6 +57,7 @@ end
 local deathMed = 1024
 local deathLarge = 1025
 local deathMultiMed = 1026
+local deathMega = 1027
 local chargeFX = 1032
 local muzzleFX = 1028
 local muzzleFXLarge = 1030
@@ -66,8 +67,10 @@ local graserChargeTime = 120
 local graserFireTime = 240
 
 local SIG_GRASER = 2^13
+local SIG_DYING = {}
 
 local dead = false
+local dying = false
 
 --------------------------------------------------------------------------------
 --perks
@@ -132,6 +135,22 @@ local function SetDGunCMD()
 	if cmd then Spring.EditUnitCmdDesc(unitID, cmd, desc) end
 end
 
+local function DyingThread()
+	Signal(SIG_DYING)
+	SetSignalMask(SIG_DYING)
+	while not dead do
+		EmitSfx(hull, deathMultiMed)
+		EmitSfx(emit_f, deathMultiMed)
+		Sleep(1000)
+	end
+end
+
+function DyingTrigger()
+	dying = true
+	GG.FlightControl.DisableUnit(unitID)
+	StartThread(DyingThread)
+end
+
 function script.Create()
 	TurnPieceInit()	
 	SetDGunCMD()
@@ -167,6 +186,9 @@ function script.QueryWeapon(num)
 end
 
 function script.AimWeapon(num, heading, pitch)
+	if dying then
+		return false
+	end
 	if num >= 4 and num <= 9 then
 		return AimTurret(num, heading, pitch)
 	else
@@ -225,20 +247,28 @@ local shatter = SFX.SHATTER
 function script.Killed(recentDamage, maxHealth)
 	dead = true
 	local mrad = math.rad
-
-	EmitSfx(hull, deathLarge)
-	--Turn(hullMain,x_axis,10,mr(1))
-	Turn(hull,z_axis, math.random(-5,5),mrad(1))
-	Sleep(700)
-	Move(fin_l, x_axis, 10, math.random(1,5))
-	Sleep(450)
-	EmitSfx(jawfin, deathMed)
-	Sleep(600)
-	EmitSfx(hull, deathMultiMed)
-	Hide(jawfin)
-	Sleep(300)
-	EmitSfx(emit_b, deathLarge)
-	Hide(fin_r)
-	Sleep(1500)
-	-- TBD
+	
+	local severity = recentDamage/maxHealth
+	if severity < 1 then
+		EmitSfx(hull, deathLarge)
+		--Turn(hullMain,x_axis,10,mr(1))
+		Turn(hull,z_axis, math.random(-5,5),mrad(1))
+		Sleep(700)
+		Move(fin_l, x_axis, 10, math.random(1,5))
+		Sleep(450)
+		EmitSfx(jawfin, deathMed)
+		Sleep(600)
+		EmitSfx(hull, deathMultiMed)
+		Hide(jawfin)
+		Sleep(300)
+		EmitSfx(emit_b, deathLarge)
+		Hide(fin_r)
+		Sleep(1500)
+		-- TBD
+	else
+		--EmitSfx(jawfin, deathLarge)
+		EmitSfx(hull, deathMega)
+		--EmitSfx(emit_b, deathLarge)
+		Sleep(1200)
+	end
 end

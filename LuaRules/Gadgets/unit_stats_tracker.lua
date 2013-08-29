@@ -32,14 +32,14 @@ local angelsByUnitDef = {}
 local angels = {}
 
 for i=0,6 do
-	angels[i] = {kills = 0, damage = 0, killCost = 0, damageCost = 0, repair = 0}
+	angels[i] = {kills = 0, damage = 0, killCost = 0, damageCost = 0, repair = 0, deaths = 0}
 end
 
 
 for i=1,#UnitDefs do
 	local angelCP = UnitDefs[i].customParams.angel
 	if angelCP then
-		angelsByUnitDef[i] = angelCP
+		angelsByUnitDef[i] = tonumber(angelCP)
 	end
 	unitCosts[i] = UnitDefs[i].customParams.cost
 	--unitHealth[i] = UnitDefs[i].health

@@ -81,6 +81,7 @@ local BEHAVIOR_STRINGS = {
 local spacecraftDefs = {}
 local spacecraft = {}
 local waitWaitList = {}
+local disabledUnits = {}
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -296,6 +297,13 @@ local function SetUnitPosition(unitID, x, y, z)
 	end
 	Spring.MoveCtrl.SetPosition(unitID, x, y, z)
 end
+
+local function DisableUnit()
+	if not spacecraft[unitID] then
+		return
+	end
+	disabledUnits[unitID] = true
+end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function gadget:Initialize()
@@ -340,6 +348,7 @@ function gadget:Initialize()
 		SetUnitPosition = SetUnitPosition,
 		SetChaseTarget = SetChaseTarget,
 		BreakOffTarget = BreakOffTarget,
+		DisableUnit = DisableUnit,
 	}
 end
 
@@ -428,260 +437,264 @@ function gadget:GameFrame(f)
 			waitWaitList[unitID] = nil
 		end
 		]]
-	
-		local unitDefID = data.unitDefID
-		local def = spacecraftDefs[unitDefID]
-		local px, py, pz = GetUnitMidPos(unitID)
-		
-		-- first determine what we should do
-		if data.commandCacheTTL <= 0 then
-			local commands = spGetUnitCommands(unitID, 2)
-			if commands and commands[1] and commands[1].id ~= 0 and commands[1].id ~= 70 and commands[1].id ~= CMD.WAIT then
-				data.commandCache = commands[1]
-			else
-				data.commandCache = nil
-				data.behavior = 0
-				data.wantedSpeed = 0
-				data.moveGoal = nil
-			end
-			data.commandCacheTTL = COMMAND_CACHE_TTL
-		else
-			data.commandCacheTTL = data.commandCacheTTL - 1
-		end
-		if data.commandCache and ((f+unitID)%3 == 0) then
-			local command = data.commandCache
-			local cmdID = command.id
-			local orbitTarget = def.orbitTarget
-			if data.forceChaseTarget then
-				cmdID = CMD.ATTACK
-				--orbitTarget = false
-			end
-			if specialCMDs[cmdID] then
-				local ux, uy, uz = GetUnitMidPos(unitID)
-				local tx, ty, tz
-				if (#command.params == 1) then
-					tx, ty, tz = GetUnitMidPos(command.params[1])
+		if not disabledUnits[unitID] then
+			local unitDefID = data.unitDefID
+			local def = spacecraftDefs[unitDefID]
+			local px, py, pz = GetUnitMidPos(unitID)
+			
+			-- first determine what we should do
+			if data.commandCacheTTL <= 0 then
+				local commands = spGetUnitCommands(unitID, 2)
+				if commands and commands[1] and commands[1].id ~= 0 and commands[1].id ~= 70 and commands[1].id ~= CMD.WAIT then
+					data.commandCache = commands[1]
 				else
-					tx, ty, tz = unpack(command.params)
+					data.commandCache = nil
+					data.behavior = 0
+					data.wantedSpeed = 0
+					data.moveGoal = nil
 				end
-				if tx and ty and tz then
-					local distance = GetDistance(ux, uy, uz, tx, ty, tz)
-					local minRange = specialWeapons[specialCMDs[cmdID]].minRange
-					local maxRange = specialWeapons[specialCMDs[cmdID]].maxRange
-					if distance > maxRange then
-						data.behavior = 2
-						data.moveGoal = {tx, ty, tz}
-						data.wantedSpeed = def.speed
-					elseif distance < minRange then
-						data.behavior = 3
-						data.wantedSpeed = def.speed
-						
-						local heading = spGetUnitHeading(unitID)
-						heading = NormalizeHeading(heading)
-						data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.minAvoidanceAngle, def.maxAvoidanceAngle)
+				data.commandCacheTTL = COMMAND_CACHE_TTL
+			else
+				data.commandCacheTTL = data.commandCacheTTL - 1
+			end
+			if data.commandCache and ((f+unitID)%3 == 0) then
+				local command = data.commandCache
+				local cmdID = command.id
+				local orbitTarget = def.orbitTarget
+				if data.forceChaseTarget then
+					cmdID = CMD.ATTACK
+					--orbitTarget = false
+				end
+				if specialCMDs[cmdID] then
+					local ux, uy, uz = GetUnitMidPos(unitID)
+					local tx, ty, tz
+					if (#command.params == 1) then
+						tx, ty, tz = GetUnitMidPos(command.params[1])
 					else
-						data.behavior = 2
-						data.wantedSpeed = GetWantedSpeed(distance, data, def)
-						data.moveGoal = {tx, ty, tz}
+						tx, ty, tz = unpack(command.params)
 					end
-				end
-			elseif cmdID == CMD_RESUPPLY then
-				data.behavior = 2
-				local tx, ty, tz = GetUnitMidPos(command.params[1])
-				data.wantedSpeed = def.speed
-				data.moveGoal = {tx, ty, tz}
-			elseif orbitTarget or cmdID == CMD.GUARD then
-				local targetID = command.params[1]
-				if targetID and spValidUnitID(targetID) then
-					local distance = spGetUnitSeparation(unitID, targetID, false)
-					local targetDefID = spGetUnitDefID(targetID)
-					local targetDef = spacecraftDefs[targetDefID] or {}
-					local targetData = spacecraft[targetID]
-					
-					local orbitDistance = def.combatRange
-					if cmdID == CMD.GUARD then
-						orbitDistance = targetDef.avoidDistance + 100
-					end
-					if distance > (orbitDistance) then
-						data.behavior = 2
-						data.moveGoal = {GetUnitMidPos(targetID)}
-						data.wantedSpeed = def.speed
-					elseif data.behavior == 2 then
-						local heading = spGetUnitHeading(unitID)/65536*2*math.pi
-						heading = NormalizeHeading(heading)
-						local tx, ty, tz = GetUnitMidPos(targetID)
-						data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, orbitDistance, def.minAvoidanceAngle, def.maxAvoidanceAngle)
-						data.wantedSpeed = ((cmdID == CMD.GUARD) or (def.combatSpeed < targetData.wantedSpeed)) and def.speed or def.combatSpeed
-						data.behavior = 3
-					end
-				end
-			elseif cmdID == CMD.ATTACK then
-				local targetID = data.forceChaseTarget or command.params[1]
-				if targetID and spValidUnitID(targetID) then
-					local distance = spGetUnitSeparation(unitID, targetID, false)
-					local targetDefID = spGetUnitDefID(targetID)
-					local targetDef = spacecraftDefs[targetDefID] or {}
-					
-					if data.behavior == 2 then
-						-- too close, switch to avoid behavior
-						data.moveGoal = {GetUnitMidPos(targetID)}
-						data.wantedSpeed = GetWantedSpeed(distance, data, def)
-						local avoidDistance = math.max(def.minimumRange, targetDef.avoidDistance, MIN_AVOID_DISTANCE)
-						if distance < avoidDistance then
+					if tx and ty and tz then
+						local distance = GetDistance(ux, uy, uz, tx, ty, tz)
+						local minRange = specialWeapons[specialCMDs[cmdID]].minRange
+						local maxRange = specialWeapons[specialCMDs[cmdID]].maxRange
+						if distance > maxRange then
+							data.behavior = 2
+							data.moveGoal = {tx, ty, tz}
+							data.wantedSpeed = def.speed
+						elseif distance < minRange then
 							data.behavior = 3
+							data.wantedSpeed = def.speed
+							
 							local heading = spGetUnitHeading(unitID)
 							heading = NormalizeHeading(heading)
-							local tx, ty, tz = GetUnitMidPos(targetID)
-							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.minAvoidanceAngle, def.maxAvoidanceAngle)
-							data.lastDistance = distance
-							data.wantedSpeed = def.speed
-							--Spring.Echo(unitID .. " last distance = " .. distance)
+							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.minAvoidanceAngle, def.maxAvoidanceAngle)
+						else
+							data.behavior = 2
+							data.wantedSpeed = GetWantedSpeed(distance, data, def)
+							data.moveGoal = {tx, ty, tz}
 						end
-					elseif data.behavior == 3 then
-						-- if target is on our tail, attempt to shake
-						data.timeBeforeShakePursuer = data.timeBeforeShakePursuer - 1
-						if data.timeBeforeShakePursuer == 0 then
-							if distance <= (data.lastDistance or 0) + (def.speed*60) then
+					end
+				elseif cmdID == CMD_RESUPPLY then
+					data.behavior = 2
+					local tx, ty, tz = GetUnitMidPos(command.params[1])
+					data.wantedSpeed = def.speed
+					data.moveGoal = {tx, ty, tz}
+				elseif orbitTarget or cmdID == CMD.GUARD then
+					local targetID = command.params[1]
+					if targetID and spValidUnitID(targetID) then
+						local distance = spGetUnitSeparation(unitID, targetID, false)
+						local targetDefID = spGetUnitDefID(targetID)
+						local targetDef = spacecraftDefs[targetDefID] or {}
+						local targetData = spacecraft[targetID]
+						
+						local orbitDistance = def.combatRange
+						if cmdID == CMD.GUARD then
+							orbitDistance = targetDef.avoidDistance + 100
+						end
+						if distance > (orbitDistance) then
+							data.behavior = 2
+							data.moveGoal = {GetUnitMidPos(targetID)}
+							data.wantedSpeed = def.speed
+						elseif data.behavior == 2 then
+							local heading = spGetUnitHeading(unitID)/65536*2*math.pi
+							heading = NormalizeHeading(heading)
+							local tx, ty, tz = GetUnitMidPos(targetID)
+							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, orbitDistance, def.minAvoidanceAngle, def.maxAvoidanceAngle)
+							data.wantedSpeed = ((cmdID == CMD.GUARD) or (def.combatSpeed < targetData.wantedSpeed)) and def.speed or def.combatSpeed
+							data.behavior = 3
+						end
+					end
+				elseif cmdID == CMD.ATTACK then
+					local targetID = data.forceChaseTarget or command.params[1]
+					if targetID and spValidUnitID(targetID) then
+						local distance = spGetUnitSeparation(unitID, targetID, false)
+						local targetDefID = spGetUnitDefID(targetID)
+						local targetDef = spacecraftDefs[targetDefID] or {}
+						
+						if data.behavior == 2 then
+							-- too close, switch to avoid behavior
+							data.moveGoal = {GetUnitMidPos(targetID)}
+							data.wantedSpeed = GetWantedSpeed(distance, data, def)
+							local avoidDistance = math.max(def.minimumRange, targetDef.avoidDistance, MIN_AVOID_DISTANCE)
+							if distance < avoidDistance then
+								data.behavior = 3
+								local heading = spGetUnitHeading(unitID)
+								heading = NormalizeHeading(heading)
+								local tx, ty, tz = GetUnitMidPos(targetID)
+								data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.minAvoidanceAngle, def.maxAvoidanceAngle)
+								data.lastDistance = distance
+								data.wantedSpeed = def.speed
+								--Spring.Echo(unitID .. " last distance = " .. distance)
+							end
+						elseif data.behavior == 3 then
+							-- if target is on our tail, attempt to shake
+							data.timeBeforeShakePursuer = data.timeBeforeShakePursuer - 1
+							if data.timeBeforeShakePursuer == 0 then
+								if distance <= (data.lastDistance or 0) + (def.speed*60) then
+									data.behavior = 2
+									data.moveGoal = {GetUnitMidPos(targetID)}
+									data.wantedSpeed = def.combatSpeed
+									--Spring.Echo(unitID .. " is jinking (distance " .. distance .. ", was " .. data.lastDistance .. ")")
+								end
+								data.lastDistance = distance
+								data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
+							end
+							-- far enough, switch to closing behavior
+							local distance2 = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
+							if distance > def.combatRange or distance2 < MOVE_DISTANCE_THRESHOLD then
 								data.behavior = 2
 								data.moveGoal = {GetUnitMidPos(targetID)}
-								data.wantedSpeed = def.combatSpeed
-								--Spring.Echo(unitID .. " is jinking (distance " .. distance .. ", was " .. data.lastDistance .. ")")
+								data.wantedSpeed = GetWantedSpeed(distance, data, def)
+								data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
+								--Spring.Echo("Got enough distance, closing in again")
 							end
-							data.lastDistance = distance
-							data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
-						end
-						-- far enough, switch to closing behavior
-						local distance2 = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
-						if distance > def.combatRange or distance2 < MOVE_DISTANCE_THRESHOLD then
+						--elseif def.standoff then
+							-- FIXME unimplemented
+							--data.behavior = 6
+						else
 							data.behavior = 2
 							data.moveGoal = {GetUnitMidPos(targetID)}
 							data.wantedSpeed = GetWantedSpeed(distance, data, def)
 							data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
-							--Spring.Echo("Got enough distance, closing in again")
 						end
-					--elseif def.standoff then
-						-- FIXME unimplemented
-						--data.behavior = 6
+						--if f%120 == 0 and data.lastMoveGoal and data.moveGoal and data.lastMoveGoal[1] == data.lastMoveGoal[1] and data.lastMoveGoal[3] == data.moveGoal[3] then
+						--	Spring.Echo("FFS", data.moveGoal[1], data.moveGoal[3])
+						--end
+						--data.lastMoveGoal = data.moveGoal
 					else
-						data.behavior = 2
-						data.moveGoal = {GetUnitMidPos(targetID)}
-						data.wantedSpeed = GetWantedSpeed(distance, data, def)
-						data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
+						RequestNewTarget(unitID, unitDefID)
 					end
-					--if f%120 == 0 and data.lastMoveGoal and data.moveGoal and data.lastMoveGoal[1] == data.lastMoveGoal[1] and data.lastMoveGoal[3] == data.moveGoal[3] then
-					--	Spring.Echo("FFS", data.moveGoal[1], data.moveGoal[3])
-					--end
-					--data.lastMoveGoal = data.moveGoal
+				elseif cmdID == CMD_TURN then
+					data.moveGoal = command.params
+					data.wantedSpeed = 0
+				elseif MOVE_COMMANDS[cmdID] then
+					data.moveGoal = command.params
+					local distance = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
+					data.wantedSpeed = (distance > 100) and def.speed or def.combatSpeed
+					if distance <= MOVE_DISTANCE_THRESHOLD then	-- close enough
+						Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {data.commandCache.tag}, {})
+					end
+				end
+			end
+			
+			if f%30 == 0 then
+				if (not data.commandCache) or AUTOENGAGE_COMMANDS[data.commandCache.id] then
+					RequestNewTarget(unitID, unitDefID, data.commandCache == nil)
+				end
+			end
+			--if f%120 == 0 then
+			--	if data.commandCache then Spring.Echo(data.commandCache.id) end
+			--end
+			
+			-- decided what we want to do, now to get there
+			local wantedPitch, wantedHeading
+			local speed = 0
+			local moveGoal = data.moveGoal
+			local energy = GG.Energy and GG.Energy.GetUnitEnergy(unitID)
+			if energy and energy == 0 then	-- stranded!
+				-- make no changes to our facing or speed
+			else
+				if moveGoal then
+					local dy = moveGoal[2] - py
+					local vectorX, vectorZ = px - moveGoal[1], pz - moveGoal[3] 
+					local dxz = math.sqrt(vectorX^2 + vectorZ^2)
+					wantedPitch = -math.atan2(dy, dxz)
+					wantedHeading = spGetHeadingFromVector(vectorX, vectorZ)/65536*2*pi + pi
+					wantedHeading = NormalizeHeading(wantedHeading)
+					if math.abs(wantedHeading - data.heading) < 0.01 then
+						wantedHeading = data.heading
+					end
+					if math.abs(wantedPitch - data.pitch) < 0.01 then
+						wantedPitch = data.pitch
+					end
 				else
-					RequestNewTarget(unitID, unitDefID)
-				end
-			elseif MOVE_COMMANDS[cmdID] then
-				data.moveGoal = command.params
-				local distance = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
-				data.wantedSpeed = (distance > 100) and def.speed or def.combatSpeed
-				if distance <= MOVE_DISTANCE_THRESHOLD then	-- close enough
-					Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {data.commandCache.tag}, {})
-				end
-			end
-		end
-		
-		if f%30 == 0 then
-			if (not data.commandCache) or AUTOENGAGE_COMMANDS[data.commandCache.id] then
-				RequestNewTarget(unitID, unitDefID, data.commandCache == nil)
-			end
-		end
-		--if f%120 == 0 then
-		--	if data.commandCache then Spring.Echo(data.commandCache.id) end
-		--end
-		
-		-- decided what we want to do, now to get there
-		local wantedPitch, wantedHeading
-		local speed = 0
-		local moveGoal = data.moveGoal
-		local energy = GG.Energy and GG.Energy.GetUnitEnergy(unitID)
-		if energy and energy == 0 then	-- stranded!
-			-- make no changes to our facing or speed
-		else
-			if moveGoal then
-				local dy = moveGoal[2] - py
-				local vectorX, vectorZ = px - moveGoal[1], pz - moveGoal[3] 
-				local dxz = math.sqrt(vectorX^2 + vectorZ^2)
-				wantedPitch = -math.atan2(dy, dxz)
-				wantedHeading = spGetHeadingFromVector(vectorX, vectorZ)/65536*2*pi + pi
-				wantedHeading = NormalizeHeading(wantedHeading)
-				if math.abs(wantedHeading - data.heading) < 0.03 then
+					wantedPitch = data.pitch
 					wantedHeading = data.heading
 				end
-				if math.abs(wantedPitch - data.pitch) < 0.03 then
-					wantedPitch = data.pitch
+			
+				-- fixes wrong-way turning with pitch after an Immelmann/split-S
+				--local correction = 1
+				--if data.pitch > pi/2 or data.pitch < -pi/2 then		
+				--	correction = -1
+				--end
+				--wantedHeading = wantedHeading*correction
+				
+				local slowState = spGetUnitRulesParam(unitID,"slowState") or 0
+				local turnrate = def.turnrate * (1 - slowState)
+				data.pitch = GetNewPitch(data.pitch, wantedPitch, turnrate)
+				local rollDir = 0
+			
+				if wantedHeading ~= data.heading then
+					data.heading, rollDir = GetNewHeading(data.heading, wantedHeading, turnrate)
 				end
-			else
-				wantedPitch = data.pitch
-				wantedHeading = data.heading
-			end
-		
-			-- fixes wrong-way turning with pitch after an Immelmann/split-S
-			--local correction = 1
-			--if data.pitch > pi/2 or data.pitch < -pi/2 then		
-			--	correction = -1
-			--end
-			--wantedHeading = wantedHeading*correction
-			
-			local slowState = spGetUnitRulesParam(unitID,"slowState") or 0
-			local turnrate = def.turnrate * (1 - slowState)
-			data.pitch = GetNewPitch(data.pitch, wantedPitch, turnrate)
-			local rollDir = 0
-		
-			if wantedHeading ~= data.heading then
-				data.heading, rollDir = GetNewHeading(data.heading, wantedHeading, turnrate)
-			end
-			data.roll = GetNewPitch(data.roll, -rollDir*def.rollAngle, def.rollSpeed)
-			
-			Spring.MoveCtrl.SetRotation(unitID,data.pitch,data.heading,data.roll)
-			--spSetUnitRotation(unitID,data.pitch,data.heading,data.roll)
-			
-			local oldSpeed = data.speed
-			speed = data.wantedSpeed --GetNewSpeed(data.speed, data.wantedSpeed, def.acceleration, def.brakerate)
-			local maxSpeed = def.speed * (1 - slowState)
-			if speed > maxSpeed then
-				speed = maxSpeed
-			end
-			data.speed = speed
-			
-			-- energy usage
-			if GG.Energy and def.hasEnergy then
-				local deltaV = speed - oldSpeed
-				if deltaV < 0 then
-					deltaV = deltaV * -0.5	--braking only uses half as much E
+				data.roll = GetNewPitch(data.roll, -rollDir*def.rollAngle, def.rollSpeed)
+				
+				Spring.MoveCtrl.SetRotation(unitID,data.pitch,data.heading,data.roll)
+				--spSetUnitRotation(unitID,data.pitch,data.heading,data.roll)
+				
+				local oldSpeed = data.speed
+				speed = data.wantedSpeed --GetNewSpeed(data.speed, data.wantedSpeed, def.acceleration, def.brakerate)
+				local maxSpeed = def.speed * (1 - slowState)
+				if speed > maxSpeed then
+					speed = maxSpeed
 				end
-				local energyUsage = BASE_THRUSTER_ENERGY_USAGE*(speed + deltaV*ACCELERATION_ENERGY_USAGE_MULT)/maxSpeed*def.thrusterEnergyUse
-				if energyUsage > 0 then
-					local enoughEnergyLeft = GG.Energy.UseUnitEnergy(unitID, energyUsage)
-					if not enoughEnergyLeft then
-						GG.Energy.SetUnitEnergy(unitID, 0)	-- drain the last drop of fuel
+				data.speed = speed
+				
+				-- energy usage
+				if GG.Energy and def.hasEnergy then
+					local deltaV = speed - oldSpeed
+					if deltaV < 0 then
+						deltaV = deltaV * -0.5	--braking only uses half as much E
+					end
+					local energyUsage = BASE_THRUSTER_ENERGY_USAGE*(speed + deltaV*ACCELERATION_ENERGY_USAGE_MULT)/maxSpeed*def.thrusterEnergyUse
+					if energyUsage > 0 then
+						local enoughEnergyLeft = GG.Energy.UseUnitEnergy(unitID, energyUsage)
+						if not enoughEnergyLeft then
+							GG.Energy.SetUnitEnergy(unitID, 0)	-- drain the last drop of fuel
+						end
 					end
 				end
+				--if f%120 == 0 then Spring.Echo(data.speed, data.wantedSpeed) end
+				--if f%120 == 0 then Spring.Echo(data.heading, wantedHeading) end	
 			end
-			--if f%120 == 0 then Spring.Echo(data.speed, data.wantedSpeed) end
-			--if f%120 == 0 then Spring.Echo(data.heading, wantedHeading) end	
+					
+			-- calculate velocity
+			--Spring.MoveCtrl.SetRelativeVelocity(p.unit,0,0,speed)
+			local vx = math.sin(data.heading) *(math.cos(data.pitch))*speed
+			local vy = -math.sin(data.pitch)*speed
+			local vz = math.cos(data.heading) *(math.cos(data.pitch))*speed
+			
+			local vx1, vy1, vz1 = unpack(data.velocity)
+			local inertiaFactor = def.inertiaFactor
+			
+			vx = vx*(1-inertiaFactor) + vx1*inertiaFactor
+			vy = vy*(1-inertiaFactor) + vy1*inertiaFactor
+			vz = vz*(1-inertiaFactor) + vz1*inertiaFactor
+			
+			data.velocity = {vx, vy, vz}
+			Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
+			--Spring.SetUnitVelocity(unitID, vx, vy, vz)
 		end
-				
-		-- calculate velocity
-		--Spring.MoveCtrl.SetRelativeVelocity(p.unit,0,0,speed)
-		local vx = math.sin(data.heading) *(math.cos(data.pitch))*speed
-		local vy = -math.sin(data.pitch)*speed
-		local vz = math.cos(data.heading) *(math.cos(data.pitch))*speed
-		
-		local vx1, vy1, vz1 = unpack(data.velocity)
-		local inertiaFactor = def.inertiaFactor
-		
-		vx = vx*(1-inertiaFactor) + vx1*inertiaFactor
-		vy = vy*(1-inertiaFactor) + vy1*inertiaFactor
-		vz = vz*(1-inertiaFactor) + vz1*inertiaFactor
-		
-		data.velocity = {vx, vy, vz}
-		Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
-		--Spring.SetUnitVelocity(unitID, vx, vy, vz)
 	end
 end
 

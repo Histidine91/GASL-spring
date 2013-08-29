@@ -352,7 +352,7 @@ local unitDef = {
 		suppressionmod = 0.75,
 		energy = 10000,
 		canresupply = true,
-		angel = true,
+		angel = 2,
 	},
 }
 

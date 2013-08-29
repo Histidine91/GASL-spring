@@ -10,7 +10,7 @@ local unitDef = {
 	category = "LARGE CARRIER STRONG TARGET ANY",
 	footprintX = 8,
 	footprintZ = 8,
-	maxDamage = 80000,
+	maxDamage = 5,
 	--autoheal = 10,
 	idleTime = 0,
 	idleAutoHeal = 0,
@@ -271,7 +271,7 @@ local unitDef = {
 			"custom:death_med",
 			"custom:death_large",
 			"custom:death_multimed",
-			"custom:teleport",
+			"custom:death_mega",
 			"custom:gunmuzzle",
 			"custom:muzzlemassdriver",
 			"custom:muzzlekineticlarge",
@@ -298,7 +298,7 @@ local unitDef = {
 		attackspeedstate = 0,
 		suppressionmod = 0.2,
 		suppressionflankingmod = 0.5,
-		angel = true,
+		angel = 0,
 	},
 }
 

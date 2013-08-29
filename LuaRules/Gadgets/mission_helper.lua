@@ -18,6 +18,10 @@ end
 if (not gadgetHandler:IsSyncedCode()) then
   return
 end
+
+if (not VFS.FileExists("mission.lua")) then
+  return
+end
 --------------------------------------------------------------------------------
 -- synced
 --------------------------------------------------------------------------------

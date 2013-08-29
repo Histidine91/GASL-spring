@@ -160,13 +160,15 @@ local function WritePythonDict(dict, dictName, params)
 	local endLine = comma .. "\n"
 	local separator = params.raw and " = " or  " : "
 	local str = ""
-	if not params.raw then
-	      str = dictName .. " = "	--WriteIndents(numIndents)
-	      str = str .. "{\n"
+	if (not params.raw) then
+		if params.endOfFile then
+			str = dictName .. " = "	--WriteIndents(numIndents)
+		end
+		str = str .. "{\n"
 	end
 	for i,v in pairs(dict) do
 		if not params.raw then
-			str = str .. WriteIndents(numIndents + 1)
+			str = str .. WriteIndents(params.numIndents + 1)
 		end
 		if (type(i) == "string") and not params.raw then
 			str = str .. string.format("%q", i) .. separator

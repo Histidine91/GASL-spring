@@ -50,9 +50,9 @@ local colors = {
 	red = {1, 0, 0, 1},
 }
 
-local footprint = {}
+local footprints = {}
 for i=1,#UnitDefs do
-	footprint[i] = UnitDefs[i].xsize/2
+	footprints[i] = UnitDefs[i].xsize/2
 end
 
 local function GetTwoPointDistance(x1, y1, z1, x2, y2, z2)
@@ -121,7 +121,7 @@ function widget:DrawScreen(vsx,vsy)
 			if x and y and z then
 				local dist = GetTwoPointDistance(x,y,z,cam.px, cam.py, cam.pz)
 				local size = (baseDistance/(dist^0.5)) or 1
-				size = size*footprint[unitDefID]^0.5
+				size = size*footprints[unitDefID]^0.5
 				if (dist < maxDistance) and (dist > minDistance) then
 					local color = colors.cyan
 				
@@ -147,8 +147,7 @@ function widget:DrawScreen(vsx,vsy)
 					gl.Texture("LuaUI/Images/targetmarker.png")
 					gl.Rotate(rotAngle,0,0,1)
 					--gl.Billboard()
-					local texSize = size--*footprint[unitDefID]^0.5
-					gl.TexRect(-48*texSize, -48*texSize, 48*texSize, 48*texSize)
+					gl.TexRect(-48*size, -48*size, 48*size, 48*size)
 					gl.PopMatrix()
 				end
 			end

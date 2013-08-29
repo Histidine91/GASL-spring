@@ -730,7 +730,10 @@ local function VirtTraceRay(x,y, cs, useWater)
 	return false, gx, gy, gz
 end
 
-local function SetLockSpot2(cs, x, y, useWater) --set an anchor on the ground for camera rotation 
+local function SetLockSpot2(cs, x, y, useWater) --set an anchor on the ground for camera rotation
+	if not useWater then
+	  useWater = true
+	end
 	if ls_have then --if lockspot is locked
 		return
 	end

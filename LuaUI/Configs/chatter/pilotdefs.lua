@@ -1,5 +1,7 @@
 VFS.Include("LuaUI/Configs/chatter/portraits.lua")
 
+idleChatter = VFS.Include("LuaUI/Configs/chatter/idlechatter.lua")
+
 local colors = {
 	red = "\255\255\0\0",
 	pink = "\255\255\128\128",
@@ -19,6 +21,7 @@ local pilotDefsPre = {
 				{image = portraits.milfeulle_pain, text = "Lucky Star, no longer operational!"},
 			},
 			kill = {
+				{image = portraits.milfeulle_happy, text = "Lucky Star, enemy has been destroyed!"},
 				{image = portraits.milfeulle_veryhappy, text = "I did it! Enemy down!"},
 			},
 			unitDamaged_severe = {
@@ -30,7 +33,7 @@ local pilotDefsPre = {
 				minor = colors.pink .. "Lucky Star\008 is " .. colors.orange .. "50% damaged\008!"
 			},
 			unitDamaged_minor = {
-				{image = portraits.milfeulle_serious, text = "Lucky Star, minor damaged sustained... but I'm not giving up yet!"},
+				{image = portraits.milfeulle_serious, text = "Minor damaged sustained... but I'm not giving up yet!"},
 				minor = colors.pink .. "Lucky Star\008 is " .. colors.yellow .. "20% damaged\008!"
 			},
 			criticalHit = {
@@ -59,6 +62,7 @@ local pilotDefsPre = {
 			},
 			unitEnergy_low = {
 				{image = portraits.milfeulle_oh, text = "Lucky Star, down to half energy."},
+				{image = portraits.milfeulle_concerned, text = "My energy is down to 50%."},
 				minor = colors.pink .. "Lucky Star\008 down to " .. colors.yellow .. "55% energy\008!"
 			},
 			weaponMiss = {
@@ -75,7 +79,8 @@ local pilotDefsPre = {
 				minor = colors.pink .. "Lucky Star\008 has " .. colors.green .. "completed resupply\008!"
 			},
 			engagingEnemy = {
-				{image = portraits.milfeulle_oh, text = "According to the radar, the enemy is... over there!"}
+				{image = portraits.milfeulle_oh, text = "According to the radar, the enemy is... over there!"},
+				{image = portraits.milfeulle_serious, text = "Enemy sighted. Attacking opponent now."},
 			},
 			commandReceived = {
 				{image = portraits.milfeulle_normal, text = "Yes, sir!"},
@@ -84,6 +89,7 @@ local pilotDefsPre = {
 			specialWeapon = {
 				{image = portraits.milfeulle_veryhappy, text = "Now it's my turn to strike!\nHyper Cannon, fire!"},
 				{image = portraits.milfeulle_aggressive, text = "Eei!\nHyper Cannon!"},
+				{image = portraits.milfeulle_serious, text = "Hyper Cannon, fire!"},
 			},
 		}
 	},
@@ -171,6 +177,7 @@ local pilotDefsPre = {
 			specialWeapon = {
 				{image = portraits.ranpha_aggressive, text = "Crush them!\nAnchor Claw!"},
 				{image = portraits.ranpha_aggressive, text = "Iron Fisted Judgement!\nAnchor Claw!"},
+				{image = portraits.ranpha_aggressive, text = "Finishing strike!\nAnchor Claw!"},
 			},
 		}
 	},
@@ -183,6 +190,7 @@ local pilotDefsPre = {
 			kill = {
 				{image = portraits.forte_normal, text = "Splash one bandit.\nOn to the next."},
 				{image = portraits.forte_excited, text = "One bad guy down!\nWho's next?"},
+				{image = portraits.forte_happy, text = "Target eliminated. My enemy's finished."},
 			},
 			unitDamaged_severe = {
 				{image = portraits.forte_pain, text = "Happy Trigger, severely damaged!\nRepairs needed urgently!"},
@@ -198,8 +206,8 @@ local pilotDefsPre = {
 				minor = colors.violet .. "Happy Trigger\008 is " .. colors.yellow .. "20% damaged\008!"
 			},
 			criticalHit = {
-				{image = portraits.forte_excited, text = "Do ya feel lucky, punk? Do ya?"},
 				{image = portraits.forte_excited, text = "Good, a clean hit!\nDid you see that, Tact?"},
+				{image = portraits.forte_happy, text = "That was a good hit.\nThe next one will finish them."},
 			},
 			criticalHit_received = {
 				{image = portraits.forte_pain, text = "Urgh! That was stronger than anticipated..."},
@@ -238,6 +246,7 @@ local pilotDefsPre = {
 			spiritFull = {
 				{image = portraits.forte_excited, text = "I'm all powered up!\nTime for the bad guys to feel pain!"},
 				{image = portraits.forte_excited, text = "Well, well!\nLooks like I just ran out of gum!"},
+				{image = portraits.forte_excited, text = "Do ya feel lucky, punk? Do ya?"},
 				minor = colors.violet .. "Happy Trigger\008 has " .. colors.yellow .. "maxed spirit\008!"
 			},
 			resupply = {
@@ -256,6 +265,7 @@ local pilotDefsPre = {
 			specialWeapon = {
 				{image = portraits.forte_excited, text = "Get out of the way!\nStrike Burst!"},
 				{image = portraits.forte_excited, text = "It's Harrington time!\nStrike Burst!"},
+				{image = portraits.forte_serious, text = "I will eradicate you!\nStrike Burst!"},
 			},
 		}
 	},
@@ -566,6 +576,10 @@ pilotDefsPre.placeholdersior = pilotDefsPre.elsior
 pilotDefs = {}
 
 for unitName, data in pairs(pilotDefsPre) do
+	if idleChatter[unitName] then
+		data.dialogue.idle = idleChatter[unitName]
+	end
+
 	if UnitDefNames[unitName] then
 		pilotDefs[UnitDefNames[unitName].id] = data
 	end

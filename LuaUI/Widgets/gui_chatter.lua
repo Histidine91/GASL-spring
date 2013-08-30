@@ -31,10 +31,13 @@ local IMAGE_HEIGHT = 100
 local PANEL_HEIGHT = 48
 local PANEL_HEIGHT_MINOR = 24
 local NAME_WIDTH = 80
+
 local TIME_KEEP_WINDOW_OPEN = 6
 local CHATTER_DELAY_PER_UNIT = 5*30
 local WARNING_OVERLAY_PERIOD = 0.5
 local STATIC_OVERLAY_PERIOD = 0.1
+local IDLE_CHATTER_INTERVAL = 15
+local EVENT_DELAY_IDLE_CHATTER_BY = 3
 
 local commands = {	-- TODO
 	[CMD.ATTACK] = true,
@@ -81,6 +84,10 @@ local staticOverlayTimer = 0
 local warningOverlayTimer = 0
 
 local static = false
+local warning = false
+local whiteoutTimer = 0
+local idleChatterTimer = 5
+local idleChatterIndex = {}	-- [unitDefID] = index
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function HideWindow(dt)
@@ -112,11 +119,11 @@ end
 
 local function CreateImage(params)
 	if image then
-		--image:Dispose()
-		image.file = params.image
-		image.color = (params.warningOverlay) and {1,0.5,0.5,1} or {1,1,1,1}
-		image:Invalidate()
-		return
+		image:Dispose()
+		--image.file = params.image
+		--image.color = (params.warningOverlay) and {1,0.5,0.5,1} or {1,1,1,1}
+		--image:Invalidate()
+		--return
 	end
 	image = Image:New{
 		parent = fakewindow,
@@ -126,7 +133,7 @@ local function CreateImage(params)
 		x = 5;
 		keepAspect = true,
 		file = params.image,
-		color = (params.warningOverlay) and {1,0.5,0.5,1} or {1,1,1,1},
+		--color = (params.warningOverlay) and {1,0.5,0.5,1} or {1,1,1,1},
 	}
 end
 
@@ -172,6 +179,7 @@ local function CreateEventPanel(params)
 	end
 	
 	static = params.staticOverlay or false
+	warning = params.warningOverlay or false
 	
 	stackPanel:AddChild(panel, nil, 1)
 	table.insert(chatItems, 1, {panel = panel, name = nameLabel, textBox = textBox, image = params.image})
@@ -185,7 +193,7 @@ local function CreateEventPanel(params)
 	end
 end
 
-local function GetEventDialogue(params, unitID, unitDefID, minor)
+local function GetEventDialogue(params, unitID, unitDefID, minor, forceIndex)
 	local data = pilotDefs[unitDefID]
 	if not data then
 		return
@@ -199,7 +207,7 @@ local function GetEventDialogue(params, unitID, unitDefID, minor)
 		return {text = items.minor, minor = true}
 	end
 	
-	local choice = math.random(#items)
+	local choice = forceIndex or math.random(#items)
 	local selected = items[choice]
 	local text, image, sound = selected.text, selected.image, selected.sound
 	return {name = selected.name or data.name, text = text, image = image,
@@ -241,6 +249,7 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 			eventDef.queueRating = 0
 			eventDef.lastEvent = gameframe
 			SetUnitLastChatter(unitID, priority)
+			idleChatterTimer = idleChatterTimer + EVENT_DELAY_IDLE_CHATTER_BY
 		end
 	else
 		-- increase chance of future event being reported
@@ -258,11 +267,51 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 	end
 end
 
-local function DrawOverlay(x,y,texture, flipX, flipY)
+local function ProcessIdleChatter()
+	local unitID = WG.COFC and WG.COFC.GetThirdPersonTrackUnit()
+	if not unitID then
+		local units = Spring.GetSelectedUnits()
+		if units then
+			unitID = units[1]
+		end
+	end
+	if not unitID then	-- give up
+		return
+	end
+	local unitDefID = Spring.GetUnitDefID(unitID)
+	idleChatterIndex[unitDefID] = idleChatterIndex[unitDefID] or 1
+	local params = GetEventDialogue({eventType = "idle"}, unitID, unitDefID, nil, idleChatterIndex[unitDefID])
+	if params then
+		CreateEventPanel(params)
+		SetUnitLastChatter(unitID, 40)
+		idleChatterIndex[unitDefID] = idleChatterIndex[unitDefID] + 1
+		if idleChatterIndex[unitDefID] > #(pilotDefs[unitDefID].dialogue.idle) then
+			idleChatterIndex[unitDefID] = 1
+		end
+		idleChatterTimer = IDLE_CHATTER_INTERVAL
+	end
+end
+
+local function DrawTextureOverlay(x,y,texture, flipX, flipY)
 	gl.PushMatrix()
 	gl.Translate(x,y,0)
 	gl.Texture(texture)
 	gl.TexRect(0, 0, IMAGE_WIDTH, -IMAGE_HEIGHT, flipX, flipY)
+	gl.PopMatrix()
+end
+
+local function DrawRect(xsize, ysize)
+	gl.Vertex(0,0,0)
+	gl.Vertex(xsize, 0, 0)
+	gl.Vertex(xsize, ysize, 0)
+	gl.Vertex(0, ysize, 0)
+end
+
+local function DrawColorOverlay(x,y, color)
+	gl.PushMatrix()
+	gl.Translate(x,y,0)
+	gl.Color(color)
+	gl.BeginEnd(GL.QUADS, DrawRect, IMAGE_WIDTH, -IMAGE_HEIGHT)
 	gl.PopMatrix()
 end
 --------------------------------------------------------------------------------
@@ -274,13 +323,11 @@ function widget:Update(dt)
 		staticOverlayTimer = 0
 	end
 	
-	--[[
-	warningOverlayPhase = warningOverlayPhase + dt
-	if warningOverlayTimer > STATIC_OVERLAY_PERIOD then
+	warningOverlayTimer = warningOverlayTimer + dt
+	if warningOverlayTimer > WARNING_OVERLAY_PERIOD then
 		warningOverlayPhase = warningOverlayPhase%2 + 1
 		warningOverlayTimer = 0
 	end
-	]]
 	
 	if timer_opened then
 		local timer_now = spGetTimer()
@@ -292,10 +339,15 @@ function widget:Update(dt)
 end
 
 function widget:DrawScreen()
+	if warning and not window.hidden and warningOverlayPhase == 1 then
+		local x, y = image:LocalToScreen(0, 0)
+		y = screen0.height - y
+		DrawColorOverlay(x, y, {1, 0.2, 0.2, 0.6})
+	end
 	if static and not window.hidden then
 		local x, y = image:LocalToScreen(0, 0)
 		y = screen0.height - y
-		DrawOverlay(x, y, staticTexture, staticOverlayPhase%2 == 0, (staticOverlayPhase+1)%2 == 0)
+		DrawTextureOverlay(x, y, staticTexture, staticOverlayPhase%2 == 0, (staticOverlayPhase+1)%2 == 0)
 	end
 end
 
@@ -307,6 +359,12 @@ end
 
 function widget:GameFrame(f)
 	gameframe = f
+	if (f%30 == 0) and Spring.GetGameRulesParam("combatSuspended") ~= 1 then
+		idleChatterTimer = idleChatterTimer - 1
+		if idleChatterTimer <= 0 then
+			ProcessIdleChatter()
+		end
+	end
 end
 
 function widget:Initialize()

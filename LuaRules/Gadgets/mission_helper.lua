@@ -54,6 +54,7 @@ local function SuspendCombat()
     end
     --SetUnitInvulnerable(unitID, true)
   end
+  Spring.SetGameRulesParam("combatSuspended", 1)
   Spring.GiveOrderToUnitArray(units, CMD.STOP, {}, 0)
 end
 
@@ -61,6 +62,7 @@ local function ResumeCombat()
   for unitID in pairs(nonNeutrals) do
     Spring.SetUnitNeutral(unitID, false)
   end
+  Spring.SetGameRulesParam("combatSuspended", 0)
 end
 
 local function SetAngelsInvulnerable(bool)

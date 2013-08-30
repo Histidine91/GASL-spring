@@ -77,6 +77,7 @@ for i=1,#UnitDefs do
 		combatRange = tonumber(customParams.combatrange) or 1000,
 		maneuverability = math.floor((1 - (customParams.inertiafactor or 0.98)) * 1000),
 		ecm = customParams.ecm or 0,
+		jammerStrength = ("%.0f"):format(customParams.missilejamstrength or ((customParams.ecm or 0)^0.5)*10),
 		morale = tonumber(customParams.morale),
 		energy = tonumber(customParams.energy),
 		
@@ -548,6 +549,15 @@ local function CreateStatsWindow(unitID, unitDefID)
 		fontSize = 13;
 		fontShadow = true;
 		tooltip = "Every point of ECM increases the spread of incoming weapons fire (except missiles) by 1%.",
+	}
+	local label_jammer = InfoLabel:New{
+		parent = grid_ship_stats2;
+		caption = "Jammer strength:\t"..data.jammerStrength,
+		width="100%";
+		align="left";
+		fontSize = 13;
+		fontShadow = true;
+		tooltip = "Every point of jammer strength gives a 1% chance to cause incoming missiles to lose lock.",
 	}
 	
 	local scroll_weapons = ScrollPanel:New{

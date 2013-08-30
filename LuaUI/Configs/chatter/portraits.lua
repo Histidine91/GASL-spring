@@ -37,6 +37,7 @@ local portraitList = {	--VFS.DirList(PORTRAIT_DIR)
 	"forte_oh",
 	"forte_confident",
 	"forte_concerned",
+	"forte_what",
 	"forte_pain",
 	"forte_excited",
 	
@@ -62,6 +63,7 @@ local portraitList = {	--VFS.DirList(PORTRAIT_DIR)
 	"lester_aggressive",
 	
 	"almo_normal",
+	"almo_surprised",
 	"almo_happy",
 	"almo_shocked",
 	

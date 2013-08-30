@@ -59,6 +59,8 @@ local INERTIA_FACTOR = 0.99
 local BASE_THRUSTER_ENERGY_USAGE = 0.1	-- used every update interval, so a lot more than it looks!
 local ACCELERATION_ENERGY_USAGE_MULT = 3
 local TARGET_SEEK_RANGE = 3000
+local TARGET_SEEK_RANGE_LONG = 6000
+
 local MOVE_COMMANDS = {
 	[CMD.MOVE] = true,
 	[CMD.FIGHT] = true,
@@ -228,12 +230,15 @@ local function RequestNewTarget(unitID, unitDefID, addGUIEvent)
 	if states.firestate == 0 or states.movestate == 0 then
 		return
 	end
-	local seekRange = (states.movestate == 1 and TARGET_SEEK_RANGE) or nil
-	local enemy = Spring.GetUnitNearestEnemy(unitID, seekRange)
+	
+	local teamID = Spring.GetUnitTeam(unitID)
+	
+	local seekRange = (states.movestate == 1 and TARGET_SEEK_RANGE) or TARGET_SEEK_RANGE_LONG
+	local enemy = GG.PickTarget(unitID, unitDefID, teamID, seekRange) 	--Spring.GetUnitNearestEnemy(unitID, seekRange)
 	if enemy then
 		Spring.GiveOrderToUnit(unitID, CMD.INSERT, {0, CMD.ATTACK, 0, enemy}, {"alt"})
 		if addGUIEvent then
-			GG.EventWrapper.AddEvent("engagingEnemy", 1, unitID, unitDefID, Spring.GetUnitTeam(unitID), enemy, spGetUnitDefID(enemy), Spring.GetUnitTeam(enemy))
+			GG.EventWrapper.AddEvent("engagingEnemy", 1, unitID, unitDefID, teamID, enemy, spGetUnitDefID(enemy), Spring.GetUnitTeam(enemy))
 		end
 	end
 end

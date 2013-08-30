@@ -10,7 +10,7 @@ function widget:GetInfo()
   }
 end
 
-local stats = {"kills", "damage", "killCost", "damageCost", "repair"}
+local stats = {"kills", "damage", "killCost", "damageCost", "repair", "deaths"}
 
 -- IMPORTANT: do not write any dictionaries, Ren'Py will throw up upon trying to import
 function widget:GameOver()

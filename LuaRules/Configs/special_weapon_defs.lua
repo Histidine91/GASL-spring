@@ -1,6 +1,6 @@
 include "LuaRules/Configs/customcmds.h.lua"
 
-local color_skyblue = "\255\0\224\255"
+local color_skyblue = "\255\1\224\255"
 
 specialCMDs = {
 	--[CMD_SPECIAL_WEAPON] = "generic",	-- generic command
@@ -20,11 +20,11 @@ specialWeapons = {
 		cmdDesc = {
 			id      = CMD_HYPER_CANNON,
 			name    = "Hyper Cannon",
-			action  = "hypercannon",
+			action  = "specialweapon",
 			cursor  = "DGun",
 			texture = "LuaUI/Images/Commands/Bold/action.png",
 			type    = CMDTYPE.ICON_UNIT,
-			tooltip = color_skyblue.."Special Attack\008\nFire an immensely powerful beam that wipes anything in its path",
+			tooltip = color_skyblue.."Special Attack: Hyper Cannon\008\nFire an immensely powerful beam that wipes anything in its path",
 		},
 		scriptFunction = "HyperCannonTrigger"
 	},
@@ -35,11 +35,11 @@ specialWeapons = {
 		cmdDesc = {
 			id      = CMD_ANCHOR_CLAW,
 			name    = "Anchor Claw",
-			action  = "anchorclaw",
+			action  = "specialweapon",
 			cursor  = "DGun",
 			texture = "LuaUI/Images/Commands/Bold/action.png",
 			type    = CMDTYPE.ICON_UNIT,
-			tooltip = color_skyblue.."Special Attack\008\nSmashes a foe with twin crushing blows",
+			tooltip = color_skyblue.."Special Attack: Anchor Claw\008\nSmashes a foe with twin crushing blows",
 		},
 		scriptFunction = "AnchorClawTrigger"
 	},
@@ -50,11 +50,11 @@ specialWeapons = {
 		cmdDesc = {
 			id      = CMD_STRIKE_BURST,
 			name    = "Strike Burst",
-			action  = "strikeburst",
+			action  = "specialweapon",
 			cursor  = "DGun",
 			texture = "LuaUI/Images/Commands/Bold/action.png",
 			type    = CMDTYPE.ICON_UNIT,
-			tooltip = color_skyblue.."Special Attack\008\nGo to maximum rate of fire on all weapons, concentrated on a single target",
+			tooltip = color_skyblue.."Special Attack: Strike Burst\008\nGo to maximum rate of fire on all weapons, concentrated on a single target",
 		},
 		scriptFunction = "StrikeBurstTrigger"
 	},

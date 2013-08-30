@@ -92,6 +92,7 @@ return {
 		{	"groupclear",	"Shift+q",},
 		{	"repair",	"r",},
 		{	"stop",	"s",},
+		{	"find_carrier",	"Ctrl+s",},
 		{	"unloadunits",	"u",},
 		{	"pastetext",	"Ctrl+v",},
 		{	"wait",	"w",},
@@ -162,5 +163,6 @@ return {
 		{	"epic_chili_integral_menu_tab_special",	"v",},
 		{	"epic_chili_gesture_menu_markingmenu",	"b",},
 		{	"exitwindow",	"s+escape",},
+		{	"specialweapon", "d"}
 	},
 }

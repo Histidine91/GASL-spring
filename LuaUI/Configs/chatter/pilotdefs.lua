@@ -498,9 +498,9 @@ local pilotDefsPre = {
 	elsior = {
 		name = "Tact",
 		dialogue = {
-			death = {
-				{name = "Almo", image = portraits.almo_shocked, text = "Critical systems failure!\nPrimary engine overloading!"},
-			},
+			--death = {
+			--	{name = "Almo", image = portraits.almo_shocked, text = "Critical systems failure!\nPrimary engine overloading!"},
+			--},
 			kill = {
 				{name = "Lester", image = portraits.lester_amused, text = "Target destroyed!\nWe survived somehow, Tact."},
 				{name = "Almo", image = portraits.almo_happy, text = "Target is breaking up!\nWell done, commander!"},

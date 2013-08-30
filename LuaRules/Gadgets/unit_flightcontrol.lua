@@ -24,6 +24,7 @@ local pi = math.pi
 local spGetUnitPosition		= Spring.GetUnitPosition
 local spGetUnitCommands		= Spring.GetUnitCommands
 local spGetUnitDefID		= Spring.GetUnitDefID
+local spGetUnitVelocity		= Spring.GetUnitVelocity
 local spGetUnitHeading		= Spring.GetUnitHeading
 local spGetUnitRulesParam	= Spring.GetUnitRulesParam
 local spGetUnitSeparation	= Spring.GetUnitSeparation
@@ -246,6 +247,17 @@ end
 -- GG functions
 local function GetUnitSpeed(unitID)
 	return spacecraft[unitID] and spacecraft[unitID].speed
+end
+
+-- this one isn't a GG function though
+local function GetTargetIntercept(unitID, targetID, distance)
+	local tx, ty, tz = GetUnitMidPos(targetID)
+	local vx, vy, vz = spGetUnitVelocity(targetID)
+	local travelTime = GetUnitSpeed(unitID)/(distance or spGetUnitSeparation(unitID, targetID))
+	if travelTime > 2 then
+		travelTime = 2
+	end
+	return tx + vx*travelTime, ty + vy*travelTime, tz + vz*travelTime
 end
 
 local function SetUnitSpeed(unitID, speed)
@@ -474,7 +486,7 @@ function gadget:GameFrame(f)
 					local ux, uy, uz = GetUnitMidPos(unitID)
 					local tx, ty, tz
 					if (#command.params == 1) then
-						tx, ty, tz = GetUnitMidPos(command.params[1])
+						tx, ty, tz = GetTargetIntercept(unitID, command.params[1])
 					else
 						tx, ty, tz = unpack(command.params)
 					end
@@ -518,7 +530,7 @@ function gadget:GameFrame(f)
 						end
 						if distance > (orbitDistance) then
 							data.behavior = 2
-							data.moveGoal = {GetUnitMidPos(targetID)}
+							data.moveGoal = {GetTargetIntercept(unitID, targetID, distance)}
 							data.wantedSpeed = def.speed
 						elseif data.behavior == 2 then
 							local heading = spGetUnitHeading(unitID)/65536*2*math.pi
@@ -557,7 +569,7 @@ function gadget:GameFrame(f)
 							if data.timeBeforeShakePursuer == 0 then
 								if distance <= (data.lastDistance or 0) + (def.speed*60) then
 									data.behavior = 2
-									data.moveGoal = {GetUnitMidPos(targetID)}
+									data.moveGoal = {GetTargetIntercept(unitID, targetID, distance)}
 									data.wantedSpeed = def.combatSpeed
 									--Spring.Echo(unitID .. " is jinking (distance " .. distance .. ", was " .. data.lastDistance .. ")")
 								end
@@ -568,7 +580,7 @@ function gadget:GameFrame(f)
 							local distance2 = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
 							if distance > def.combatRange or distance2 < MOVE_DISTANCE_THRESHOLD then
 								data.behavior = 2
-								data.moveGoal = {GetUnitMidPos(targetID)}
+								data.moveGoal = {GetTargetIntercept(unitID, targetID, distance)}
 								data.wantedSpeed = GetWantedSpeed(distance, data, def)
 								data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
 								--Spring.Echo("Got enough distance, closing in again")
@@ -578,7 +590,7 @@ function gadget:GameFrame(f)
 							--data.behavior = 6
 						else
 							data.behavior = 2
-							data.moveGoal = {GetUnitMidPos(targetID)}
+							data.moveGoal = {GetTargetIntercept(unitID, targetID, distance)}
 							data.wantedSpeed = GetWantedSpeed(distance, data, def)
 							data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
 						end

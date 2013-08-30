@@ -268,9 +268,9 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 			end
 		end},
 		tooltip = "\255\0\255\0" .. UnitDefs[unitDefID].humanName .. "\008\n"..
-			"Left click: Select\n"..
+			"Left click: Select (controllable units only)\n"..
 			"Right click: Deselect\n"..
-			"Double-click: Lock camera (controllable units only)\n"..
+			"Double-click: Lock camera\n"..
 			"Shift+click: Append to current selection\n"..
 			"Alt+click: Open info window",
 	}
@@ -408,6 +408,8 @@ local function UpdateUnitInfo(unitID)
 	
 	local health, maxHealth = GetUnitHealth(unitID)
 	if not health then
+		-- probably dead
+		widget:UnitDestroyed(unitID)
 		return
 	end
 	local spirit = GetUnitRulesParam(unitID, "spirit") or 0

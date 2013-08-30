@@ -33,6 +33,8 @@ local PANEL_HEIGHT_MINOR = 24
 local NAME_WIDTH = 80
 local TIME_KEEP_WINDOW_OPEN = 6
 local CHATTER_DELAY_PER_UNIT = 5*30
+local WARNING_OVERLAY_PERIOD = 0.5
+local STATIC_OVERLAY_PERIOD = 0.1
 
 local commands = {	-- TODO
 	[CMD.ATTACK] = true,
@@ -44,6 +46,7 @@ local commands = {	-- TODO
 }
 
 local maxItems = 12	-- TODO delegate to Epic Menu
+local staticTexture  = "LuaUI/Images/overlay_static1.png"
 
 local gameframe = spGetGameFrame()
 --------------------------------------------------------------------------------
@@ -72,7 +75,12 @@ local image
 --------------------------------------------------------------------------------
 -- variables
 local lastChatterByUnit = {}	-- [unitID] = {gameframe=n, priority=x}
+local staticOverlayPhase = 1
+local warningOverlayPhase = 1
+local staticOverlayTimer = 0
+local warningOverlayTimer = 0
 
+local static = false
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function HideWindow(dt)
@@ -104,7 +112,11 @@ end
 
 local function CreateImage(params)
 	if image then
-		image:Dispose()
+		--image:Dispose()
+		image.file = params.image
+		image.color = (params.warningOverlay) and {1,0.5,0.5,1} or {1,1,1,1}
+		image:Invalidate()
+		return
 	end
 	image = Image:New{
 		parent = fakewindow,
@@ -114,7 +126,7 @@ local function CreateImage(params)
 		x = 5;
 		keepAspect = true,
 		file = params.image,
-		color = (params.warningOverlay) and {1,0.6,0.6,1} or {1,1,1,1},
+		color = (params.warningOverlay) and {1,0.5,0.5,1} or {1,1,1,1},
 	}
 end
 
@@ -158,6 +170,9 @@ local function CreateEventPanel(params)
 	elseif not params.minor then
 		Spring.Log(widget.GetInfo().name, "warning", "Missing image for event " .. params.eventType .. ", pilot " .. params.name .. " with text \"" .. params.text .. "\"" )
 	end
+	
+	static = params.staticOverlay or false
+	
 	stackPanel:AddChild(panel, nil, 1)
 	table.insert(chatItems, 1, {panel = panel, name = nameLabel, textBox = textBox, image = params.image})
 	ShowWindow()
@@ -170,12 +185,12 @@ local function CreateEventPanel(params)
 	end
 end
 
-local function GetEventDialogue(eventType, unitID, unitDefID, minor)
+local function GetEventDialogue(params, unitID, unitDefID, minor)
 	local data = pilotDefs[unitDefID]
 	if not data then
 		return
 	end
-	local items = data.dialogue[eventType]
+	local items = data.dialogue[params.eventType]
 	if not items then
 		return
 	end
@@ -187,7 +202,9 @@ local function GetEventDialogue(eventType, unitID, unitDefID, minor)
 	local choice = math.random(#items)
 	local selected = items[choice]
 	local text, image, sound = selected.text, selected.image, selected.sound
-	return {name = selected.name or data.name, text = text, image = image, sound = sound, eventType = eventType}
+	return {name = selected.name or data.name, text = text, image = image,
+		sound = sound, eventType = params.eventType,
+		warningOverlay = params.warningOverlay, staticOverlay = params.staticOverlay}
 end
 
 local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, unitID2, unitDefID2, unitTeam2, force)
@@ -202,7 +219,7 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 	
 	local params = {eventType = eventType, magnitude = magnitude, unitID = unitID, unitDefID = unitDefID,
 		unitTeam = unitTeam, unitID2 = unitID2, unitDefID2 = unitDefID2, unitTeam2 = unitTeam2,
-		warningOverlay = eventDef.warningOverlay}
+		warningOverlay = eventDef.warningOverlay, staticOverlay = eventDef.staticOverlay }
 	
 	local isEnemy = not spIsUnitAllied(unitID)
 	local priority = (isEnemy and eventDef.priorityEnemy) or eventDef.priority or eventDef.priorityFunc(eventDef, params, isEnemy)
@@ -218,7 +235,7 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 	
 	if force or ( ((chance-eventDef.queueRating) < priority) and (not limitChatter)) then
 		-- print full event
-		local eventParams = GetEventDialogue(eventType, unitID, unitDefID)
+		local eventParams = GetEventDialogue(params, unitID, unitDefID)
 		if eventParams then
 			CreateEventPanel(eventParams)
 			eventDef.queueRating = 0
@@ -232,7 +249,7 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 		end
 		-- print minor event
 		if eventDef.allowMinorEvent and (not isEnemy) then
-			local eventParams = GetEventDialogue(eventType, unitID, unitDefID, true)
+			local eventParams = GetEventDialogue(params, unitID, unitDefID, true)
 			if eventParams then
 				CreateEventPanel(eventParams)
 				SetUnitLastChatter(unitID, priority)
@@ -241,15 +258,44 @@ local function ProcessEvent(eventType, magnitude, unitID, unitDefID, unitTeam, u
 	end
 end
 
+local function DrawOverlay(x,y,texture, flipX, flipY)
+	gl.PushMatrix()
+	gl.Translate(x,y,0)
+	gl.Texture(texture)
+	gl.TexRect(0, 0, IMAGE_WIDTH, -IMAGE_HEIGHT, flipX, flipY)
+	gl.PopMatrix()
+end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function widget:Update(dt)
+	staticOverlayTimer = staticOverlayTimer + dt
+	if staticOverlayTimer > STATIC_OVERLAY_PERIOD then
+		staticOverlayPhase = staticOverlayPhase%4 + 1
+		staticOverlayTimer = 0
+	end
+	
+	--[[
+	warningOverlayPhase = warningOverlayPhase + dt
+	if warningOverlayTimer > STATIC_OVERLAY_PERIOD then
+		warningOverlayPhase = warningOverlayPhase%2 + 1
+		warningOverlayTimer = 0
+	end
+	]]
+	
 	if timer_opened then
 		local timer_now = spGetTimer()
 		if spDiffTimers(timer_now, timer_opened) >= TIME_KEEP_WINDOW_OPEN then
 			HideWindow(dt)
 			timer_opened = nil
 		end
+	end
+end
+
+function widget:DrawScreen()
+	if static and not window.hidden then
+		local x, y = image:LocalToScreen(0, 0)
+		y = screen0.height - y
+		DrawOverlay(x, y, staticTexture, staticOverlayPhase%2 == 0, (staticOverlayPhase+1)%2 == 0)
 	end
 end
 

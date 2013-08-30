@@ -20,84 +20,15 @@ for i,v in pairs(KEYSYMS) do
 	Spring.Echo(i.."\t"..v)
 end
 --]]
---[[
-HOW IT WORKS:
-	Main window (invisible) is parent of a fake window.
-		Tabs are buttons in main window, just above fake window.
-		Currently selected tab is highlighted, when tab is changed all tabs are removed and regenerated.
-		
-		Two parent Panels (children of fake window), a column for normal commands and a row for state commands.
-		<numRows> (or <numStateColumns>) StackPanels are nested in each of the parents, at right angles.
-		When sorting commands, it splits commands into batches of <MAX_COLUMNS> and assigns them to children
-			so if there are 10 commands, it puts 6 in first row and 4 in second row
-			Build orders work a little differently, they have a predefined row in the config.
-		Ditto for states, except it uses MAX_STATE_ROWS
-		
-		If unit tab is selected and third command row is free, build queue of first selected factory found in array returned by SelectionChanged is displayed.
-		The queue shows up to <MAX_COLUMNS> batches of units and their exact sequence.
-		
-	All items resize with main window.
-	
-NOTE FOR OTHER GAME DEVS:
-	ZK uses WG.GetBuildIconFrame to draw the unit type border around buildpics.
-	If you're not using them (likely), remove all lines containing that function.
---]]
 
 ------------------------
 --  CONFIG
 ------------------------
-------------------------
 options_path = 'Settings/HUD Panels/Integral Menu'
-options_order = { 'disablesmartselect', 'hidetabs', 'unitstabhotkey', 'unitshotkeyrequiremeta', 'unitshotkeyaltaswell', 'tab_factory', 'tab_economy', 'tab_defence', 'tab_special' }
-options = {
-	disablesmartselect = {
-		name = 'Disable Smart Tab Select',
-		type = 'bool',
-		value = false,
-	},
-	hidetabs = {
-		name = 'Hide Tab Row',
-		type = 'bool',
-		advanced = true,
-		value = true,
-	},
-	unitstabhotkey = {
-		name = 'Hotkey for Units tab',
-		type = 'bool',
-		value = true,
-	},
-	unitshotkeyrequiremeta = {
-		name = 'Units tab hotkeys require Meta',
-		type = 'bool',
-		value = true,
-	},
-	unitshotkeyaltaswell = {
-		name = 'Units tab can use Alt as Meta',
-		type = 'bool',
-		value = false,
-	},
-	tab_factory = {
-		name = "Factory Tab",
-		desc = "Switches to factory tab, enables grid hotkeys",
-		type = 'button',
-	},
-	tab_economy = {
-		name = "Economy Tab",
-		desc = "Switches to economy tab, enables grid hotkeys",
-		type = 'button',
-	},
-	tab_defence = {
-		name = "Defence Tab",
-		desc = "Switches to defence tab, enables grid hotkeys",
-		type = 'button',
-	},
-	tab_special = {
-		name = "Special Tab",
-		desc = "Switches to special tab, enables grid hotkeys",
-		type = 'button',
-	},
-}
+options_order = {}
+options = {}
 
+------------------------
 
 ------------------------
 --speedups
@@ -261,8 +192,6 @@ local Control
 local screen0
 local window		--main window (invisible)
 local fakewindow	--visible Panel
-local menuTabRow	--parent row of tabs
-local menuTabs = {}		--buttons
 local commands_main	--parent column of command buttons
 local sp_commands = {}	--buttons
 local states_main	--parent row of state buttons
@@ -352,27 +281,8 @@ local function MakeButton(container, cmd, insertItem, index)
 	
 	local hotkey = cmd.action and WG.crude.GetHotkey(cmd.action) or ''
 	
-	if (options.unitstabhotkey.value and menuChoice == 6 and selectedFac and container.i_am_sp_commands) then
-		if options.unitshotkeyrequiremeta.value then
-			local alt,ctrl,meta,shift = Spring.GetModKeyState()
-			if meta or (alt and options.unitshotkeyaltaswell.value) then
-				hotkey = gridMap[container.index][index] or ''
-			end
-		else
-			hotkey = gridMap[container.index][index] or ''
-		end
-	end
-	if gridHotkeyed and hotkeyMode then
-		hotkey = gridMap[container.index][index] or ''
-	end
-	
 	if not isState and hotkey ~= '' then
 		text = '\255\0\255\0' .. hotkey
-	end
-	
-	--count label (for factory build options)
-	if menuChoice == 6 and isBuild and buildQueueUnsorted[-cmd.id] then
-		countText = tostring(buildQueueUnsorted[-cmd.id])
 	end
 	
 	--texture 
@@ -912,62 +822,6 @@ local function Update(buttonpush)
 	ManageCommandIcons(useRowSort)
 end 
 
-local function MakeMenuTab(i, alpha)
-	local button = Button:New{
-		parent = menuTabRow;
-		y = 0,
-		height = "100%",
---		font = {
---			shadow = true
---		},
-		
-		caption = hotkeyMode and menuChoices[i].name or menuChoices[i].hotkeyName,
-		OnClick = {
-			function()
-				menuChoice = i
-				if i >= 2 and i <= 5 then lastBuildChoice = i end
-				Update(true)
-				ColorTabs(i)
-			end
-		},
-	}
-	button.backgroundColor[4] = alpha or 1
-	return button
-end
-
---need to recreate the tabs completely because chili is dumb
---also needs to be non-local so MakeMenuTab can call it
-function ColorTabs(arg)
-	arg = arg or menuChoice
-	RemoveChildren(menuTabRow)
-	for i=1,6 do
-		if i == arg then
-			menuTabs[arg] = MakeMenuTab(arg, 1)
-		else
-			menuTabs[i] = MakeMenuTab(i, 0.4)
-		end
-	end
-end
-
-local function SmartTabSelect()
-	Update()
-	if options.hidetabs.value then
-		menuChoice = 1
-		ColorTabs(1)
-	elseif options.disablesmartselect.value then 
-		return
-	elseif #n_units > 0 and #n_econ == 0 then
-		menuChoice = 6	--selected factory, jump to units
-		ColorTabs(6)
-	elseif #n_econ > 0 and menuChoice == 6 then
-		menuChoice = lastBuildChoice	--selected non-fac and in units menu, jump to last build menu
-		ColorTabs(lastBuildChoice)
-	elseif #n_factories + #n_econ + #n_defense + #n_units == 0 then
-		menuChoice = 1	--selected non-builder, jump to common
-		ColorTabs(1)
-	end
-end
-
 local function CopyTable(outtable,intable)
   for i,v in pairs(intable) do 
     if (type(v)=='table') then
@@ -1037,142 +891,11 @@ local function LayoutHandler(xIcons, yIcons, cmdCount, commands)
 	return "", xIcons, yIcons, {}, customCmds, {}, {}, {}, {}, reParamsCmds, {[1337]=9001}
 end 
 
-local function ScrollTabRight()
-	menuChoice = menuChoice + 1
-	if menuChoice > #menuChoices then menuChoice = 1 end
-	if menuChoice >= 2 and menuChoice <= 5 then lastBuildChoice = menuChoice end
-	Update(true)
-	ColorTabs()
-end
-
-local function ScrollTabLeft()
-	menuChoice = menuChoice - 1
-	if menuChoice < 1 then menuChoice = #menuChoices end
-	if menuChoice >= 2 and menuChoice <= 5 then lastBuildChoice = menuChoice end
-	Update(true)
-	ColorTabs()
-end
-
---------------------------------------
--- Hotkey Mode
-
-function widget:KeyPress(key, modifier, isRepeat)
-	if (hotkeyMode) and not isRepeat then 
-		local thingsDone = false
-		local pos = gridKeyMap[key]
-		if pos and sp_commands[pos[1]] and sp_commands[pos[1]].children[pos[2]] then
-			local cmdid = sp_commands[pos[1]].children[pos[2]]
-			if cmdid then
-				cmdid = cmdid.cmdid
-				if cmdid then 
-					local index = Spring.GetCmdDescIndex(cmdid)
-					if index then
-						Spring.SetActiveCommand(index,1,true,false,false,false,false,false)
-						thingsDone = true
-					end
-				end
-			end
-		end
-		hotkeyMode = false
-		menuChoice = 1 -- auto-return to orders to make it clear hotkey time is over
-		Update(true)
-		ColorTabs()
-		return thingsDone 
-	elseif menuChoice == 6 and options.unitstabhotkey.value and selectedFac then
-		local pos = gridKeyMap[key]
-		if pos and pos[1] ~= 3 and sp_commands[pos[1]] and sp_commands[pos[1]].children[pos[2]] then
-			local cmdid = sp_commands[pos[1]].children[pos[2]]
-			if cmdid then
-				cmdid = cmdid.cmdid
-				if cmdid then 
-					local index = Spring.GetCmdDescIndex(cmdid)
-					if index then
-						local alt,ctrl,meta,shift = Spring.GetModKeyState()
-						if (meta or (alt and options.unitshotkeyaltaswell.value) or not options.unitshotkeyrequiremeta.value) and not ctrl then
-							local opts = 0
-							if alt then
-								opts = opts + CMD.OPT_ALT
-							end
-							if shift then
-								opts = opts + CMD.OPT_SHIFT
-							end
-							Spring.GiveOrderToUnit(selectedFac, cmdid, {0}, opts)
-							if WG.sounds_gaveOrderToUnit then
-								WG.sounds_gaveOrderToUnit(selectedFac, true)
-							end
-							-- does not work with meta held
-							--Spring.SetActiveCommand(index,1,true,false,alt,false,false,shift)
-							return true
-						end
-					end
-				end
-			end
-		end
-	end
-
-	if (key == KEYSYMS.SPACE or ((key == KEYSYMS.RALT or key == KEYSYMS.LALT) and options.unitshotkeyaltaswell.value)) and selectedFac and menuChoice == 6 and options.unitshotkeyrequiremeta.value  and options.unitstabhotkey.value then
-		Update(true)
-	end
-end
-
-function widget:KeyRelease(key, modifier, isRepeat)
-	if (key == KEYSYMS.SPACE or ((key == KEYSYMS.RALT or key == KEYSYMS.LALT) and options.unitshotkeyaltaswell.value)) and selectedFac and menuChoice == 6 and options.unitshotkeyrequiremeta.value and options.unitstabhotkey.value then
-		Update(true)
-	end
-end
-
-	--Spring.Echo(CMD.OPT_META) = 4
-	--Spring.Echo(CMD.OPT_RIGHT) = 16
-	--Spring.Echo(CMD.OPT_SHIFT) = 32
-	--Spring.Echo(CMD.OPT_CTRL) = 64
-	--Spring.Echo(CMD.OPT_ALT) = 128
-
-local function HotkeyTabFactory()
-	menuChoice = 2
-	hotkeyMode = true
-	Update(true)
-	ColorTabs()
-end
-
-local function HotkeyTabEconomy()
-	menuChoice = 3
-	hotkeyMode = true
-	Update(true)
-	ColorTabs()
-end
-
-local function HotkeyTabDefence()
-	menuChoice = 4
-	hotkeyMode = true
-	Update(true)
-	ColorTabs()
-end
-
-local function HotkeyTabSpecial()
-	menuChoice = 5
-	hotkeyMode = true
-	Update(true)
-	ColorTabs()
-end
-
-options.tab_factory.OnChange = HotkeyTabFactory
-options.tab_economy.OnChange = HotkeyTabEconomy
-options.tab_defence.OnChange = HotkeyTabDefence
-options.tab_special.OnChange = HotkeyTabSpecial
-
 local function AddAction(cmd, func, data, types)
 	return widgetHandler.actionHandler:AddAction(widget, cmd, func, data, types)
 end
 local function RemoveAction(cmd, types)
 	return widgetHandler.actionHandler:RemoveAction(widget, cmd, types)
-end
-
-local function updateTabName(num, choice)
-	local hotkey = WG.crude.GetHotkey(choice.actionName)
-	if hotkey ~= '' then
-		choice.hotkeyName = choice.name ..  '(\255\0\255\0' .. hotkey .. '\008)'	
-		choice.name = choice.name ..  '(' .. hotkey .. ')'
-	end
 end
 
 -- INITS 
@@ -1181,11 +904,6 @@ function widget:Initialize()
 	Spring.ForceLayoutUpdate()
 	
 	recentlyInitialized = true
-	
-	RemoveAction("nextmenu")
-	RemoveAction("prevmenu")	
-	AddAction("nextmenu", ScrollTabRight, nil, "p")
-	AddAction("prevmenu", ScrollTabLeft, nil, "p")
 	
 	--[[local f,it,isFile = nil,nil,false
 	f  = io.open('cmdcolors.txt','r')
@@ -1247,7 +965,7 @@ function widget:Initialize()
 		name   = 'integralwindow';
 		color = {0, 0, 0, 0},
 		width = 450;
-		height = 180; -- keep an aspect ratio regardless of screen ratio
+		height = 155; -- keep an aspect ratio regardless of screen ratio
 		right = 0; 
 		bottom = 0;
 		dockable = true;
@@ -1271,9 +989,9 @@ function widget:Initialize()
 	fakewindow = Panel:New{
 		parent = window,
 		x = 0,
-		y = '15%',
+		y = 0,
 		width = "100%";
-		height = "86%";
+		height = "100%";
 		--disableChildrenHitTest = false,
 		--itemMargin  = {0, 0, 0, 0},
 		dockable = false;
@@ -1294,24 +1012,6 @@ function widget:Initialize()
 		end },
 	}
 
-	menuTabRow = StackPanel:New{
-		parent = window,
-		resizeItems = true;
-		columns = 6;
-		orientation   = "horizontal";
-		height = "15%";
-		width = "99%";
-		x = '1%';
-		y = 0;
-		padding = {0, 0, 0, 0},
-		itemMargin  = {0, 0, 0, 0},
-	}
-	
-	for i=1,6 do
-		menuTabs[i] = MakeMenuTab(i, 1)
-	end
-	ColorTabs()
-	
 	commands_main = Panel:New{
 		parent = fakewindow,
 		backgroundColor = {0, 0, 0, 0},
@@ -1431,17 +1131,6 @@ function widget:DrawScreen()
 	end
 end
 
--- Make the hotkeys appear on the menu tabs
-function widget:Update()
-	if recentlyInitialized then
-		for i = 2, 5 do
-			updateTabName(i, menuChoices[i])
-		end
-		recentlyInitialized = false
-		ColorTabs(1)
-	end
-end
-
 function widget:GameFrame(n)
 	--set progress bar
 	if n%6 == 0 then
@@ -1456,39 +1145,9 @@ function widget:GameFrame(n)
 	end
 end
 
-function widget:SelectionChanged(newSelection)
-	--get new selected fac, if any
-	for i=1,#newSelection do
-		local id = newSelection[i]
-		if UnitDefs[spGetUnitDefID(id)].isFactory then
-			if selectedFac ~= id then
-				alreadyRemovedTag = {}
-			end
-			selectedFac = id
-			SmartTabSelect()
-			return
-		end
-	end
-	selectedFac = nil
-	SmartTabSelect()
-end
-
 function widget:Shutdown()
   widgetHandler:ConfigLayoutHandler(nil)
   Spring.ForceLayoutUpdate()
-end
-
-options.hidetabs.OnChange = function(self) 
-	fakewindow:SetPosRelative(_, self.value and 0 or '15%', _, self.value and '100%' or '86%')
-	fakewindow:SetPosRelative(_, self.value and 0 or '15%', _, self.value and '100%' or '86%')
-	
-	if self.value then 
-		window:RemoveChild(menuTabRow)
-	else
-		window:AddChild(menuTabRow)
-	end
-	menuChoice = 1
-	ColorTabs(1)
 end
 
 local vsx, vsy   = widgetHandler:GetViewSizes()

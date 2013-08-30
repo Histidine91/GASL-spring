@@ -503,6 +503,8 @@ local pilotDefsPre = {
 			},
 			kill = {
 				{name = "Lester", image = portraits.lester_amused, text = "Target destroyed!\nWe survived somehow, Tact."},
+				{name = "Almo", image = portraits.almo_happy, text = "Target is breaking up!\nWell done, commander!"},
+				{image = portraits.tact_normal, text = "Alright, threat eliminated!\nHelm, get us to safety."},
 			},
 			unitDamaged_severe = {
 				{name = "Almo", image = portraits.almo_shocked, text = "It's too dangerous! Commander, please recall the Angel Wing!"},
@@ -536,11 +538,11 @@ local pilotDefsPre = {
 			unitSuppressed_moderate = {
 				{name = "Lester", image = portraits.lester_bitter, text = "Under heavy fire. The crew isn't taking it well..."},
 				{image = portraits.tact_stressed, text = "Everyone, hang in there!\nWe're not going to roll over from this!"},
-				{image = portraits.coco_surprised, text = "Uwaah!\nSo much fire..."},
+				{name = "Coco", image = portraits.coco_surprised, text = "Uwaah!\nSo much fire..."},
 				minor = colors.yellow .. "Elsior\008 is " .. colors.orange .. "50% suppressed\008!"
 			},
 			unitSuppressed_minor = {
-				{iname = "Coco", image = portraits.coco_normal, text = "Under intense enemy fire...\nI hope we can pull through this..."},
+				{name = "Coco", image = portraits.coco_normal, text = "Under intense enemy fire...\nI hope we can pull through this..."},
 				minor = colors.yellow .. "Elsior\008 is " .. colors.yellow .. "25% suppressed\008!"
 			},
 			unitEnergy_critical = {

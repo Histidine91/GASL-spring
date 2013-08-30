@@ -180,7 +180,7 @@ local function WritePythonDict(dict, dictName, params)
 			local arg = {numIndents =  params.numIndents + 1, endOfFile = false}
 			str = str .. WritePythonDict(v, nil, arg)
 		elseif type(v) == "boolean" then
-			str = str .. v and "True" or "False" .. endLine
+			str = str .. ((v and "True") or "False") .. endLine
 		elseif type(v) == "string" then
 			str = str .. string.format("%q", v) .. endLine
 		else

@@ -18,11 +18,12 @@ function widget:GameOver()
     gameOver = (Spring.GetGameRulesParam("gameOver") == 1 and true) or false
   }
   for i=0,6 do
+    results[i] = {}
     for j=1,#stats do
       local stat = stats[j]
       local str = stat.."_"..i
-      results[str] = Spring.GetGameRulesParam(str)
+      results[i][stat] = Spring.GetGameRulesParam(str)
     end
   end
-  WG.SavePythonDict("results.py", results, "combatResults", {raw = true})
+  WG.SavePythonDict("results.py", results, "combatResults", {endOfFile = true})
 end

@@ -269,6 +269,6 @@ function script.Killed(recentDamage, maxHealth)
 		--EmitSfx(jawfin, deathLarge)
 		EmitSfx(hull, deathMega)
 		--EmitSfx(emit_b, deathLarge)
-		Sleep(1200)
+		Sleep(800)
 	end
 end

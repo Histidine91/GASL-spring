@@ -240,7 +240,7 @@ local unitDef = {
 				suppression_noFlank = 1,
 				statsprojectiles = 2,
 				special = true,
-				retarget = 1000,
+				retarget = 1600,
 				retargettime = 15,
 			},
 			
@@ -286,7 +286,7 @@ local unitDef = {
 				damagetype = "kinetic",
 				suppression_noFlank = 1,
 				hidden = true,
-				retarget = 1000,
+				retarget = 1600,
 				retargettime = 15,
 			},
 			

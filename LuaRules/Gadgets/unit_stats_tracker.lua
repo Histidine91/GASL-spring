@@ -99,9 +99,9 @@ function GG.TrackRepairStats(repairerID, repairerDefID, unitID, unitDefID, amoun
 end
 
 function gadget:GameOver()
-	for index=0,6 do
+	for i=0,6 do
 		for stat, value in pairs(angels[i]) do
-			Spring.SetGameRulesParam(stat.."_"..index, value)
+			Spring.SetGameRulesParam(stat.."_"..i, value)
 		end
 	end
 end

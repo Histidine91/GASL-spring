@@ -470,7 +470,7 @@ local HALFPIMINUS	= HALFPI-0.01
 local RADperDEGREE = PI/180
 
 local CAM_TRACK_PERIOD = 0.01
-local OVERVIEW_DISTICON = 150
+local OVERVIEW_DISTICON = 100
 
 local fpsmode = false
 local mx, my = 0,0

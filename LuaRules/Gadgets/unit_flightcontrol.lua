@@ -697,8 +697,8 @@ function gadget:GameFrame(f)
 			vz = vz*(1-inertiaFactor) + vz1*inertiaFactor
 			
 			data.velocity = {vx, vy, vz}
+			Spring.SetUnitVelocity(unitID, vx, vy, vz)
 			Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
-			--Spring.SetUnitVelocity(unitID, vx, vy, vz)
 		end
 	end
 end

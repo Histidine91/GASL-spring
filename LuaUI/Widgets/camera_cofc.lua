@@ -9,8 +9,8 @@ function widget:GetInfo()
     date      = "2011-03-16", --2013-June-30
     license   = "GNU GPL, v2 or later",
     layer     = 1002,
-	handler   = true,
-    enabled   = false,
+    handler   = true,
+    enabled   = true,
   }
 end
 
@@ -1951,6 +1951,7 @@ local groupNumber = {
 	[KEYSYMS.N_7] = 7,
 	[KEYSYMS.N_8] = 8,
 	[KEYSYMS.N_9] = 9,
+	[KEYSYMS.N_0] = 0,
 }
 
 function GroupRecallFix(key, modifier, isRepeat)

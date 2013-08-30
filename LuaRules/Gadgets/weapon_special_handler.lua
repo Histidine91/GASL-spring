@@ -94,7 +94,7 @@ local function ExecuteCommand(cmdData, unitID, unitDefID, unitTeam, cmdParams)
   end
   
   GG.SetUnitSpirit(unitID, unitDefID, unitTeam, 0)
-  SetEnabled(unitID, unitDefId, unitTeam, false)
+  SetEnabled(unitID, unitDefID, unitTeam, false)
   GG.SetUnitSuppression(unitID, 0)
   
   local unitID2, unitDefID2, unitTeam2

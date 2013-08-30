@@ -51,6 +51,7 @@ local SIG_SPECIAL = 4
 -- variables
 --------------------------------------------------------------------------------
 local isUsingSpecial = false
+local specialTarget
 local dead = false
 
 --------------------------------------------------------------------------------
@@ -106,6 +107,7 @@ local function StrikeBurstThread()
 end
 
 function StrikeBurstTrigger(params)
+    specialTarget = params[1]
     GG.FlightControl.SetChaseTarget(unitID, params[1])
     StartThread(StrikeBurstThread)
 end
@@ -174,6 +176,31 @@ function script.Shot(num)
     if data.index > #data.muzzles then
 	data.index = 1
     end
+end
+
+function script.BlockShot(weaponID, targetID, userTarget)
+    local minRange = minRanges[weaponID]
+    local energyPerShot = (GG.Energy) and energyPerShot[weaponID]
+    if minRange then
+	local distance
+	if targetID then
+	    distance = Spring.GetUnitSeparation(unitID, targetID, true)
+	elseif userTarget then
+	    local cmd = Spring.GetUnitCommands(unitID, 1)[1]
+	    if cmd.id == CMD.ATTACK then
+		local tx,ty,tz = unpack(cmd.params)
+		distance = GetUnitDistanceToPoint(unitID, tx, ty, tz, true)
+	    end
+	end
+	if distance < minRange then return true end
+    end
+    if usingSpecial and (not Spring.GetUnitIsDead(specialTarget)) and specialTarget ~= targetID then
+	return true
+    end
+    if energyPerShot then
+	return (not GG.Energy.UseUnitEnergy(unitID, unitDefID, energyPerShot))
+    end
+    return false
 end
 
 function script.HitByWeapon()

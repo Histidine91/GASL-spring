@@ -17,6 +17,8 @@ end
 if not (gadgetHandler:IsSyncedCode()) then
 	return
 end
+
+local spAreTeamsAllied = Spring.AreTeamsAllied
 --------------------------------------------------------------------------------
 --SYNCED
 --------------------------------------------------------------------------------
@@ -31,13 +33,13 @@ local unitCosts = {}
 local angelsByUnitDef = {}
 local angels = {}
 
-for i=0,6 do
+for i=-1,6 do
 	angels[i] = {kills = 0, damage = 0, killCost = 0, damageCost = 0, repair = 0, deaths = 0}
 end
 
 
 for i=1,#UnitDefs do
-	local angelCP = UnitDefs[i].customParams.angel
+	local angelCP = UnitDefs[i].customParams.angel or -1
 	if angelCP then
 		angelsByUnitDef[i] = tonumber(angelCP)
 	end
@@ -59,7 +61,7 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 		end
 	end
 	
-	if attackerDefID and angelsByUnitDef[attackerDefID] then
+	if attackerDefID and angelsByUnitDef[attackerDefID] and attackerTeam == 0 then
 		local adjustedDamage = damage
 		if paralyzer then
 			adjustedDamage = adjustedDamage/5
@@ -82,24 +84,29 @@ function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
 	end
 	GG.EventWrapper.AddEvent("death", (UnitDefs[unitDefID].power^0.5)*2+10, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
 	
-	if angelsByUnitDef[attackerDefID] then
+	if angelsByUnitDef[attackerDefID] and attackerTeam == 0 then
 		local index = angelsByUnitDef[attackerDefID]
 		angels[index].kills = angels[index].kills + 1
 		angels[index].killCost = angels[index].killCost + unitCosts[unitDefID]
 	end
-	if angelsByUnitDef[unitDefID] then
+	if angelsByUnitDef[unitDefID] and unitTeam == 0 then
 		local index = angelsByUnitDef[unitDefID]
 		angels[index].deaths = angels[index].deaths + 1
 	end
 end
 
-function GG.TrackRepairStats(repairerID, repairerDefID, unitID, unitDefID, amount)
+function GG.TrackRepairStats(repairerID, repairerDefID, repairerTeam, unitID, unitDefID, unitTeam, amount)
+	if repairerTeam ~= 0 then
+		return
+	end
 	local index = angelsByUnitDef[repairerDefID]
-	angels[index].repair = angels[index].repair + amount
+	if index then
+		angels[index].repair = angels[index].repair + amount
+	end
 end
 
 function gadget:GameOver()
-	for i=0,6 do
+	for i=-1,6 do
 		for stat, value in pairs(angels[i]) do
 			Spring.SetGameRulesParam(stat.."_"..i, value)
 		end

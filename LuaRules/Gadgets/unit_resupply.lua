@@ -187,7 +187,10 @@ local function ResupplyUnit(fighterID, carrierID)
 	GG.FlightControl.SetUnitSpeed(fighterID, 0)
 	fighterToCarrier[fighterID] = nil
 	local fighterDefID = fighterUnitIDs[fighterID]
+	local fighterTeam = Spring.GetUnitTeam(fighterID)
 	local carrierDefID = carriers[carrierID].unitDefID
+	local carrierTeam = Spring.GetUnitTeam(carrierID)
+	
 	
 	--first transfer energy
 	local energy, maxEnergy = GG.Energy.GetUnitEnergy(fighterID)
@@ -216,8 +219,8 @@ local function ResupplyUnit(fighterID, carrierID)
 	local _,_,_,x,y,z = Spring.GetUnitPosition(fighterID, true)
 	Spring.SpawnCEG("resupply", x, y, z, 0, 1, 0, 20)
 	
-	GG.EventWrapper.AddEvent("resupply", 1, fighterID, fighterDefID, Spring.GetUnitTeam(fighterID), carrierID, carrierDefID, Spring.GetUnitTeam(carrierID))
-	GG.TrackRepairStats(carrierID, carrierDefID, fighterID, fighterDefID, maxHealth - health)
+	GG.EventWrapper.AddEvent("resupply", 1, fighterID, fighterDefID, fighterTeam, carrierID, carrierDefID, carrierTeam)
+	GG.TrackRepairStats(carrierID, carrierDefID, carrierTeam, fighterID, fighterDefID, fighterTeam, maxHealth - health)
 	
 	if Spring.GetUnitStates(fighterID)["repeat"] then 
 		--spGiveOrderToUnit(fighterID, CMD_RESUPPLY, {carrierID}, {"shift"})

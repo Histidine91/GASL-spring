@@ -50,6 +50,7 @@ local commands = {	-- TODO
 
 local maxItems = 12	-- TODO delegate to Epic Menu
 local staticTexture  = "LuaUI/Images/overlay_static1.png"
+local warningTexture = "LuaUI/Images/emergency.png"
 
 local gameframe = spGetGameFrame()
 --------------------------------------------------------------------------------
@@ -79,7 +80,7 @@ local image
 -- variables
 local lastChatterByUnit = {}	-- [unitID] = {gameframe=n, priority=x}
 local staticOverlayPhase = 1
-local warningOverlayPhase = 1
+local warningOverlayPhase = 0
 local staticOverlayTimer = 0
 local warningOverlayTimer = 0
 
@@ -199,7 +200,7 @@ local function GetEventDialogue(params, unitID, unitDefID, minor, forceIndex)
 		return
 	end
 	local items = data.dialogue[params.eventType]
-	if not items then
+	if (not items) or #items == 0 then
 		return
 	end
 	
@@ -207,7 +208,7 @@ local function GetEventDialogue(params, unitID, unitDefID, minor, forceIndex)
 		return {text = items.minor, minor = true}
 	end
 	
-	local choice = forceIndex or math.random(#items)
+	local choice = forceIndex or math.random(1,#items)
 	local selected = items[choice]
 	local text, image, sound = selected.text, selected.image, selected.sound
 	return {name = selected.name or data.name, text = text, image = image,
@@ -292,11 +293,12 @@ local function ProcessIdleChatter()
 	end
 end
 
-local function DrawTextureOverlay(x,y,texture, flipX, flipY)
+local function DrawTextureOverlay(x,y,texture, width, height, flipX, flipY)
 	gl.PushMatrix()
+	gl.Color(1,1,1,1)
 	gl.Translate(x,y,0)
 	gl.Texture(texture)
-	gl.TexRect(0, 0, IMAGE_WIDTH, -IMAGE_HEIGHT, flipX, flipY)
+	gl.TexRect(0, 0, width, -height, flipX, flipY)
 	gl.PopMatrix()
 end
 
@@ -323,11 +325,14 @@ function widget:Update(dt)
 		staticOverlayTimer = 0
 	end
 	
+	--[[
 	warningOverlayTimer = warningOverlayTimer + dt
 	if warningOverlayTimer > WARNING_OVERLAY_PERIOD then
 		warningOverlayPhase = warningOverlayPhase%2 + 1
 		warningOverlayTimer = 0
 	end
+	]]
+	warningOverlayPhase = (warningOverlayPhase+dt)%1
 	
 	if timer_opened then
 		local timer_now = spGetTimer()
@@ -339,16 +344,18 @@ function widget:Update(dt)
 end
 
 function widget:DrawScreen()
-	if warning and not window.hidden and warningOverlayPhase == 1 then
+	if warning and not window.hidden then
 		local x, y = image:LocalToScreen(0, 0)
 		y = screen0.height - y
-		DrawColorOverlay(x, y, {1, 0.2, 0.2, 0.6})
+		DrawColorOverlay(x, y, {1, 0.2, 0.2, 0.4*warningOverlayPhase + 0.2})
+		DrawTextureOverlay(x + 4, y - 80, warningTexture, 83, 16, false, true)
 	end
 	if static and not window.hidden then
 		local x, y = image:LocalToScreen(0, 0)
 		y = screen0.height - y
-		DrawTextureOverlay(x, y, staticTexture, staticOverlayPhase%2 == 0, (staticOverlayPhase+1)%2 == 0)
+		DrawTextureOverlay(x, y, staticTexture, IMAGE_WIDTH, IMAGE_HEIGHT, staticOverlayPhase%2 == 0, (staticOverlayPhase+1)%2 == 0)
 	end
+	gl.Color(1,1,1,1)
 end
 
 function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdOpts, cmdParams)

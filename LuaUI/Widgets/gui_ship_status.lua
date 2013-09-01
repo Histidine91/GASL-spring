@@ -26,6 +26,16 @@ local GetGameFrame 		= Spring.GetGameFrame
 local GetModKeyState	= Spring.GetModKeyState
 local SelectUnitArray	= Spring.SelectUnitArray
 
+local glPushMatrix	= gl.PushMatrix
+local glPopMatrix	= gl.PopMatrix
+local glColor		= gl.Color
+local glTranslate	= gl.Translate
+local glRotate		= gl.Rotate
+local glTexture		= gl.Texture
+local glTexRect		= gl.TexRect
+local glBeginEnd	= gl.BeginEnd
+local GL_QUADS		= GL.QUADS
+
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 local buttonColorRed = {1,0,0,1}
@@ -69,11 +79,16 @@ local BUTTON_OVERLAY_Y = (BUTTON_HEIGHT-4)/2
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 local UPDATE_FREQUENCY = 0.25
-local DAMAGE_WARNING_PERIOD = 0.7
+local ENERGY_WARNING_SIZE = 12
+local DAMAGE_WARNING_PERIOD = 0.5
 local DAMAGE_WARNING_MIN_SIZE_MOD = 0.3
 local DAMAGE_WARNING_SIZE_RATIO = 0.5	-- inner ring vs. outer ring
 local SPIRIT_SWIRL_SIZE_RATIO = 0.2
+local SPIRIT_FLASH_PERIOD = 0.7
 local SPIRIT_SWIRL_PERIOD = 1
+
+local ENERGY_TEXTURE_LOW = "LuaUI/Images/energy_low.png"
+local ENERGY_TEXTURE_CRITICAL = "LuaUI/Images/energy_critical.png"
 
 local angelDefs = {
   [UnitDefNames.luckystar.id] = {hasSpirit = true},
@@ -109,19 +124,20 @@ options_path = 'Settings/HUD Panels/Ship Status'
 options_order = {}
 options = {}
 
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local lastTexture
+
 -- list and interface vars
 local unitsByID = {}	-- [unitID] = index
 local units = {} -- [index] = {unitID, unitDefID, panel, button, image, [healthbar] = ProgressBar, [energybar] = ProgressBar, [spiritbar] = ProgressBar, [suppressionbar] = ...}
-local overlayPhase = 0
+local spiritOverlayPhase = 0
+local damagePings = {}	-- [unitID] = phase
 local spiritSwirls = {}	-- [unitID] = phase
 
---local gamestart = GetGameFrame() > 1
-
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- FUNCTIONS
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- drawing stuff
 
 local vsx, vsy   = widgetHandler:GetViewSizes()
@@ -340,6 +356,7 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 			caption = "";
 			color   = {1,1,0,1};
 		}
+		--[[
 		units[index].energyLowIndicator = Image:New{
 			--parent = units[index].image,
 			width = 24,
@@ -349,6 +366,7 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 			file = "LuaUI/Images/energy.png",
 			hidden = true
 		}
+		]]
 		numBars = numBars + 1
 	end
 	if angelDefs[unitDefID] and angelDefs[unitDefID].hasSpirit then
@@ -428,7 +446,7 @@ local function UpdateUnitInfo(unitID)
 		unitData.suppressionbar:SetValue(suppression)
 	end
 	
-	
+	--[[
 	if energy then
 		if energy <= 0.3 then
 			if unitData.energyLowIndicator.hidden then
@@ -440,6 +458,7 @@ local function UpdateUnitInfo(unitID)
 			unitData.energyLowIndicator.hidden = true
 		end
 	end
+	]]
 end
 
 
@@ -458,6 +477,7 @@ local function AddUnit(unitID, unitDefID, teamID)
 	units[index] = {unitID = unitID, unitDefID = unitDefID, parent = parent}
 	AddUnitDisplay(unitID, unitDefID, index, '', parent, parent == stack_angels)	-- FIXME hotkey
 	UpdateUnitInfo(unitID)
+	damagePings[unitID] = 0
 end
 
 local function RemoveUnit(unitID)
@@ -493,6 +513,7 @@ local function RemoveUnit(unitID)
 	end
 	unitsByID[unitID] = nil
 	spiritSwirls[unitID] = nil
+	damagePings[unitID] = nil
 end
 
 local function InitializeUnits()
@@ -523,12 +544,26 @@ local function SetCurrentStack(stackName)
 	end
 	for name,button in pairs(buttons) do
 		if name == stackName then
-			button.backgroundColor[4] = 1
+			--button.backgroundColor[4] = 1
+			button.file = "LuaUI/Images/button_"..button.teamType.."_active.png"
+			button.previousFile = button.file
 		else
-			button.backgroundColor[4] = buttonAlphaDeselected
+			--button.backgroundColor[4] = buttonAlphaDeselected
+			button.file = "LuaUI/Images/button_"..button.teamType..".png"
+			button.previousFile = button.file
 		end
 		button:Invalidate()
 	end
+end
+
+local function TeamButtonUp(self)
+	self.file = self.previousFile
+end
+
+local function TeamButtonDown(self)
+	self.previousFile = self.file
+	self.file = "LuaUI/Images/button_"..self.teamType.."_press.png"
+	self:Invalidate()
 end
 
 local function SpiritFull(unitID)
@@ -537,44 +572,51 @@ local function SpiritFull(unitID)
 	end
 end
 
-local function DrawWarningFlash(x, y)
+local function DrawWarningFlash(x, y, phase)
 	--TODO make display list ?
-	gl.PushMatrix()
-	gl.Translate(x,y,0)
-	local size = DAMAGE_WARNING_MIN_SIZE_MOD+(1-DAMAGE_WARNING_MIN_SIZE_MOD)*overlayPhase
+	glPushMatrix()
+	glTranslate(x,y,0)
+	local size = DAMAGE_WARNING_MIN_SIZE_MOD+(1-DAMAGE_WARNING_MIN_SIZE_MOD)*phase
 	local vx = BUTTON_OVERLAY_X*size
 	local vy = BUTTON_OVERLAY_Y*size
-	gl.BeginEnd(GL.QUADS, PingOrSwirl, vx, vy, damageColor1, damageColor2, DAMAGE_WARNING_SIZE_RATIO)
-	gl.PopMatrix()
+	glBeginEnd(GL_QUADS, PingOrSwirl, vx, vy, damageColor1, damageColor2, DAMAGE_WARNING_SIZE_RATIO)
+	glPopMatrix()
 end
 
 local function DrawSpiritGlow(x,y)
-	gl.PushMatrix()
-	gl.Translate(x,y,0)
-	gl.Color(1,1,0.4,0.7*math.sin(overlayPhase*math.pi))
-	gl.BeginEnd(GL.QUADS, SpiritGlow)
-	gl.PopMatrix()
+	glPushMatrix()
+	glTranslate(x,y,0)
+	glColor(1,1,0.4,0.7*math.sin(spiritOverlayPhase*math.pi))
+	glBeginEnd(GL_QUADS, SpiritGlow)
+	glPopMatrix()
 end
 
 local function DrawSpiritSwirl(x,y,phase)
 	local size = (phase*5 + 1)
 	local vx = BUTTON_OVERLAY_X*size
 	local vy = BUTTON_OVERLAY_X*size
-	gl.PushMatrix()
-	gl.Translate(x,y,0)
-	gl.Rotate(phase*180,0,0,1)
-	gl.BeginEnd(GL.QUADS, PingOrSwirl, vx, vy, swirlColor1, swirlColor2, SPIRIT_SWIRL_SIZE_RATIO)
-	gl.PopMatrix()
+	glPushMatrix()
+	glTranslate(x,y,0)
+	glRotate(phase*180,0,0,1)
+	glBeginEnd(GL_QUADS, PingOrSwirl, vx, vy, swirlColor1, swirlColor2, SPIRIT_SWIRL_SIZE_RATIO)
+	glPopMatrix()
+end
+
+local function DrawEnergyTexture(x,y,energy)
+	if energy > 0.5 then
+		return
+	end
+	local texture = (energy > 0.25) and ENERGY_TEXTURE_LOW or ENERGY_TEXTURE_CRITICAL
+	glPushMatrix()
+	glTranslate(x,y,0)
+	glColor(1,1,1,1)
+	glTexture(texture)
+	glTexRect(-ENERGY_WARNING_SIZE, ENERGY_WARNING_SIZE, 0, 0)
+	glPopMatrix()
 end
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 -- engine callins
-
---[[
-function widget:GameStart()
-	gamestart = true
-end
-]]--
 
 function widget:UnitCreated(unitID, unitDefID, unitTeam)
 	AddUnit(unitID, unitDefID, unitTeam)
@@ -611,13 +653,17 @@ end
 
 local timer = 0
 function widget:Update(dt)
-	overlayPhase = (overlayPhase + dt/DAMAGE_WARNING_PERIOD)%1
+	spiritOverlayPhase = (spiritOverlayPhase + dt/SPIRIT_FLASH_PERIOD)%1
 	for unitID, phase in pairs(spiritSwirls) do
 		if phase <= 0 then
 			spiritSwirls[unitID] = nil
 		else
 			spiritSwirls[unitID] = phase - dt/SPIRIT_SWIRL_PERIOD
 		end
+	end
+	for unitID, phase in pairs(damagePings) do
+		local health = units[unitsByID[unitID]].healthbar.value
+		damagePings[unitID] = (phase + (1 - health)*dt/DAMAGE_WARNING_PERIOD)%1
 	end
 	
 	timer = timer + dt
@@ -640,7 +686,7 @@ function widget:DrawScreen()
 			if currentStack ~= stack_enemy then
 				local health = unitData.healthbar.value
 				if health <= 0.3 then
-					DrawWarningFlash(x, y)
+					DrawWarningFlash(x, y, damagePings[unitData.unitID])
 				end
 			end
 			if unitData.spiritbar and unitData.spiritbar.value == 100 then
@@ -650,10 +696,16 @@ function widget:DrawScreen()
 			if swirlPhase then
 				DrawSpiritSwirl(x, y, swirlPhase)
 			end
+			--[[
+			local energy = GetUnitRulesParam(unitData.unitID, "energy")
+			if energy then
+				DrawEnergyTexture(x + BUTTON_WIDTH/2 - 4, y - BUTTON_HEIGHT/2 + 4, energy)
+			end
+			]]
 		end
-		
 	end
-	gl.Color(1,1,1,1)
+	glColor(1,1,1,1)
+	glTexture(false)
 end
 
 function widget:UnitDamaged(unitID, unitDefID, unitTeam)
@@ -706,7 +758,7 @@ function widget:Initialize()
 	scroll_main = ScrollPanel:New{
 		parent = window_status,
 		x = 0,
-		y = 32,
+		y = 16,
 		height = "100%",
 		width = "100%",
 		bottom = 0,
@@ -756,45 +808,54 @@ function widget:Initialize()
 		autosize = true,
 		autoArrangeV = true,
 	}
-	button_angels = Button:New{
+	button_angels = Image:New{
 		parent = window_status;
 		x = 0,
 		y = 0,
-		width = "50%",
+		width = "25%",
 		height = 16,
-		caption = '',
+		file = "LuaUI/Images/button_angels.png",
+		OnMouseDown = {TeamButtonDown},
+		OnMouseUp = {TeamButtonUp},
 		OnClick = {function() SetCurrentStack("angels") end},
-		backgroundColor = buttonColorBlue,
+		teamType = "angels",
 	}
-	button_ally = Button:New{
+	button_ally = Image:New{
+		parent = window_status;
+		x = "25%",
+		y = 0,
+		width = "25%",
+		height = 16,
+		caption = '',
+		file = "LuaUI/Images/button_ally.png",
+		OnMouseDown = {TeamButtonDown},
+		OnMouseUp = {TeamButtonUp},
+		OnClick = {function() SetCurrentStack("ally") end},
+		teamType = "ally",
+	}
+	button_neutral = Image:New{
 		parent = window_status;
 		x = "50%",
 		y = 0,
-		width = "50%",
+		width = "25%",
 		height = 16,
-		caption = '',
-		OnClick = {function() SetCurrentStack("ally") end},
-		backgroundColor = buttonColorGreen,
-	}
-	button_neutral = Button:New{
-		parent = window_status;
-		x = 0,
-		y = 16,
-		width = "50%",
-		height = 16,
-		caption = '',
+		file = "LuaUI/Images/button_neutral.png",
+		OnMouseDown = {TeamButtonDown},
+		OnMouseUp = {TeamButtonUp},
 		OnClick = {function() SetCurrentStack("neutral") end},
-		backgroundColor = buttonColorYellow,
+		teamType = "neutral",
 	}
-	button_enemy = Button:New{
+	button_enemy = Image:New{
 		parent = window_status;
-		x = "50%",
-		y = 16,
-		width = "50%",
+		x = "75%",
+		y = 0,
+		width = "25%",
 		height = 16,
-		caption = '',
+		file = "LuaUI/Images/button_enemy.png",
+		OnMouseDown = {TeamButtonDown},
+		OnMouseUp = {TeamButtonUp},
 		OnClick= {function() SetCurrentStack("enemy") end},
-		backgroundColor = buttonColorRed,
+		teamType = "enemy",
 	}
 	stacks = {angels = stack_angels, ally = stack_ally, neutral = stack_neutral, enemy = stack_enemy}
 	buttons = {angels = button_angels, ally = button_ally, neutral = button_neutral, enemy = button_enemy}

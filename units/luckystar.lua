@@ -90,6 +90,7 @@ local unitDef = {
 				description = "A standard high-power laser weapon, effective against all targets.",
 				critchance = 0.05,
 				energypershot = 50,
+				category = {laser = true, energy = true},
 			},
 			
 			craterMult		= 0,
@@ -138,6 +139,7 @@ local unitDef = {
 				energypershot = 180,
 				jammable = true,
 				--eccm = 20,
+				category = {seeker = true, missile = true},
 			},
 			
 			craterMult		= 0,
@@ -191,6 +193,7 @@ local unitDef = {
 				critchance = 0.05,
 				energypershot = 80,
 				jammable = true,
+				category = {phalanx = true, seeker = true, energy = true},
 			},
 			
 			craterMult		= 0,
@@ -242,6 +245,7 @@ local unitDef = {
 				description = "Twin rapid-fire autocannons that chew up soft targets. Accuracy and armor penetration are subpar.",
 				critchance = 0.075,
 				energypershot = 6,
+				category = {ballistic = true, vulcan = true},
 			},
 			
 			craterMult		= 0,

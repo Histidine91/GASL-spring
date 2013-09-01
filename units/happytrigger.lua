@@ -110,6 +110,7 @@ local unitDef = {
 				minimumrange = 400,
 				critchance = 0.1,
 				energypershot = 90,
+				category = {ballistic = true, railgun = true},
 			},
 			
 			damage                  = {
@@ -151,6 +152,7 @@ local unitDef = {
 				description = "A standard high-power laser weapon, effective against all targets.",
 				critchance = 0.05,
 				energypershot = 50,
+				category = {laser = true, energy = true},
 			},
 			
 			craterMult		= 0,
@@ -199,6 +201,7 @@ local unitDef = {
 				energypershot = 360,
 				jammable = true,
 				--eccm = 20,
+				category = {seeker = true, missile = true},
 			},
 			
 			craterMult		= 0,
@@ -254,6 +257,7 @@ local unitDef = {
 				suppression_noFlank = 1,
 				critchance = 0.05,
 				energypershot = 160,
+				category = {phalanx = true, seeker = true, energy = true},
 			},
 			
 			craterMult		= 0,

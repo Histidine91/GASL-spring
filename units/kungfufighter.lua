@@ -87,6 +87,7 @@ local unitDef = {
 				description = "Twin upscaled autocannons, boasting considerably greater firepower than the normal version. Best employed against lightly armored targets.",
 				critchance = 0.075,
 				energypershot = 12,
+				category = {ballistic = true, vulcan = true},
 			},
 			
 			craterMult		= 0,
@@ -139,6 +140,7 @@ local unitDef = {
 				energypershot = 270,
 				jammable = true,
 				--eccm = 15,
+				category = {seeker = true, missile = true},
 			},
 			
 			craterMult		= 0,
@@ -192,6 +194,7 @@ local unitDef = {
 				energypershot = 140,
 				jammable = true,
 				eccm = 10,
+				category = {seeker = true, missile = true},
 			},
 			
 			craterMult		= 0,

@@ -122,6 +122,8 @@ function script.Create()
     Turn(prong_R, z_axis, math.rad(42))
     Turn(prong_L, x_axis, math.rad(30))
     Turn(prong_R, x_axis, math.rad(30))
+    Turn(prong_L, y_axis, math.rad(-20))
+    Turn(prong_R, y_axis, math.rad(20))
     
     for i=1,4 do
 	local angles = {-math.rad(18), math.rad(42), -math.rad(48), math.rad(72)}

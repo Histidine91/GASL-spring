@@ -130,6 +130,8 @@ function script.Create()
     Turn(prong_R, z_axis, math.rad(42))
     Turn(prong_L, x_axis, math.rad(30))
     Turn(prong_R, x_axis, math.rad(30))
+    Turn(prong_L, y_axis, math.rad(-20))
+    Turn(prong_R, y_axis, math.rad(20))
     Turn(phalanxArm_L, z_axis, math.rad(-12))
     Turn(phalanxArm_R, z_axis, math.rad(12))
     

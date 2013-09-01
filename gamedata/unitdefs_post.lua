@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-local modOptions
+local modOptions = {}
 if (Spring.GetModOptions) then
   modOptions = Spring.GetModOptions()
 end
@@ -53,6 +53,39 @@ function CopyTable(tableToCopy, deep)
     end
   end
   return copy
+end
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- morale effects
+local BASE_MORALE = 50
+local MORALE_ACCURACY_BOOST = 0.25
+local MORALE_SUPPRESSION_MOD_BOOST = 1
+
+for name, ud in pairs(UnitDefs) do
+    local cp = ud.customparams
+    if cp.angel then
+	local morale = modOptions["morale"..cp.angel] or cp.morale
+	if morale then
+	    cp.morale = morale
+	    local moraleMod = (morale - BASE_MORALE)/BASE_MORALE
+	    
+	    -- weapon accuracy
+	    local accMod = moraleMod * MORALE_ACCURACY_BOOST
+	    --cp.moraleaccboost = accMod
+	    for name, weaponData in pairs(ud.weapondefs) do
+		if weaponData.accuracy then
+		    weaponData.accuracy = weaponData.accuracy*(1-accMod)
+		end
+		if weaponData.sprayangle then
+		    weaponData.sprayangle = weaponData.sprayangle*(1-accMod)
+		end
+	    end	    
+	    -- suppression resistance
+	    local suppressionModMod = moraleMod * MORALE_SUPPRESSION_MOD_BOOST
+	    cp.suppressionmod = (cp.suppressionmod or 1) * suppressionModMod
+	end
+    end
 end
 
 --------------------------------------------------------------------------------

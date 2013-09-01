@@ -306,7 +306,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 
 	local window_main = Window:New{
 		parent = screen0,
-		--name   = 'unitinfo_window';
+		name   = 'unitinfo_window';
 		width = 600;
 		height = 580;
 		x = vsx/2 - 300; 

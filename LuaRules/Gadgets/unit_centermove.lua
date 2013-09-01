@@ -29,13 +29,19 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-if (gadgetHandler:IsSyncedCode()) then
+if not (gadgetHandler:IsSyncedCode()) then
+	return false
+end
+--------------------------------------------------------------------------------
 --SYNCED
+--------------------------------------------------------------------------------
+include("LuaRules/Configs/customcmds.h.lua")
 
 local cmds = {
 	[CMD.MOVE] = true,
 	[CMD.FIGHT] = true,
-	[CMD.PATROL] = true
+	[CMD.PATROL] = true,
+	[CMD_TURN] = true,
 }
 
 local replaceList = {}
@@ -80,12 +86,4 @@ function gadget:GameFrame(f)
 		--spGiveOrderToUnit(t.u, CMD_REMOVE, {t.tag}, {})
 		replaceList[i]=nil
 	end
-end
-
-else
-
---UNSYNCED
-
-return false
-
 end

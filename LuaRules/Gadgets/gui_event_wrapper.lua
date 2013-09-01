@@ -29,10 +29,10 @@ events to record:
 	+energy low/critical
 	+suppression (low, moderate, severe)
 	received repair		-need gadget
-	received resupply	-need gadget
+	+received resupply
 	+command received	- delegate to widget
 	+spirit maxed
-	using special ability	- need gadget
+	+using special ability
 	+engaging new target
 ]]--
 

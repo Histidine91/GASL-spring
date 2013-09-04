@@ -26,6 +26,9 @@ local DAMAGETYPE_IMAGES = {
 	energy = "LuaUI/Images/damage_energy.png",
 }
 
+local colorRed = "\255\255\64\64"
+local colorGreen = "\255\64\255\64"
+
 local function tobool(val)
 	local t = type(val)
 	if (t == 'nil') then
@@ -38,6 +41,19 @@ local function tobool(val)
 		return ((val ~= '0') and (val ~= 'false'))
 	end
 	return false
+end
+
+local function WriteColoredString(value, before, after)
+	before = before or ""
+	after = after or ""
+	value = tonumber(value)
+	if value > 0 then
+		return colorGreen .. before .. value .. after .. "\008"
+	elseif value < 0 then
+		return colorRed .. before .. value .. after .. "\008"
+	else
+		return before .. value .. after
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -80,6 +96,7 @@ for i=1,#UnitDefs do
 		jammerStrength = ("%.0f"):format(customParams.missilejamstrength or ((customParams.ecm or 0)^0.5)*10),
 		morale = tonumber(customParams.morale),
 		energy = tonumber(customParams.energy),
+		suppressionMod = tonumber(customParams.suppressionmod) or 1,
 		
 		weapons = {}
 	}
@@ -257,7 +274,7 @@ local function CreateWeaponPanels(data, parent)
 	end
 end
 
-local function FillPilotBiodata(unitID, unitDefID, pilotData, container)
+local function FillPilotBiodata(unitID, unitDefID, shipData, pilotData, container)
 	--[[
 	local nameHeader = Label:New{
 		parent = container;
@@ -296,7 +313,54 @@ local function FillPilotBiodata(unitID, unitDefID, pilotData, container)
 		fontSize = 13;
 		fontShadow = true;
 		--x = 64,
-		y = 24,
+		y = 20,
+	}
+	
+	local bonusStack = StackPanel:New{
+		parent = container;
+		width = "100%",
+		x = 0,	--"40%",
+		y = 40,
+		bottom = 0,
+		padding = {0, 0, 0, 0},
+		itemMargin = {0, 0, 0, 0}
+	}
+	
+	local BASE_MORALE = 50
+	local MORALE_ACCURACY_BOOST = 0.25
+	local MORALE_DAMAGE_BOOST = 0.5
+	local morale = shipData.morale
+	local moraleMod = ((morale or 50) - BASE_MORALE)/BASE_MORALE
+	local accMod = moraleMod * MORALE_ACCURACY_BOOST
+	local damageMod = moraleMod * MORALE_ACCURACY_BOOST
+	
+	if morale then
+		local moraleAcc = InfoLabel:New{
+			parent = bonusStack;
+			caption = "Accuracy mod.: " .. WriteColoredString(("%.0f"):format(accMod*100), nil, "%"),
+			align="left";
+			fontSize = 12;
+			fontShadow = true;
+			tooltip = "Accuracy modifier from morale",
+		}
+		
+		local moraleDamage = InfoLabel:New{
+			parent = bonusStack;
+			caption = "Damage mod.: " .. WriteColoredString(("%.0f"):format(damageMod*100), nil, "%"),
+			align="left";
+			fontSize = 12;
+			fontShadow = true;
+			tooltip = "Bonus to damage dealt and reduction in damage taken from morale",
+		}
+	end
+	
+	local supprResist = InfoLabel:New{
+		parent = bonusStack;
+		caption = "Suppression resist.: " ..  WriteColoredString(("%.0f"):format((1 - shipData.suppressionMod)*100), nil, "%"),
+		align="left";
+		fontSize = 12;
+		fontShadow = true;
+		tooltip = "Modifier to suppression taken; morale-adjusted",
 	}
 end
 
@@ -578,9 +642,10 @@ local function CreateStatsWindow(unitID, unitDefID)
 	}
 	local panel_pilot_stats = Panel:New{
 		parent = panel_pilot,
-		x = "50%",
+		x = "50%",	--118
+		--bottom = 0,
 		y = 0,
-		height = "100%",
+		height = "100%",	--"40%",
 		right = 0,
 		backgroundColor = {0,0,0,0},
 	}
@@ -607,11 +672,12 @@ local function CreateStatsWindow(unitID, unitDefID)
 		centerItems = false
 		]]
 	}
-	FillPilotBiodata(unitID, unitDefID, pilot, panel_pilot_biodata)
+	FillPilotBiodata(unitID, unitDefID, data, pilot, panel_pilot_biodata)
 	
 	local panel_morale = Panel:New{
 		parent = panel_pilot_stats;
-		y = 0,
+		x = 0,
+		--bottom = 0,
 		width = "100%",
 		height = '33%',
 		tooltip = "Angels with high morale get bonuses to accuracy, damage, and defense.",
@@ -639,7 +705,8 @@ local function CreateStatsWindow(unitID, unitDefID)
 	}
 	local panel_spirit = Panel:New{
 		parent = panel_pilot_stats;
-		y = '33%',
+		--x = "33%",
+		y = "33%",
 		width = "100%",
 		height = '33%',
 		tooltip = "When the Angel's spirit is at maximum, she can use her special attack.",
@@ -667,6 +734,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 	}
 	local panel_suppression = Panel:New{
 		parent = panel_pilot_stats;
+		--x = "66%",
 		y = "66%",
 		width = "100%",
 		height = '33%',

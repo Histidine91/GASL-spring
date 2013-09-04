@@ -58,14 +58,12 @@ local unitDef = {
 		{
 			def = "MISSILE",
 			onlyTargetCategory = "TARGET",
-			badTargetCategory = "ARMORED",
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 120,
 		},
 		{
 			def = "PHALANX",
 			onlyTargetCategory = "TARGET",
-			badTargetCategory = "ARMORED",
 		},
 		{
 			def = "RAILGUN_SB",
@@ -82,14 +80,12 @@ local unitDef = {
 		{
 			def = "MISSILE_SB",
 			onlyTargetCategory = "TARGET",
-			badTargetCategory = "ARMORED",
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 120,
 		},
 		{
 			def = "PHALANX_SB",
 			onlyTargetCategory = "TARGET",
-			badTargetCategory = "ARMORED",
 		},
 	},
 	

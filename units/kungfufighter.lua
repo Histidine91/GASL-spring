@@ -59,7 +59,7 @@ local unitDef = {
 		},
 		{
 			def = "MISSILE_HARPOON",
-			onlyTargetCategory = "LARGE",
+			onlyTargetCategory = "MEDIUM LARGE",
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 90,
 		},

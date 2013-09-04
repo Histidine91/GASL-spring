@@ -26,6 +26,7 @@ local spGetUnitCommands		= Spring.GetUnitCommands
 local spGetUnitDefID		= Spring.GetUnitDefID
 local spGetUnitVelocity		= Spring.GetUnitVelocity
 local spGetUnitHeading		= Spring.GetUnitHeading
+local spGetUnitDirection	= Spring.GetUnitDirection
 local spGetUnitRulesParam	= Spring.GetUnitRulesParam
 local spGetUnitSeparation	= Spring.GetUnitSeparation
 local spGetUnitStates		= Spring.GetUnitStates
@@ -125,6 +126,11 @@ local function GetNewSpeed(old, wanted, accel, brake)
 end
 
 local function GetNewPitch(old, wanted, turnrate)
+	if wanted > (math.pi/2) then
+		wanted = wanted - math.pi
+	elseif wanted < (-math.pi/2) then
+		wanted = -math.pi - wanted
+	end
 	local new = old
 	if old < wanted then
 		new = old + turnrate
@@ -249,17 +255,6 @@ local function GetUnitSpeed(unitID)
 	return spacecraft[unitID] and spacecraft[unitID].speed
 end
 
--- this one isn't a GG function though
-local function GetTargetIntercept(unitID, targetID, distance)
-	local tx, ty, tz = GetUnitMidPos(targetID)
-	local vx, vy, vz = spGetUnitVelocity(targetID)
-	local travelTime = GetUnitSpeed(unitID)/(distance or spGetUnitSeparation(unitID, targetID))
-	if travelTime > 2 then
-		travelTime = 2
-	end
-	return tx + vx*travelTime, ty + vy*travelTime, tz + vz*travelTime
-end
-
 local function SetUnitSpeed(unitID, speed)
 	local data = spacecraft[unitID]
 	if not data then
@@ -270,6 +265,48 @@ local function SetUnitSpeed(unitID, speed)
 	local vy = math.sin(data.pitch) * speed
 	local vz = math.cos (data.heading) * speed
 	data.velocity = {vx, vy, vz}
+end
+
+local function GetUnitVelocity(unitID)
+	if spacecraft[unitID] then
+		local vx, vy, vz = unpack(spacecraft[unitID].velocity)
+		return vx, vy, vz
+	end
+end
+
+local function SetUnitVelocity(unitID, vx, vy, vz)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	data.velocity = {vx, vy, vz}
+	Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
+	--data.speed = (vx^2 + vy^2 + vz^2)^0.5
+end
+
+local function SetUnitHeading(unitID, heading)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	
+	heading = NormalizeHeading(heading)
+	data.heading = heading
+	Spring.MoveCtrl.SetHeading(unitID, heading*65536/2/pi)
+end
+
+local function SetChaseTarget(unitID, targetID)
+	if not spacecraft[unitID] then
+		return
+	end
+	spacecraft[unitID].forceChaseTarget = targetID
+end
+
+local function SetUnitPosition(unitID, x, y, z)
+	if not spacecraft[unitID] then
+		return
+	end
+	Spring.MoveCtrl.SetPosition(unitID, x, y, z)
 end
 
 local function BreakOffTarget(unitID)
@@ -294,32 +331,29 @@ local function BreakOffTarget(unitID)
 	data.wantedSpeed = def.speed
 end
 
-local function SetUnitHeading(unitID, heading)
-	if not spacecraft[unitID] then
-		return
-	end
-	spacecraft[unitID].heading = NormalizeHeading(heading)
-end
-
-local function SetChaseTarget(unitID, targetID)
-	if not spacecraft[unitID] then
-		return
-	end
-	spacecraft[unitID].forceChaseTarget = targetID
-end
-
-local function SetUnitPosition(unitID, x, y, z)
-	if not spacecraft[unitID] then
-		return
-	end
-	Spring.MoveCtrl.SetPosition(unitID, x, y, z)
-end
-
-local function DisableUnit()
+local function DisableUnit(unitID)
 	if not spacecraft[unitID] then
 		return
 	end
 	disabledUnits[unitID] = true
+end
+
+local function EnableUnit(unitID)
+	if not spacecraft[unitID] then
+		return
+	end
+	disabledUnits[unitID] = nil
+end
+
+-- this one isn't a GG function though
+local function GetTargetIntercept(unitID, targetID, distance)
+	local tx, ty, tz = GetUnitMidPos(targetID)
+	local vx, vy, vz = spGetUnitVelocity(targetID)
+	local travelTime = GetUnitSpeed(unitID)/(distance or spGetUnitSeparation(unitID, targetID))
+	if travelTime > 2 then
+		travelTime = 2
+	end
+	return tx + vx*travelTime, ty + vy*travelTime, tz + vz*travelTime
 end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -361,11 +395,14 @@ function gadget:Initialize()
 	GG.FlightControl = {
 		GetUnitSpeed = GetUnitSpeed,
 		SetUnitSpeed = SetUnitSpeed,
+		GetUnitVelocity = GetUnitVelocity,
+		SetUnitVelocity = SetUnitVelocity,
 		SetUnitHeading = SetUnitHeading,
 		SetUnitPosition = SetUnitPosition,
 		SetChaseTarget = SetChaseTarget,
 		BreakOffTarget = BreakOffTarget,
 		DisableUnit = DisableUnit,
+		EnableUnit = EnableUnit,
 	}
 end
 
@@ -388,10 +425,12 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 				wantedSpeed = 0,
 				attackSpeedState = spacecraftDefs[unitDefID].initAttackSpeedState,
 				velocity = {0,0,0},
+				rotationVelocity = {0,0,0},
 				commandCache = nil,
 				commandCacheTTL = 0,
 				timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER,
 				forceChaseTarget = nil,
+				fresh = true,
 			}
 			spacecraft[unitID].heading = NormalizeHeading(spacecraft[unitID].heading)
 			cmdSetAttackSpeed.params[1] = spacecraft[unitID].attackSpeedState
@@ -402,6 +441,7 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 			--Spring.SetUnitPosition(u,x,0,z)
 			Spring.MoveCtrl.Enable(unitID)
 			Spring.MoveCtrl.SetPosition(unitID,x,0,z)
+			--Spring.MoveCtrl.SetPosition(unitID,x,math.random(-100, 200),z)
 			--Spring.MoveCtrl.SetPosition(unitID,x,up and 150 or 0,z)
 			up = not up
 		end
@@ -459,6 +499,19 @@ function gadget:GameFrame(f)
 			local def = spacecraftDefs[unitDefID]
 			local px, py, pz = GetUnitMidPos(unitID)
 			
+			local fresh = data.fresh
+			
+			local heading = fresh and data.heading or spGetUnitHeading(unitID)/65536*2*math.pi
+			heading = NormalizeHeading(heading)
+			local dx, dy, dz = spGetUnitDirection(unitID)
+			local pitch = -math.atan2(dy, (dx^2+dy^2)^0.5)
+			--local roll
+			
+			if fresh then	-- fix for units instantly pointing south on first turn
+				Spring.MoveCtrl.SetRotation(unitID,pitch,heading,data.roll)
+			end
+			data.fresh = nil
+			
 			-- first determine what we should do
 			if data.commandCacheTTL <= 0 then
 				local commands = spGetUnitCommands(unitID, 2)
@@ -501,9 +554,6 @@ function gadget:GameFrame(f)
 						elseif distance < minRange then
 							data.behavior = 3
 							data.wantedSpeed = def.speed
-							
-							local heading = spGetUnitHeading(unitID)
-							heading = NormalizeHeading(heading)
 							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 						else
 							data.behavior = 2
@@ -533,8 +583,6 @@ function gadget:GameFrame(f)
 							data.moveGoal = {GetTargetIntercept(unitID, targetID, distance)}
 							data.wantedSpeed = def.speed
 						elseif data.behavior == 2 then
-							local heading = spGetUnitHeading(unitID)/65536*2*math.pi
-							heading = NormalizeHeading(heading)
 							local tx, ty, tz = GetUnitMidPos(targetID)
 							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, orbitDistance, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 							data.wantedSpeed = ((cmdID == CMD.GUARD) or (def.combatSpeed < targetData.wantedSpeed)) and def.speed or def.combatSpeed
@@ -555,8 +603,6 @@ function gadget:GameFrame(f)
 							local avoidDistance = math.max(def.minimumRange, targetDef.avoidDistance, MIN_AVOID_DISTANCE)
 							if distance < avoidDistance then
 								data.behavior = 3
-								local heading = spGetUnitHeading(unitID)
-								heading = NormalizeHeading(heading)
 								local tx, ty, tz = GetUnitMidPos(targetID)
 								data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 								data.lastDistance = distance
@@ -565,13 +611,13 @@ function gadget:GameFrame(f)
 							end
 						elseif data.behavior == 3 then
 							-- if target is on our tail, attempt to shake
-							data.timeBeforeShakePursuer = data.timeBeforeShakePursuer - 1
-							if data.timeBeforeShakePursuer == 0 then
-								if distance <= (data.lastDistance or 0) + (def.speed*60) then
+							if distance <= (data.lastDistance or 0) + (def.speed) then
+								data.timeBeforeShakePursuer = data.timeBeforeShakePursuer - 1
+								if data.timeBeforeShakePursuer == 0 then
 									data.behavior = 2
 									data.moveGoal = {GetTargetIntercept(unitID, targetID, distance)}
 									data.wantedSpeed = def.combatSpeed
-									--Spring.Echo(unitID .. " is jinking (distance " .. distance .. ", was " .. data.lastDistance .. ")")
+									--Spring.Echo(unitID .. " is attempting to shake (distance " .. distance .. ", was " .. data.lastDistance .. ")")
 								end
 								data.lastDistance = distance
 								data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
@@ -619,18 +665,18 @@ function gadget:GameFrame(f)
 					RequestNewTarget(unitID, unitDefID, data.commandCache == nil)
 				end
 			end
-			--if f%120 == 0 then
-			--	if data.commandCache then Spring.Echo(data.commandCache.id) end
-			--end
 			
 			-- decided what we want to do, now to get there
 			local wantedPitch, wantedHeading
 			local speed = 0
 			local moveGoal = data.moveGoal
+			
 			local energy = GG.Energy and GG.Energy.GetUnitEnergy(unitID)
 			if energy and energy == 0 then	-- stranded!
+				Spring.MoveCtrl.SetDrag(unitID, 0.1)	-- space friction (keeps 'em from wandering offmap)
 				-- make no changes to our facing or speed
 			else
+				Spring.MoveCtrl.SetDrag(unitID, 0)
 				if moveGoal then
 					local dy = moveGoal[2] - py
 					local vectorX, vectorZ = px - moveGoal[1], pz - moveGoal[3] 
@@ -638,36 +684,59 @@ function gadget:GameFrame(f)
 					wantedPitch = -math.atan2(dy, dxz)
 					wantedHeading = spGetHeadingFromVector(vectorX, vectorZ)/65536*2*pi + pi
 					wantedHeading = NormalizeHeading(wantedHeading)
-					if math.abs(wantedHeading - data.heading) < 0.01 then
-						wantedHeading = data.heading
+					if math.abs(wantedHeading - heading) < 0.03 then
+						wantedHeading = heading
 					end
-					if math.abs(wantedPitch - data.pitch) < 0.01 then
-						wantedPitch = data.pitch
+					if math.abs(wantedPitch - pitch) < 0.03 then
+						wantedPitch = pitch
 					end
 				else
-					wantedPitch = data.pitch
-					wantedHeading = data.heading
+					wantedPitch = pitch
+					wantedHeading = heading
 				end
 			
 				-- fixes wrong-way turning with pitch after an Immelmann/split-S
 				--local correction = 1
-				--if data.pitch > pi/2 or data.pitch < -pi/2 then		
+				--if pitch > pi/2 or pitch < -pi/2 then		
 				--	correction = -1
 				--end
 				--wantedHeading = wantedHeading*correction
 				
 				local slowState = spGetUnitRulesParam(unitID,"slowState") or 0
 				local turnrate = def.turnrate * (1 - slowState)
-				data.pitch = GetNewPitch(data.pitch, wantedPitch, turnrate)
-				local rollDir = 0
-			
-				if wantedHeading ~= data.heading then
-					data.heading, rollDir = GetNewHeading(data.heading, wantedHeading, turnrate)
+				
+				--pitch = GetNewPitch(pitch, wantedPitch, turnrate)
+				----[[
+				local rx = 0
+				if wantedPitch ~= pitch then
+					--rx = GetNewPitch(pitch, wantedPitch, turnrate) - pitch
+					if wantedPitch > pitch then
+						rx = math.min(wantedPitch - pitch, turnrate)
+					else
+						rx = math.max(wantedPitch - pitch, -turnrate)
+					end
 				end
+				local ry, rz = 0, 0
+				--]]
+				local rollDir = 0
+				
+			
+				if wantedHeading ~= heading then
+					--heading, rollDir = GetNewHeading(heading, wantedHeading, turnrate)
+					ry, rollDir = GetNewHeading(heading, wantedHeading, turnrate)
+					ry = ry - heading
+				end
+				
+				--rz = GetNewPitch(data.roll, -rollDir*def.rollAngle, def.rollSpeed)
 				data.roll = GetNewPitch(data.roll, -rollDir*def.rollAngle, def.rollSpeed)
 				
-				Spring.MoveCtrl.SetRotation(unitID,data.pitch,data.heading,data.roll)
-				--spSetUnitRotation(unitID,data.pitch,data.heading,data.roll)
+				local rotVel = data.rotationVelocity
+				rotVel[1] = rx
+				rotVel[2] = ry
+				rotVel[3] = rz
+				--Spring.MoveCtrl.SetRotation(unitID,pitch,heading,data.roll)
+				--spSetUnitRotation(unitID,pitch,heading,data.roll)
+				Spring.MoveCtrl.SetRotationVelocity(unitID, rotVel[1], rotVel[2], rotVel[3])
 				
 				local oldSpeed = data.speed
 				speed = data.wantedSpeed --GetNewSpeed(data.speed, data.wantedSpeed, def.acceleration, def.brakerate)
@@ -690,16 +759,14 @@ function gadget:GameFrame(f)
 							GG.Energy.SetUnitEnergy(unitID, 0)	-- drain the last drop of fuel
 						end
 					end
-				end
-				--if f%120 == 0 then Spring.Echo(data.speed, data.wantedSpeed) end
-				--if f%120 == 0 then Spring.Echo(data.heading, wantedHeading) end	
+				end	
 			end
 					
 			-- calculate velocity
 			--Spring.MoveCtrl.SetRelativeVelocity(p.unit,0,0,speed)
-			local vx = math.sin(data.heading) *(math.cos(data.pitch))*speed
-			local vy = -math.sin(data.pitch)*speed
-			local vz = math.cos(data.heading) *(math.cos(data.pitch))*speed
+			local vx = math.sin(heading) *(math.cos(pitch))*speed
+			local vy = -math.sin(pitch)*speed
+			local vz = math.cos(heading) *(math.cos(pitch))*speed
 			
 			local vx1, vy1, vz1 = unpack(data.velocity)
 			local inertiaFactor = def.inertiaFactor
@@ -708,6 +775,8 @@ function gadget:GameFrame(f)
 			vy = vy*(1-inertiaFactor) + vy1*inertiaFactor
 			vz = vz*(1-inertiaFactor) + vz1*inertiaFactor
 			
+			data.pitch = pitch
+			data.heading = heading
 			data.velocity = {vx, vy, vz}
 			Spring.SetUnitVelocity(unitID, vx, vy, vz)
 			Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)

@@ -83,7 +83,7 @@ for name, ud in pairs(UnitDefs) do
 	    end	    
 	    -- suppression resistance
 	    local suppressionModMod = moraleMod * MORALE_SUPPRESSION_MOD_BOOST
-	    cp.suppressionmod = (cp.suppressionmod or 1) * suppressionModMod
+	    cp.suppressionmod = math.max((cp.suppressionmod or 1) - (cp.suppressionmod or 1)*suppressionModMod, 0)
 	end
     end
 end

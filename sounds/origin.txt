@@ -25,3 +25,4 @@ Galaxy Angel:
 spirit_full.wav
 flier.wav
 debriefing.wav
+repair.wav

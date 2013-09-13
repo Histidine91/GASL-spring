@@ -16,7 +16,7 @@ local spGetCameraState = Spring.GetCameraState
 local spGetMouseState = Spring.GetMouseState
 local spGetUnitDefID = Spring.GetUnitDefID
 local spGetUnitHealth = Spring.GetUnitHealth
-local spGetUnitPosition = Spring.GetUnitPosition
+local spGetUnitViewPosition = Spring.GetUnitViewPosition
 local spIsUnitSelected = Spring.IsUnitSelected
 local spIsUnitInView = Spring.IsUnitInView
 local spTraceScreenRay = Spring.TraceScreenRay
@@ -33,6 +33,8 @@ options = {
 		items = {
 			{ key = 'none', name = 'None', },
 			{ key = 'selected', name = 'Selected', },
+			{ key = 'distant', name = 'Distant', },
+			{ key = 'selected_and_distant', name = 'Selected & Distant', },
 			{ key = 'all', name = 'All', },
 		},
 		value = 'selected',
@@ -40,12 +42,14 @@ options = {
 }
 
 local PANEL_WIDTH, PANEL_HEIGHT = 160, 32
+local DISTANT_VIEW_THRESHOLD = 2000
 
 local units = {}
 
 local updateFrequency = 0.2
 local gameframe = Spring.GetGameFrame()
 local currentMouseOverUnit
+local cam = spGetCameraState()
 
 -- Chili classes
 local Chili
@@ -58,6 +62,12 @@ local screen0
 
 ------------------------
 ------------------------
+local function GetTwoPointDistance(x1, y1, z1, x2, y2, z2)
+	local distSq = (x1-x2)^2 + (y1-y2)^2 + (z1-z2)^2
+	return distSq^0.5
+end
+
+
 local function DisposePanel(unitID)
 	if not unitID then return end
 	
@@ -69,9 +79,8 @@ end
 
 local function GetPanelPosition(unitID, invert)
 	--local height = Spring.GetUnitHeight(unitID)
-	local cam = spGetCameraState()
 	local cx, cy, cz = cam.px, cam.py, cam.pz
-	local _,_,_,ux, uy, uz = spGetUnitPosition(unitID, true)
+	local ux, uy, uz = spGetUnitViewPosition(unitID)
 	local distFromCam = (cx-ux)^2 + (cy-uy)^2 + (cz-uz)^2
 	distFromCam = distFromCam^0.5
 	--uy = uy + height
@@ -126,11 +135,25 @@ local function ShouldDisplayNametag(unitID)
 	local setting = options.toDisplay.value
 	if setting == "none" then
 		return false
-	elseif setting == "selected" then
-		return (spIsUnitSelected(unitID) or (WG.COFC and WG.COFC.GetThirdPersonTrackUnit() == unitID) or currentMouseOverUnit == unitID) and spIsUnitInView(unitID)
-	else
-		return spIsUnitInView(unitID)
+	elseif not spIsUnitInView(unitID) then
+		return false
 	end
+	
+	if setting == "selected" then
+		return (spIsUnitSelected(unitID) or (WG.COFC and WG.COFC.GetThirdPersonTrackUnit() == unitID) or currentMouseOverUnit == unitID)
+	elseif setting == "distant" then
+		local x,y,z = spGetUnitViewPosition(unitID)
+		local dist = GetTwoPointDistance(x, y, z, cam.px, cam.py, cam.pz)
+		return dist > DISTANT_VIEW_THRESHOLD
+	elseif setting == "selected_and_distant" then
+		if (spIsUnitSelected(unitID) or (WG.COFC and WG.COFC.GetThirdPersonTrackUnit() == unitID) or currentMouseOverUnit == unitID) then
+			return true
+		end
+		local x,y,z = spGetUnitViewPosition(unitID)
+		local dist = GetTwoPointDistance(x, y, z, cam.px, cam.py, cam.pz)
+		return dist > DISTANT_VIEW_THRESHOLD
+	end
+	return true
 end
 ------------------------
 ------------------------
@@ -138,7 +161,8 @@ end
 local timer = 0
 
 function widget:Update(dt)
-	-- chili code
+	cam = spGetCameraState()
+	
 	timer = timer + dt
 	for unitID, data in pairs(units) do
 		if ShouldDisplayNametag(unitID) then

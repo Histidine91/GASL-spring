@@ -83,7 +83,7 @@ end
 function gadget:UnitCreated(unitID, unitDefID, unitTeam)
   if defs[unitDefID] and defs[unitDefID] ~= -1 then
     units[unitID] = defs[unitDefID]
-    spSetUnitRulesParam(unitID, "energy", 1)
+    spSetUnitRulesParam(unitID, "energy", 1, {inlos = true})
   end
 end
 

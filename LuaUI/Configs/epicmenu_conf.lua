@@ -81,7 +81,8 @@ local function AddOption(option)
 	table.insert(confdata.eopt, option)
 end
 
-local function ShButton( caption, action2, tooltip, advanced )
+--ShortHand for adding a button
+local function ShButton( caption, action2, tooltip, advanced, icon )
 	AddOption({
 		type='button',
 		name=caption,
@@ -90,11 +91,13 @@ local function ShButton( caption, action2, tooltip, advanced )
 		OnChange = (type(action2) ~= 'string' and action2 or nil),
 		key=caption,
 		advanced = advanced,
+		icon = icon,
 	})
 end
 
---a form of checkbox that act like multiple choice question
-local function ShTick2( caption, items,defValue, action2, advanced) 
+
+--ShortHand for adding radiobuttons
+local function ShRadio( caption, items,defValue, action2, advanced) 
 	AddOption({
 		type='radioButton', 
 		name=caption,
@@ -107,6 +110,7 @@ local function ShTick2( caption, items,defValue, action2, advanced)
 	})
 end
 
+--ShortHand for adding a label
 local function ShLabel( caption )
 	AddOption({
 		type='label',
@@ -115,6 +119,25 @@ local function ShLabel( caption )
 		key=caption,
 	})
 end
+
+
+local imgPath = LUAUI_DIRNAME  .. 'images/'
+confdata.subMenuIcons = {	
+	['Game/Game Speed'] = imgPath..'epicmenu/speed-test-icon.png',
+	['Game/Unit AI'] = imgPath..'epicmenu/robot2.png',
+	['Settings/Reset Settings'] = imgPath..'epicmenu/undo.png',
+	['Settings/Audio'] = imgPath..'epicmenu/vol.png',
+	['Settings/Camera'] = imgPath..'epicmenu/video_camera.png',
+	['Settings/Graphics'] = imgPath..'epicmenu/graphics.png',
+	['Settings/HUD Panels'] = imgPath..'epicmenu/control_panel.png',
+	['Settings/Interface'] = imgPath..'epicmenu/robotarm.png',
+	['Settings/Misc'] = imgPath..'epicmenu/misc.png',
+	
+	['Settings/Interface/Mouse Cursor'] = imgPath..'epicmenu/input_mouse.png',
+	['Settings/Interface/Map'] = imgPath..'epicmenu/map.png',
+	['Settings/Interface/Healthbars'] = imgPath..'commands/Bold/health.png',
+	['Settings/Interface/Spectating'] = imgPath..'epicmenu/find.png',
+}
 
 -- SETUP MENU HERE
 
@@ -145,16 +168,18 @@ path='Settings/Reset Settings'
 
 
 path='Settings'
+	--[[
 	AddOption({
 		name = 'Show Advanced Settings',
 		type = 'bool',
 		value = false,
 	})
+	--]]
 
 --- GAME --- Stuff for gameplay only. Spectator would never need to open this
 path='Game' 
 
-	ShButton( 'Pause/Unpause', 'pause' )
+	ShButton( 'Pause/Unpause', 'pause', nil, nil, imgPath .. 'epicmenu/media_playback_pause.png' )
 	path='Game/Game Speed' 
 		ShButton( 'Increase Speed', 'speedup' )
 		ShButton( 'Decrease Speed', 'slowdown' )
@@ -173,7 +198,7 @@ path='Settings/Camera'
 	--]]
 
 	local cofcDisable = "luaui disablewidget Combo Overhead/Free Camera (experimental)"
-	ShTick2( 'Camera Type', {
+	ShRadio( 'Camera Type', {
 			{name = 'Total Annihilation',key='Total Annihilation', desc='TA camera', hotkey=nil},
 			{name = 'FPS',key='FPS', desc='FPS camera', hotkey=nil},
 			{name = 'Free',key='Free', desc='Freestyle camera', hotkey=nil},
@@ -258,17 +283,16 @@ path='Settings/Interface/Selection'
 	path='Settings/Interface/Selection/Selection Shapes'
 		ShButton('Toggle Selection Shapes', function() spSendCommands{"luaui togglewidget UnitShapes"} end, "Draws coloured shapes under selected units")
 	path='Settings/Interface/Selection/Selection XRay&Halo'
-		ShButton('Toggle Selection XRay&Halo', function() spSendCommands{"luaui togglewidget XrayHaloSelections"} end, "Highlights bodies of selected and hovered-over units")	
+		ShButton('Toggle Selection XRay&Halo', function() spSendCommands{"luaui togglewidget XrayHaloSelections"} end, "Highlights bodies of selected units")	
 	path='Settings/Interface/Selection/Team Platters'
 		ShButton('Toggle Team Platters', function() Spring.SendCommands{"luaui togglewidget TeamPlatter"} end, "Puts team-coloured disk below units")
 	path='Settings/Interface/Selection/Blurry Halo Selections'
-		ShButton('Toggle Blurry Halo Selections', function() Spring.SendCommands{"luaui togglewidget Selection BlurryHalo"} end, "Puts team-coloured disk below units")
+		ShButton('Toggle Blurry Halo Selections', function() Spring.SendCommands{"luaui togglewidget Selection BlurryHalo"} end, "Places blurry halo around selected units")
 
   
 --- MISC --- Ungrouped. If some of the settings here can be grouped together, make a new subsection or its own section.
 path='Settings/Misc'
 	ShButton( 'Local Widget Config', function() spSendCommands{"luaui localwidgetsconfig"} end, '', true )
-	ShButton( 'Map Draw Key', "drawinmap", '', true )
 	ShButton( 'Game Info', "gameinfo", '', true )
 	ShButton( 'Share Dialog...', 'sharedialog', '', true )
 	ShButton( 'FPS Control', "controlunit", 'Control a unit directly in FPS mode.', true )
@@ -300,17 +324,17 @@ path='Settings/Graphics'
 
 
 	--ShLabel('Trees')
-	--ShButton('Toggle View', 'drawtrees' )
-	--ShButton('See More Trees', 'moretrees' )
-	--ShButton('See Less Trees', 'lesstrees' )
+	--ShButton('Toggle View', 'drawtrees', nil, nil, imgPath..'epicmenu/tree_1.png' )
+	--ShButton('See More Trees', 'moretrees', nil, nil, imgPath..'epicmenu/tree_1.png' )
+	--ShButton('See Less Trees', 'lesstrees', nil, nil, imgPath..'epicmenu/tree_1.png' )
 	--{'Toggle Dynamic Sky', function(self) spSendCommands{'dynamicsky'} end },
 	
 	--ShLabel('Water Settings')
-	--ShButton('Basic', function() spSendCommands{"water 0"} end )
-	--ShButton('Reflective', function() spSendCommands{"water 1"} end )
-	--ShButton('Reflective and Refractive', function() spSendCommands{"water 3"} end )
-	--ShButton('Dynamic', function() spSendCommands{"water 2"} end )
-	--ShButton('Bumpmapped', function() spSendCommands{"water 4"} end )
+	--ShButton('Basic', function() spSendCommands{"water 0"} end, nil, nil, imgPath..'epicmenu/water.png' )
+	--ShButton('Reflective', function() spSendCommands{"water 1"} end, nil, nil, imgPath..'epicmenu/water.png' )
+	--ShButton('Reflective and Refractive', function() spSendCommands{"water 3"} end, nil, nil, imgPath..'epicmenu/water.png' )
+	--ShButton('Dynamic', function() spSendCommands{"water 2"} end, nil, nil, imgPath..'epicmenu/water.png' )
+	--ShButton('Bumpmapped', function() spSendCommands{"water 4"} end, nil, nil, imgPath..'epicmenu/water.png' )
 
 	ShLabel('Shadow Settings')
 	
@@ -349,24 +373,11 @@ path='Settings/Graphics'
 		max = 1, 
 		step = 0.01,
 		value = 1,
+		icon = imgPath..'epicmenu/stock_brightness.png',
 		OnChange = function(self) Spring.SendCommands{"luaui enablewidget Darkening", "luaui darkening " .. 1-self.value} end, 
 	} )
 	
-	AddOption({
-		name = 'Draw Distance',
-		type = 'number',
-		min = 1, 
-		max = 1000,
-		springsetting = 'UnitLodDist',
-		OnChange = function(self) Spring.SendCommands{"distdraw " .. self.value} end 
-	} )
 	
-	AddOption({
-		name = 'Shiny Units',
-		type = 'bool',
-		springsetting = 'AdvUnitShading',
-		OnChange=function(self) spSendCommands{"advmodelshading " .. (self.value and 1 or 0) } end, --needed as setconfigint doesn't apply change right away
-	} )
 	AddOption({ 	
 		name = 'Ground Decals',
 		type = 'bool',
@@ -402,21 +413,38 @@ path='Settings/Graphics/Map'
 ]]--
 
 path='Settings/Graphics/Unit Visibility'
-  ShLabel( 'Unit Visibility Options')
-  AddOption({
-    name = 'Icon Distance',
-    type = 'number',
-    min = 1, 
-    max = 1000,
-    springsetting = 'UnitIconDist',
-    OnChange = function(self) Spring.SendCommands{"disticon " .. self.value} end 
-	} ) 
-  ShLabel( 'Unit Visibility Widgets')
-  ShButton('Outline',function() spSendCommands{"luaui togglewidget Outline"} end, "Shows cartoon-like outline around units")
-  ShButton('Halo', function() spSendCommands{"luaui togglewidget Halo"} end, "Shows halo around units")
-  ShButton('Spotter', function() Spring.SendCommands{"luaui togglewidget Spotter"} end, "Puts team-coloured blob below units")
+	ShLabel( 'Unit Visibility Options')
+	AddOption({
+		name = 'Draw Distance',
+		type = 'number',
+		min = 1, 
+		max = 1000,
+		springsetting = 'UnitLodDist',
+		OnChange = function(self) Spring.SendCommands{"distdraw " .. self.value} end 
+	} )
+	AddOption({
+	  name = 'Icon Distance',
+	  type = 'number',
+	  min = 1, 
+	  max = 1000,
+	  springsetting = 'UnitIconDist',
+	  OnChange = function(self) Spring.SendCommands{"disticon " .. self.value} end 
+	  } )
+	AddOption({
+		name = 'Shiny Units',
+		type = 'bool',
+		springsetting = 'AdvUnitShading',
+		OnChange=function(self) spSendCommands{"advmodelshading " .. (self.value and 1 or 0) } end, --needed as setconfigint doesn't apply change right away
+	} )
+	ShLabel( 'Unit Visibility Widgets')
+	ShButton('Toggle Unit Halos', function() spSendCommands{"luaui togglewidget Halo"} end, "Shows halo around units")
+	
+	path='Settings/Graphics/Unit Visibility/Spotter'
+		ShButton('Toggle Unit Spotter', function() Spring.SendCommands{"luaui togglewidget Spotter"} end, "Puts team-coloured blob below units")
 	path='Settings/Graphics/Unit Visibility/XRay Shader'
-  	ShButton('Toggle XRay Shader', function() spSendCommands{"luaui togglewidget XrayShader"} end, "Highlights edges of units")
+		ShButton('Toggle XRay Shader', function() spSendCommands{"luaui togglewidget XrayShader"} end, "Highlights edges of units")
+	path='Settings/Graphics/Unit Visibility/Outline'
+		ShButton('Toggle Unit Outline', function() spSendCommands{"luaui togglewidget Outline"} end, "Highlights edges of units")
 
 --- HELP ---
 path='Help'
@@ -430,7 +458,7 @@ path='Help'
 	ShButton('Tutorial', function() spSendCommands{"luaui togglewidget Nubtron"} end )
 	--ShButton('Tip Dispenser', function() spSendCommands{"luaui togglewidget Automatic Tip Dispenser"} end, 'An advisor which gives you tips as you play' )
 	--path='Help/Clippy Comments'
-	--	ShButton('Toggle Clippy Comments', function() spSendCommands{"luaui togglewidget Clippy Comments"} end, "Units speak up if they see you're not playing optimally" )
+	--ShButton('Toggle Clippy Comments', function() spSendCommands{"luaui togglewidget Clippy Comments"} end, "Units speak up if they see you're not playing optimally" )
 
 
 return confdata

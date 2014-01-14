@@ -894,14 +894,15 @@ TrackUnit = function(unitID, instant)
 	local paused = select(3, spGetGameSpeed())
 	local cam = {}
 	local oldcam = spGetCameraState()
-	local tx, ty, tz = spGetUnitViewPosition(unitID, true)
+	--local _, _, _, tx, ty, tz = spGetUnitPosition(unitID, true)
+	local tx, ty, tz = spGetUnitViewPosition(unitID)
 	--local vx, vy, vz = spGetUnitDirection(unitID)
 	--local rotX, rotY, rotZ = GetRotationFromVector(vx, vy, vz)
 	--local oldcam = cam
-	local velocity = {spGetUnitVelocity(unitID)}
-	--x = x + p.velocity[1]*Game.gameSpeed
-	--y = y + p.velocity[2]*Game.gameSpeed
-	--z = z + p.velocity[3]*Game.gameSpeed
+	--local velocity = {spGetUnitVelocity(unitID)}
+	--tx = tx + velocity[1]*Game.gameSpeed*4/3
+	--ty = ty + velocity[2]*Game.gameSpeed*4/3
+	--tz = z + velocity[3]*Game.gameSpeed*4/3
 	
 	local tcam = overview_mode and trackCamOverview or trackCam
 	
@@ -947,7 +948,7 @@ TrackUnit = function(unitID, instant)
 	local delta = (((cam.px - oldcam.px)^2 + (cam.py - oldcam.py)^2 + (cam.pz - oldcam.pz)^2)^0.5)
 	--Spring.Echo(cam.px, cam.py, cam.pz, cam.rx, cam.ry, cam.rz)
 	if delta <= 0 then delta = 0 end --CAM_TRACK_PERIOD end
-	spSetCameraState(cam, instant and 0 or 0.2)
+	spSetCameraState(cam, instant and 0 or 0.25) -- 4.5
 	--Spring.SetCameraTarget(cam.px, cam.py, cam.pz, 0.5)
 end
 

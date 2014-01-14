@@ -19,6 +19,41 @@
 --
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+local HANDLER_BASENAME = "gadgets.lua"
+local isMission = VFS.FileExists("mission.lua")
+
+local DepthMod = 10
+local DepthValue = -1
+
+origPairs = pairs
+local whiteList = {['string'] = true, ['number'] = true, ['boolean'] = true, ['nil'] = true, ['thread'] = true}
+local function mynext(...)
+	local i,v = next(...)
+	local t = type(i)
+	if not whiteList[t] then
+		Spring.Log(HANDLER_BASENAME, "error", '*** A gadget is misusing pairs! Report this with full infolog.txt! ***')
+		Spring.Log(HANDLER_BASENAME, "error", t)
+		Spring.Log(HANDLER_BASENAME, "error", i)
+		Spring.Log(HANDLER_BASENAME, "error", v)
+		DepthValue = DepthValue + 1
+		if isMission then
+			Spring.Log(HANDLER_BASENAME, "error", "Error depth: " .. DepthValue%DepthMod + 1, DepthValue%DepthMod + 1)
+		else
+			error("Error depth: " .. DepthValue%DepthMod + 1, DepthValue%DepthMod + 1)	-- breaks mission_runner
+		end
+	end
+	return i,v
+end
+
+pairs = function(...) 
+	if SendToUnsynced then
+		local n,s,i = origPairs(...)
+		return mynext,s,i
+	else
+		local n,s,i = origPairs(...)
+		return next,s,i
+	end
+end
 
 local SAFEWRAP = 0
 -- 0: disabled
@@ -36,15 +71,12 @@ if (Spring.IsDevLuaEnabled()) then
   VFSMODE = VFS.RAW_ONLY
 end
 
-
 VFS.Include(HANDLER_DIR .. 'setupdefs.lua', nil, VFSMODE)
 VFS.Include(HANDLER_DIR .. 'system.lua',    nil, VFSMODE)
 VFS.Include(HANDLER_DIR .. 'callins.lua',   nil, VFSMODE)
 VFS.Include(SCRIPT_DIR .. 'utilities.lua', nil, VFSMODE)
 
 local actionHandler = VFS.Include(HANDLER_DIR .. 'actions.lua', nil, VFSMODE)
-
-local HANDLER_BASENAME = "gadgets.lua"
 
 --------------------------------------------------------------------------------
 
@@ -232,7 +264,6 @@ local isSyncedCode = (SendToUnsynced ~= nil)
 local function IsSyncedCode()
   return isSyncedCode
 end
-
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -618,7 +649,7 @@ function gadgetHandler:RemoveGadget(gadget)
   local name = gadget.ghInfo.name
   self.knownGadgets[name].active = false
   if (gadget.Shutdown) then
-    gadget:Shutdown()
+	gadget:Shutdown()
   end
 
   ArrayRemove(self.gadgets, gadget)
@@ -848,7 +879,7 @@ function gadgetHandler:RegisterGlobal(owner, name, value)
   if ((name == nil)        or
       (_G[name])           or
       (self.globals[name]) or
-      (CallInsMap[name])) then
+      ((CallInsMap and CallInsMap[name]) or (CALLIN_MAP and CALLIN_MAP[name]))) then
     return false
   end
   _G[name] = value
@@ -948,9 +979,13 @@ function gadgetHandler:GameStart()
 end
 
 function gadgetHandler:Shutdown()
+  Spring.Echo("Start gadgetHandler:Shutdown")
   for _,g in ipairs(self.ShutdownList) do
-    g:Shutdown()
+    local name = g.ghInfo.name or "UNKNOWN NAME"
+	Spring.Echo("Shutdown - " .. name)
+	g:Shutdown()
   end
+  Spring.Echo("End gadgetHandler:Shutdown")
   return
 end
 

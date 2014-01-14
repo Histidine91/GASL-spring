@@ -143,6 +143,7 @@ local unitDef = {
 			impulseBoost		= 0,
 			intensity		= 1,
 			interceptedByShieldType = 1,
+			noExplode               = true,	-- needed for Lups trails; doesn't make the projectiles go through units as it does elsewhere
 			noSelfDamage		= true,
 			projectiles		= 2,
 			range			= 1600,

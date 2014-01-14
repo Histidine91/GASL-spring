@@ -84,7 +84,8 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 		return
 	end
 	
-	local suppressionDelta = weapons[weaponID].suppression * suppressionMod[unitDefID]
+	local weaponData = weapons[weaponID]
+	local suppressionDelta = weaponData.suppression * damage/weaponData.damage * suppressionMod[unitDefID]
 	local suppressionDeltaBase = suppressionDelta
 	local target = units[unitID].target
 	if target == attackerID then
@@ -93,7 +94,7 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 		suppressionDelta = suppressionDelta * NO_TARGET_MOD
 	end
 	-- flanking effects
-	if attackerID and not (weapons[weaponID].noFlank) then
+	if attackerID and not (weaponData.noFlank) then
 		local dotUp, dotFront = GetAttackerVector(unitID, attackerID)
 		suppressionDelta = suppressionDelta - suppressionDeltaBase*dotFront*FLANKING_MOD*flankingMod[unitDefID]
 	end

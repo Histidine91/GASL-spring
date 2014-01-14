@@ -239,8 +239,8 @@ local unitDef = {
 			areaofeffect	= 8,
 			avoidfriendly 	= false,
 			burnblow	= true,
-			burst		= 4,
-			burstRate	= 0.06,
+			burst		= 3,
+			burstRate	= 0.2,
 			
 			customParams	= {
 				ap = 25,
@@ -276,7 +276,7 @@ local unitDef = {
 			noSelfDamage	= true,
 			projectiles	= 4,
 			range		= 1450,
-			reloadTime	= 20,
+			reloadTime	= 18,
 			smoketrail 	= false,
 			--soundHit	= "weapons/mlighthit",
 			soundStart	= "weapon/energy2",
@@ -346,7 +346,7 @@ local specialWeapons = {
 	},
 	PHALANX_SB = {
 		source = "PHALANX",
-		properties = {name = "Phalanx Seeker SB", burst = 24, burstRate = 0.2, range = 1650, reloadTime = 10, flightTime = 10, customParams = {special = true, seekerttl = 45, retarget = 1400, retargettime = 30}}
+		properties = {name = "Phalanx Seeker SB", burst = 18, burstRate = 0.3, range = 1650, reloadTime = 10, flightTime = 10, customParams = {special = true, seekerttl = 45, retarget = 1400, retargettime = 30}}
 	},
 }
 local weaponDefs = unitDef.weaponDefs

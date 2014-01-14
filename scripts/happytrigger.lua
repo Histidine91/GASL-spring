@@ -29,7 +29,7 @@ local weapons = {
 do
     local muzzles = weapons[4].muzzles
     local muzzles2 = weapons[8].muzzles
-    for i=1,8 do
+    for i=1,6 do
 	muzzles[#muzzles+1] = piece("phalanx_l"..i)
 	muzzles[#muzzles+1] = piece("phalanx_r"..i)
 	muzzles2[#muzzles2+1] = piece("phalanx_l"..i)
@@ -104,11 +104,13 @@ local function StrikeBurstThread()
     Turn(phalanx_R, y_axis, 0, math.rad(120))
     isUsingSpecial = false
     GG.FlightControl.SetChaseTarget(unitID, nil)
+    Spring.SetUnitTarget(unitID, 0)
 end
 
 function StrikeBurstTrigger(params)
     specialTarget = params[1]
     GG.FlightControl.SetChaseTarget(unitID, params[1])
+    Spring.SetUnitTarget(unitID, params[1])
     StartThread(StrikeBurstThread)
 end
 
@@ -135,7 +137,7 @@ function script.Create()
     Turn(phalanxArm_L, z_axis, math.rad(-12))
     Turn(phalanxArm_R, z_axis, math.rad(12))
     
-    for i=1,8 do
+    for i=1,4 do
 	local angle = (i%2 == 0) and math.rad(80) or -math.rad(80)
 	local angle2 = math.rad(90)
 	Turn(piece("phalanx_l"..i), x_axis, angle)

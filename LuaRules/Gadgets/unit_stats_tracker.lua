@@ -74,12 +74,8 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 	--AddEvent("unitDamaged", damage, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
 end
 
-function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
-	local attackerID = Spring.GetUnitLastAttacker(unitID)
-	local attackerDefID, attackerTeam
+function gadget:UnitDestroyed(unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
 	if attackerID and attackerID > 0 then
-		attackerDefID = Spring.GetUnitDefID(attackerID)
-		attackerTeam = Spring.GetUnitTeam(attackerID)
 		GG.EventWrapper.AddEvent("kill", (UnitDefs[unitDefID].power^0.5)*2+10, attackerID, attackerDefID, attackerTeam, unitID, unitDefID, unitTeam)
 	end
 	GG.EventWrapper.AddEvent("death", (UnitDefs[unitDefID].power^0.5)*2+10, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)

@@ -61,7 +61,7 @@ local INERTIA_FACTOR = 0.99
 local BASE_THRUSTER_ENERGY_USAGE = 0.1	-- used every update interval, so a lot more than it looks!
 local ACCELERATION_ENERGY_USAGE_MULT = 3
 local TARGET_SEEK_RANGE = 3000
-local TARGET_SEEK_RANGE_LONG = 6000
+local TARGET_SEEK_RANGE_LONG = 9000
 
 local MOVE_COMMANDS = {
 	[CMD.MOVE] = true,
@@ -102,9 +102,9 @@ end
 
 local function NormalizeHeading(heading)
 	if heading > pi then
-		heading = heading - 2*pi
+		heading = NormalizeHeading(heading - 2*pi)
 	elseif heading < - pi then
-		heading = heading + 2*pi
+		heading = NormalizeHeading(heading + 2*pi)
 	end
 	return heading
 end
@@ -173,9 +173,9 @@ local function GetNewHeading(old, wanted, turnrate)
 	
 	local new = old
 	if old < wanted then
-		dir = 1	-- right
+		dir = -1	-- right
 	else
-		dir = -1 	-- left
+		dir = 1 	-- left
 	end
 	if math.abs(old - wanted) > math.rad(180) then
 		dir = dir * -1
@@ -222,6 +222,7 @@ end
 
 local function GetWantedSpeed(distance, data, def)
 	local wantedSpeed = def.speed
+	local threeSecondDist = def.speed * 60
 	if (distance < def.combatRange) then
 		if data.attackSpeedState == 0 then
 			wantedSpeed = 0
@@ -349,9 +350,15 @@ end
 local function GetTargetIntercept(unitID, targetID, distance)
 	local tx, ty, tz = GetUnitMidPos(targetID)
 	local vx, vy, vz = spGetUnitVelocity(targetID)
-	local travelTime = GetUnitSpeed(unitID)/(distance or spGetUnitSeparation(unitID, targetID))
+	distance = distance or spGetUnitSeparation(unitID, targetID)
+	if distance == 0 or distance == nil then
+		return tx, ty, tz
+	end
+	local travelTime = GetUnitSpeed(unitID)/distance
 	if travelTime > 2 then
 		travelTime = 2
+	elseif travelTime < 0 then
+		travelTime = 0
 	end
 	return tx + vx*travelTime, ty + vy*travelTime, tz + vz*travelTime
 end
@@ -367,7 +374,7 @@ function gadget:Initialize()
 			combatSpeed = tonumber(customParams.combatspeed) or 0.6*ud.speed/30,
 			combatRange = tonumber(customParams.combatrange) or 1000,
 			minimumRange = tonumber(customParams.minimumrange) or 0,
-			turnrate = ud.turnRate/30/360/pi,
+			turnrate = ud.turnRate/30/360/pi,	-- 0.1 means turn 180‹ in one second
 			acceleration = tonumber(customParams.acceleration) or 0.5,	-- unused
 			brakerate = tonumber(customParams.brakerate) or 1,		-- unused
 			inertiaFactor = tonumber(customParams.inertiafactor) or INERTIA_FACTOR,
@@ -379,9 +386,12 @@ function gadget:Initialize()
 			orbitTarget = customParams.orbittarget,
 			hasEnergy = customParams.energy and true,
 			thrusterEnergyUse = customParams.thrusterenergyuse or 1,
-			initAttackSpeedState = tonumber(customParams.attackspeedstate or 1)
+			initAttackSpeedState = tonumber(customParams.attackspeedstate or 1),
 			--standoff = (customParams.standoff and true) or false,	-- unimplemented
 		}
+		spacecraftDefs[i].turnDiameter = 0.2/spacecraftDefs[i].turnrate * ud.speed
+		spacecraftDefs[i].maxTurnAngle = math.max(spacecraftDefs[i].turnrate*3, 0.15)
+		Spring.Echo(ud.name, spacecraftDefs[i].turnrate)
 		--Spring.Echo(ud.name, ud.xsize, spacecraftDefs[i].avoidDistance)
 	end
 	local units = Spring.GetAllUnits()
@@ -506,6 +516,9 @@ function gadget:GameFrame(f)
 			local dx, dy, dz = spGetUnitDirection(unitID)
 			local pitch = -math.atan2(dy, (dx^2+dy^2)^0.5)
 			--local roll
+			local distance = 0
+			
+			local cmdID
 			
 			if fresh then	-- fix for units instantly pointing south on first turn
 				Spring.MoveCtrl.SetRotation(unitID,pitch,heading,data.roll)
@@ -529,7 +542,7 @@ function gadget:GameFrame(f)
 			end
 			if data.commandCache and ((f+unitID)%3 == 0) then
 				local command = data.commandCache
-				local cmdID = command.id
+				cmdID = command.id
 				local orbitTarget = def.orbitTarget
 				if data.forceChaseTarget then
 					cmdID = CMD.ATTACK
@@ -544,7 +557,7 @@ function gadget:GameFrame(f)
 						tx, ty, tz = unpack(command.params)
 					end
 					if tx and ty and tz then
-						local distance = GetDistance(ux, uy, uz, tx, ty, tz)
+						distance = GetDistance(ux, uy, uz, tx, ty, tz)
 						local minRange = specialWeapons[specialCMDs[cmdID]].minRange
 						local maxRange = specialWeapons[specialCMDs[cmdID]].maxRange
 						if distance > maxRange then
@@ -569,7 +582,7 @@ function gadget:GameFrame(f)
 				elseif orbitTarget or cmdID == CMD.GUARD then
 					local targetID = command.params[1]
 					if targetID and spValidUnitID(targetID) then
-						local distance = spGetUnitSeparation(unitID, targetID, false)
+						distance = spGetUnitSeparation(unitID, targetID, false)
 						local targetDefID = spGetUnitDefID(targetID)
 						local targetDef = spacecraftDefs[targetDefID] or {}
 						local targetData = spacecraft[targetID]
@@ -592,7 +605,7 @@ function gadget:GameFrame(f)
 				elseif cmdID == CMD.ATTACK then
 					local targetID = data.forceChaseTarget or command.params[1]
 					if targetID and spValidUnitID(targetID) then
-						local distance = spGetUnitSeparation(unitID, targetID, false)
+						distance = spGetUnitSeparation(unitID, targetID, false)
 						local targetDefID = spGetUnitDefID(targetID)
 						local targetDef = spacecraftDefs[targetDefID] or {}
 						
@@ -652,7 +665,7 @@ function gadget:GameFrame(f)
 					data.wantedSpeed = 0
 				elseif MOVE_COMMANDS[cmdID] then
 					data.moveGoal = command.params
-					local distance = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
+					distance = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
 					data.wantedSpeed = (distance > 100) and def.speed or def.combatSpeed
 					if distance <= MOVE_DISTANCE_THRESHOLD then	-- close enough
 						Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {data.commandCache.tag}, {})
@@ -670,6 +683,7 @@ function gadget:GameFrame(f)
 			local wantedPitch, wantedHeading
 			local speed = 0
 			local moveGoal = data.moveGoal
+			local deltaHeading = 0
 			
 			local energy = GG.Energy and GG.Energy.GetUnitEnergy(unitID)
 			if energy and energy == 0 then	-- stranded!
@@ -679,14 +693,17 @@ function gadget:GameFrame(f)
 				Spring.MoveCtrl.SetDrag(unitID, 0)
 				if moveGoal then
 					local dy = moveGoal[2] - py
-					local vectorX, vectorZ = px - moveGoal[1], pz - moveGoal[3] 
+					local vectorX, vectorZ = moveGoal[1] - px , moveGoal[3] - pz  
 					local dxz = math.sqrt(vectorX^2 + vectorZ^2)
 					wantedPitch = -math.atan2(dy, dxz)
 					wantedHeading = spGetHeadingFromVector(vectorX, vectorZ)/65536*2*pi + pi
 					wantedHeading = NormalizeHeading(wantedHeading)
-					if math.abs(wantedHeading - heading) < 0.03 then
+					deltaHeading = math.abs(wantedHeading - heading) - pi
+					if math.abs(deltaHeading) < 0.03 then
 						wantedHeading = heading
+						--Spring.Echo("hold heading")
 					end
+					
 					if math.abs(wantedPitch - pitch) < 0.03 then
 						wantedPitch = pitch
 					end
@@ -734,12 +751,16 @@ function gadget:GameFrame(f)
 				rotVel[1] = rx
 				rotVel[2] = ry
 				rotVel[3] = rz
-				--Spring.MoveCtrl.SetRotation(unitID,pitch,heading,data.roll)
+				--Spring.MoveCtrl.SetRotation(unitID, rx, ry, rz)
 				--spSetUnitRotation(unitID,pitch,heading,data.roll)
-				Spring.MoveCtrl.SetRotationVelocity(unitID, rotVel[1], rotVel[2], rotVel[3])
+				Spring.MoveCtrl.SetRotationVelocity(unitID, rx, ry, rz)
 				
 				local oldSpeed = data.speed
 				speed = data.wantedSpeed --GetNewSpeed(data.speed, data.wantedSpeed, def.acceleration, def.brakerate)
+				-- prevents problems with moving to destination inside our turning circle
+				if distance < def.turnDiameter and math.abs(deltaHeading) > def.maxTurnAngle then
+					speed = 0
+				end
 				local maxSpeed = def.speed * (1 - slowState)
 				if speed > maxSpeed then
 					speed = maxSpeed

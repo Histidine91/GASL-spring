@@ -85,7 +85,7 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 	end
 	
 	local weaponData = weapons[weaponID]
-	local suppressionDelta = weaponData.suppression * damage/weaponData.damage * suppressionMod[unitDefID]
+	local suppressionDelta = weaponData.suppression * suppressionMod[unitDefID] --* damage/weaponData.damage 
 	local suppressionDeltaBase = suppressionDelta
 	local target = units[unitID].target
 	if target == attackerID then

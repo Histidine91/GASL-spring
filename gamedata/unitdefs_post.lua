@@ -113,21 +113,16 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
--- Set reverse velocities, disables turninplace for small units, enables float
--- Also no smoothmesh
+-- Some movement stuff
 
 for name, ud in pairs(UnitDefs) do
     if (ud.maxvelocity) then ud.maxreversevelocity = ud.maxvelocity * 0.33 end
 	if (ud.canfly) then
 		ud.floater = false
 		ud.cansubmerge = true
-		ud.usesmoothmesh = false
-		--ud.usepiececollisionvolumes = true
-		--ud.airhoverfactor = -1
-		--ud.cruisealt = ud.cruisealt + 125	-- fixes super annoying bug with ships refusing to touch water with their colvols
 	end
-	if (ud.customparams) then
-		if (ud.customparams["type"] == "small" or ud.customparams["type"] == "gunstar") then ud.turninplace = false end
+	if (ud.turnrate) then
+	    ud.turnrate = ud.turnrate * 0.5
 	end
 end 
 

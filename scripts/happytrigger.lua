@@ -76,17 +76,34 @@ local function DamageLoop()
     end
 end
 
---[[
 local function DebugPhalanx()
     while true do
-	for i=1,8 do
+	for i=1,6 do
 	    EmitSfx(piece("phalanx_l"..i), 1026)
 	    EmitSfx(piece("phalanx_r"..i), 1026)
 	end
 	Sleep(300)
     end
 end
-]]
+
+local function SetPhalanxPointVectors()
+    local pair = 1
+    for i=1,6 do
+	local angleDeg = (i%2 == 0) and 80 or -80
+	if pair ~= 2 then
+	    --angleDeg = angleDeg*7/8
+	end
+	local angle = math.rad(angleDeg)
+	local angle2 = math.rad(60 + 15*pair)
+	Turn(piece("phalanx_l"..i), x_axis, angle)
+	Turn(piece("phalanx_l"..i), y_axis, angle2)
+	Turn(piece("phalanx_r"..i), x_axis, angle)
+	Turn(piece("phalanx_r"..i), y_axis, -angle2)
+	if i%2 == 0 then
+	    pair = pair + 1
+	end
+    end
+end
 
 local function StrikeBurstThread()
     Signal(SIG_SPECIAL)
@@ -96,12 +113,27 @@ local function StrikeBurstThread()
     Turn(phalanxArm_R, z_axis, math.rad(24), math.rad(240))
     Turn(phalanx_L, y_axis, math.rad(-90), math.rad(360))
     Turn(phalanx_R, y_axis, math.rad(90), math.rad(360))
+    
+    local pair = 1
+    for i=1,6 do
+	local angle = math.rad(75 + 15*pair)
+	if i%2 == 0 then angle = -angle end
+	Turn(piece("phalanx_l"..i), x_axis, angle)
+	Turn(piece("phalanx_l"..i), y_axis, 0)
+	Turn(piece("phalanx_r"..i), x_axis, angle)
+	Turn(piece("phalanx_r"..i), y_axis, 0)
+	if i%2 == 0 then
+	    pair = pair + 1
+	end
+    end
+    
     Sleep(5000)
     
     Turn(phalanxArm_L, z_axis, math.rad(-12), math.rad(80))
     Turn(phalanxArm_R, z_axis, math.rad(12), math.rad(80))
     Turn(phalanx_L, y_axis, 0, math.rad(120))
     Turn(phalanx_R, y_axis, 0, math.rad(120))
+    SetPhalanxPointVectors()
     isUsingSpecial = false
     GG.FlightControl.SetChaseTarget(unitID, nil)
     Spring.SetUnitTarget(unitID, 0)
@@ -125,6 +157,8 @@ local function FeatherLoop()
     end
 end
 
+
+
 function script.Create()
     Turn(pod_L, z_axis, math.rad(12))
     Turn(pod_R, z_axis, math.rad(-12))
@@ -137,14 +171,7 @@ function script.Create()
     Turn(phalanxArm_L, z_axis, math.rad(-12))
     Turn(phalanxArm_R, z_axis, math.rad(12))
     
-    for i=1,4 do
-	local angle = (i%2 == 0) and math.rad(80) or -math.rad(80)
-	local angle2 = math.rad(90)
-	Turn(piece("phalanx_l"..i), x_axis, angle)
-	Turn(piece("phalanx_l"..i), y_axis, angle2)
-	Turn(piece("phalanx_r"..i), x_axis, angle)
-	Turn(piece("phalanx_r"..i), y_axis, -angle2)
-    end
+    SetPhalanxPointVectors()
     
     --StartThread(DebugPhalanx)
     StartThread(FeatherLoop)

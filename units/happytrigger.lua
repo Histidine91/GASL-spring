@@ -131,7 +131,7 @@ local unitDef = {
 			texture2		= "null",
 			turret                  = true,
 			weaponType              = [[LaserCannon]],
-			weaponVelocity          = 600,	
+			weaponVelocity          = 1200,	
 		},
 		
 		LASER = {

@@ -91,11 +91,11 @@ local ENERGY_TEXTURE_LOW = "LuaUI/Images/energy_low.png"
 local ENERGY_TEXTURE_CRITICAL = "LuaUI/Images/energy_critical.png"
 
 local angelDefs = {
-  [UnitDefNames.luckystar.id] = {hasSpirit = true},
-  [UnitDefNames.kungfufighter.id] = {hasSpirit = true},
-  [UnitDefNames.happytrigger.id] = {hasSpirit = true},
-  [UnitDefNames.sharpshooter.id] = {hasSpirit = true},
-  [UnitDefNames.placeholdersior.id] = {hasSpirit = false},
+  [UnitDefNames.luckystar.id] = {hasSpirit = true, order = 2},
+  [UnitDefNames.kungfufighter.id] = {hasSpirit = true, order = 3},
+  [UnitDefNames.happytrigger.id] = {hasSpirit = true, order = 5},
+  [UnitDefNames.sharpshooter.id] = {hasSpirit = true, order = 7},
+  [UnitDefNames.placeholdersior.id] = {hasSpirit = false, order = 1},
 }
 
 local hasEnergyDefs = {}
@@ -236,7 +236,7 @@ end
 -------------------------------------------------------------------------------
 -- core functions
 
-local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persistent)
+local function AddUnitDisplay(unitID, unitDefID, index, powerIndex, hotkey, parent, persistent)
 	local numBars = 0
 	units[index].persistent = persistent
 
@@ -473,31 +473,35 @@ local function AddUnit(unitID, unitDefID, teamID)
 	if unitsByID[unitID] then
 		return
 	end
+	local angelData = angelDefs[unitDefID]
+	
 	local parent = stack_neutral
 	if not Spring.IsUnitAllied(unitID) then
 		parent = stack_enemy
-	elseif angelDefs[unitDefID] then
+	elseif angelData then
 		parent = stack_angels
 	elseif teamID == myTeamID then
 		parent = stack_ally
 	end
 
 	local index = #units + 1
-	local indexFound = false
-	for i=1,#units do
-	  local unitData = units[i]
-	  if indexFound then
-	    unitsByID[unitData.unitID] = unitsByID[unitData.unitID] + 1
-	  elseif powerDefs[unitDefID] > powerDefs[units[i].unitDefID] then
-	    index = i
-	    indexFound = true
+	local powerIndex = index
+	if angelData then
+	  powerIndex = angelData.order
+	else
+	  for i=1,#units do
+	    local unitData = units[i]
+	    if powerDefs[unitDefID] > powerDefs[units[i].unitDefID] then
+	      powerIndex = i
+	      break
+	    end
 	  end
 	end
 	
 	unitsByID[unitID] = index
 	local newEntry = {unitID = unitID, unitDefID = unitDefID, parent = parent}
 	table.insert(units, index, newEntry)
-	AddUnitDisplay(unitID, unitDefID, index, '', parent, parent == stack_angels)	-- FIXME hotkey
+	AddUnitDisplay(unitID, unitDefID, index, powerIndex, '', parent, parent == stack_angels)	-- FIXME hotkey
 	UpdateUnitInfo(unitID)
 	damagePings[unitID] = 0
 end

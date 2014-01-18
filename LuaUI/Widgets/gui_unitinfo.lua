@@ -655,6 +655,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		width = 111,
 		height= 125,
 		file = pilot and pilot.portrait or nil,
+		--file2 = "LuaUI/Images/portraits/frame.png",
 		keepAspect = true,
 	}
 	local panel_pilot_biodata = Panel:New{
@@ -773,7 +774,7 @@ function widget:MousePress(x,y,button)
 	local alt, ctrl, meta, shift = Spring.GetModKeyState()
 	
 	if alt then
-		local type, data = Spring.TraceScreenRay(x, y)
+		local type, data = Spring.TraceScreenRay(x, y, false, false, false, true)
 		if (type == 'unit') then
 			local unitID = data
 			local unitDefID = (Spring.GetUnitDefID(unitID))

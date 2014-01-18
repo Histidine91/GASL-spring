@@ -84,12 +84,12 @@ for _, weaponDef in pairs(WeaponDefs) do
     
     -- all weapons can shoot through "water" and "land"
     weaponDef.waterweapon = true
-    --weaponDef.firesubmersed = true
+    weaponDef.firesubmersed = true
     weaponDef.canattackground = false
     weaponDef.avoidground = false
     weaponDef.collideground = false
     
-    weaponDef.targetborder = 1
+    weaponDef.targetborder = 0.8
     weaponDef.cylindertargeting = 0
     weaponDef.heightmod = 1
     --weaponDef.heightboostfactor = 0	-- only used for cannons

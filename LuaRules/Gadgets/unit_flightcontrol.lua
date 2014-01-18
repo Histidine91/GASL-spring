@@ -41,6 +41,8 @@ if (gadgetHandler:IsSyncedCode()) then
 --------------------------------------------------------------------------------
 --SYNCED
 --------------------------------------------------------------------------------
+local CONTROL_MODE = "rotvel"	-- can be fixedrot, rotvel or hybrid, but only rotvel really works
+
 include "LuaRules/Configs/special_weapon_defs.lua"
 
 local cmdSetAttackSpeed = {
@@ -100,6 +102,11 @@ local function GetUnitMidPos(unitID)
 	return x,y,z
 end
 
+local function GetUnitAimPos(unitID)
+	local _,_,_,_,_,_,x,y,z = spGetUnitPosition(unitID, true, true)
+	return x,y,z
+end
+
 local function NormalizeHeading(heading)
 	if heading > pi then
 		heading = NormalizeHeading(heading - 2*pi)
@@ -127,9 +134,9 @@ end
 
 local function GetNewPitch(old, wanted, turnrate)
 	if wanted > (math.pi/2) then
-		wanted = wanted - math.pi
+		wanted = math.pi/2 - 0.1
 	elseif wanted < (-math.pi/2) then
-		wanted = -math.pi - wanted
+		wanted = -math.pi/2 + 0.1
 	end
 	local new = old
 	if old < wanted then
@@ -210,8 +217,8 @@ local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distanc
 	local pz = tz + math.cos(angleXZ)*distance
 	
 	local gh = Spring.GetGroundHeight(px, pz)
-	if py < gh then
-		py = gh + 50
+	if py < (gh + 100) then
+		py = gh + 100
 	end
 	
 	--py = py - ty/10		
@@ -257,6 +264,15 @@ end
 -- GG functions
 local function GetUnitSpeed(unitID)
 	return spacecraft[unitID] and spacecraft[unitID].speed
+end
+
+local function GetUnitTrueSpeed(unitID)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	local vel = data.velocity
+	return math.sqrt(vel[1]^2 + vel[2]^2 + vel[3]^2)
 end
 
 local function SetUnitSpeed(unitID, speed)
@@ -381,7 +397,7 @@ end
 
 -- this one isn't a GG function though
 local function GetTargetIntercept(unitID, targetID, distance)
-	local tx, ty, tz = GetUnitMidPos(targetID)
+	local tx, ty, tz = GetUnitAimPos(targetID)
 	local vx, vy, vz = spGetUnitVelocity(targetID)
 	distance = distance or spGetUnitSeparation(unitID, targetID)
 	if distance == 0 or distance == nil then
@@ -412,8 +428,8 @@ function gadget:Initialize()
 			brakerate = tonumber(customParams.brakerate) or 1,		-- unused
 			inertiaFactor = tonumber(customParams.inertiafactor) or INERTIA_FACTOR,
 			avoidDistance = tonumber(customParams.avoiddistance) or ud.xsize*15 + 200,
-			minAvoidanceAngle = math.rad(tonumber(customParams.minavoidanceangle) or 0),
-			maxAvoidanceAngle = math.rad(tonumber(customParams.maxavoidanceangle) or 90),
+			minAvoidanceAngle = math.rad(tonumber(customParams.minavoidanceangle) or 40),
+			maxAvoidanceAngle = math.rad(tonumber(customParams.maxavoidanceangle) or 150),
 			rollAngle = tonumber(customParams.rollangle) or 0,
 			rollSpeed = tonumber(customParams.rollspeed) or ud.turnRate/30/360/pi * 0.25,
 			orbitTarget = customParams.orbittarget,
@@ -437,6 +453,7 @@ function gadget:Initialize()
 	
 	GG.FlightControl = {
 		GetUnitSpeed = GetUnitSpeed,
+		GetUnitTrueSpeed = GetUnitTrueSpeed,
 		SetUnitSpeed = SetUnitSpeed,
 		SetUnitForcedSpeed = SetUnitForcedSpeed,
 		GetUnitVelocity = GetUnitVelocity,
@@ -511,7 +528,7 @@ function gadget:AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdO
 		if cmdID == CMD.ATTACK and not cmdOptions.shift then	-- explicit attack order makes unit stop avoidance behavior
 			local target = #cmdParams == 1 and cmdParams[1]
 			if target and spValidUnitID(target) then
-				spacecraft[unitID].moveGoal = {GetUnitMidPos(target)}
+				spacecraft[unitID].moveGoal = {GetUnitAimPos(target)}
 				spacecraft[unitID].behavior = 2
 			end
 			return true
@@ -557,6 +574,7 @@ function gadget:GameFrame(f)
 			local pitch = -math.atan2(dy, (dx^2+dy^2)^0.5)
 			--local roll
 			local distance = 0
+			local waiting = false	-- for Godot
 			
 			local cmdID
 			
@@ -567,10 +585,14 @@ function gadget:GameFrame(f)
 			
 			-- first determine what we should do
 			if data.commandCacheTTL <= 0 then
-				local commands = spGetUnitCommands(unitID, 2)
-				if commands and commands[1] and commands[1].id ~= 0 and commands[1].id ~= 70 and commands[1].id ~= CMD.WAIT then
+				local commands = spGetUnitCommands(unitID, 2) or {}
+				local command1 = commands[1]
+				if command1 and command1.id ~= 0 and command1.id ~= CMD.SET_WANTED_MAX_SPEED and command1.id ~= CMD.WAIT then
 					data.commandCache = commands[1]
 				else
+					if command1 and command1.id == CMD.WAIT then
+						waiting = true
+					end
 					data.commandCache = nil
 					data.behavior = 0
 					data.wantedSpeed = 0
@@ -605,9 +627,11 @@ function gadget:GameFrame(f)
 							data.moveGoal = {tx, ty, tz}
 							data.wantedSpeed = def.speed
 						elseif distance < minRange then
-							data.behavior = 3
-							data.wantedSpeed = def.speed
-							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.minAvoidanceAngle, def.maxAvoidanceAngle)
+							if data.behavior ~= 3 then
+								data.behavior = 3
+								data.wantedSpeed = def.speed
+								data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.minAvoidanceAngle, def.maxAvoidanceAngle)
+							end
 						else
 							data.behavior = 2
 							data.wantedSpeed = GetWantedSpeed(unitID, distance, data, def)
@@ -651,8 +675,6 @@ function gadget:GameFrame(f)
 						
 						if data.behavior == 2 then
 							-- too close, switch to avoid behavior
-							data.moveGoal = {GetUnitMidPos(targetID)}
-							data.wantedSpeed = GetWantedSpeed(unitID, distance, data, def)
 							local avoidDistance = math.max(def.minimumRange, targetDef.avoidDistance, MIN_AVOID_DISTANCE)
 							if distance < avoidDistance then
 								data.behavior = 3
@@ -661,6 +683,9 @@ function gadget:GameFrame(f)
 								data.lastDistance = distance
 								data.wantedSpeed = def.speed
 								--Spring.Echo(unitID .. " last distance = " .. distance)
+							else
+								data.moveGoal = {GetUnitAimPos(targetID)}
+								data.wantedSpeed = GetWantedSpeed(unitID, distance, data, def)
 							end
 						elseif data.behavior == 3 then
 							-- if target is on our tail, attempt to shake
@@ -714,7 +739,7 @@ function gadget:GameFrame(f)
 			end
 			
 			if f%30 == 0 then
-				if (not data.commandCache) or AUTOENGAGE_COMMANDS[data.commandCache.id] then
+				if ((not data.commandCache) or AUTOENGAGE_COMMANDS[data.commandCache.id]) and not waiting then
 					RequestNewTarget(unitID, unitDefID, data.commandCache == nil)
 				end
 			end
@@ -736,20 +761,15 @@ function gadget:GameFrame(f)
 					local vectorX, vectorZ = moveGoal[1] - px , moveGoal[3] - pz  
 					local dxz = math.sqrt(vectorX^2 + vectorZ^2)
 					wantedPitch = -math.atan2(dy, dxz)
-					if wantedPitch > math.pi/2 then
-						wantedPitch = math.pi/2 - 0.01
-					elseif wantedPitch < -math.pi/2 then
-						wantedPitch = -math.pi/2 + 0.01
-					end
 					wantedHeading = spGetHeadingFromVector(vectorX, vectorZ)/65536*2*pi + pi
 					wantedHeading = NormalizeHeading(wantedHeading)
 					deltaHeading = math.abs(wantedHeading - heading) - pi
-					if math.abs(deltaHeading) < 0.03 then
+					if math.abs(deltaHeading) < 0.02 then
 						wantedHeading = heading
 						--Spring.Echo("hold heading")
 					end
 					
-					if math.abs(wantedPitch - pitch) < 0.03 then
+					if math.abs(wantedPitch - pitch) < 0.02 then
 						wantedPitch = pitch
 					end
 				else
@@ -772,42 +792,46 @@ function gadget:GameFrame(f)
 				
 				--pitch = GetNewPitch(pitch, wantedPitch, turnrate)
 				----[[
-				local rx = 0
+				
+				local rx, rvx = 0, 0
 				if wantedPitch ~= pitch then
-					--rx = GetNewPitch(pitch, wantedPitch, turnrate) - pitch
-					if wantedPitch > pitch then
-						rx = math.min(wantedPitch - pitch, turnrate)
-					else
-						rx = math.max(wantedPitch - pitch, -turnrate)
-					end
+					rx = GetNewPitch(pitch, wantedPitch, turnrate)
+					rvx = rx - pitch
 				end
-				local ry, rz = 0, 0
+				local ry, rz, rvy, rvz = 0, 0, 0, 0
 				--]]
 				local rollDir = 0
 				
-			
 				if wantedHeading ~= heading then
 					--heading, rollDir = GetNewHeading(heading, wantedHeading, turnrate)
 					ry, rollDir = GetNewHeading(heading, wantedHeading, turnrate)
-					ry = ry - heading
+					rvy = ry - heading
 				end
 				
-				--rz = GetNewPitch(data.roll, -rollDir*def.rollAngle, def.rollSpeed)
-				data.roll = GetNewPitch(data.roll, -rollDir*def.rollAngle, def.rollSpeed)
+				rz = GetNewPitch(data.roll, -rollDir*def.rollAngle, def.rollSpeed)
+				rvz = rz - data.roll
+				data.roll = rz	--data.roll + rvz
 				
 				local rotVel = data.rotationVelocity
-				rotVel[1] = rx
-				rotVel[2] = ry
-				rotVel[3] = rz
-				--Spring.MoveCtrl.SetRotation(unitID, rx, ry, rz)
+				rotVel[1] = rvx
+				rotVel[2] = rvy
+				rotVel[3] = rvz
+				if CONTROL_MODE == "rotvel" then
+					Spring.MoveCtrl.SetRotationVelocity(unitID, rvx, rvy, rvz)
+				elseif CONTROL_MODE == "fixedrot" then
+					Spring.MoveCtrl.SetRotation(unitID, rx, ry, rz)
+				else
+					Spring.MoveCtrl.SetRotationVelocity(unitID, 0, rvy, 0)
+					Spring.MoveCtrl.SetRotation(unitID, rx, heading, rz)
+				end
 				--spSetUnitRotation(unitID,pitch,heading,data.roll)
-				Spring.MoveCtrl.SetRotationVelocity(unitID, rx, ry, rz)
+				
 				
 				local oldSpeed = data.speed
 				speed = data.wantedSpeed --GetNewSpeed(data.speed, data.wantedSpeed, def.acceleration, def.brakerate)
 				-- prevents problems with moving to destination inside our turning circle
 				if distance < def.turnDiameter and math.abs(deltaHeading) > def.maxTurnAngle then
-					speed = 0
+					speed = cmdID == CMD.MOVE and 0 or def.combatSpeed
 				end
 				
 				local maxSpeed = def.speed * (1 - slowState)

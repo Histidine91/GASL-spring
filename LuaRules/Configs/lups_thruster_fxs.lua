@@ -24,36 +24,36 @@ local tbl = {
   luckystar = {
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_l"})},
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
-    {class='CrossJet', options={color={0.2,0.6,1}, width=3, length=40, piece="engine_l"}},    
-    {class='CrossJet', options={color={0.2,0.6,1}, width=3, length=40, piece="engine_r"}},  
+    {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_l"}},    
+    {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_r"}},  
   },
   kungfufighter = {
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_l"})},
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
-    {class='CrossJet', options={color={0.2,0.6,1}, width=3, length=40, piece="engine_l"}},    
-    {class='CrossJet', options={color={0.2,0.6,1}, width=3, length=40, piece="engine_r"}},     
+    {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_l"}},    
+    {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_r"}},     
   },
   happytrigger = {
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_l"})},
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
-    {class='CrossJet', options={color={0.2,0.6,1}, width=3, length=40, piece="engine_l"}},    
-    {class='CrossJet', options={color={0.2,0.6,1}, width=3, length=40, piece="engine_r"}},      
+    {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_l"}},    
+    {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_r"}},      
   },
   sharpshooter = {
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_l"})},
     {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
-    {class='CrossJet', options={color={0.2,0.6,1}, width=3, length=40, piece="engine_l"}},    
-    {class='CrossJet', options={color={0.2,0.6,1}, width=3, length=40, piece="engine_r"}},      
+    {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_l"}},    
+    {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_r"}},      
   },  
   yngcommando = {
     {class='StaticParticles', options=MergeTable(coronaOrange, {size=12, piece="engine"}, true)},
-    {class='CrossJet', options={color={1,0.6,0.2}, width=2.5, length=32, piece="engine"}},
+    {class='AirJet', options={color={1,0.6,0.2}, width=2.5, length=32, distortion=0, piece="engine"}},
   },
   yngtiger = {
     {class='StaticParticles', options=MergeTable(coronaOrange, {size=12, piece="exhaust_l"}, true)},
     {class='StaticParticles', options=MergeTable(coronaOrange, {size=12, piece="exhaust_r"}, true)},
-    {class='CrossJet', options={color={1,0.6,0.2}, width=2.5, length=32, piece="exhaust_l"}},
-    {class='CrossJet', options={color={1,0.6,0.2}, width=2.5, length=32, piece="exhaust_r"}},
+    {class='AirJet', options={color={1,0.6,0.2}, width=2.5, length=32, distortion=0, piece="exhaust_l"}},
+    {class='AirJet', options={color={1,0.6,0.2}, width=2.5, length=32, distortion=0, piece="exhaust_r"}},
   },  
 }
 local tbl2 = {}

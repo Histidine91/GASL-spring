@@ -90,7 +90,7 @@ local unitDef = {
 				description = "Very long range kinetic weapon that cuts through armor like a knife through butter.",
 				minimumrange = 750,
 				critchance = 0.15,
-				energypershot = 60,
+				energypershot = 120,
 				category = {ballistic = true, railgun = true},
 			},
 			
@@ -132,7 +132,7 @@ local unitDef = {
 				damagetype = "kinetic",
 				description = "Rapid-fire autocannon that chews up soft targets. Accuracy and armor penetration are subpar.",
 				critchance = 0.075,
-				energypershot = 3,
+				energypershot = 6,
 				category = {ballistic = true, vulcan = true},
 			},
 			
@@ -182,7 +182,7 @@ local unitDef = {
 				minimumrange = 800,
 				suppression_noFlank = 1,
 				critchance = 0.075,
-				energypershot = 200,
+				energypershot = 400,
 				jammable = true,
 				--eccm = 20,
 				category = {seeker = true, missile = true},
@@ -237,7 +237,7 @@ local unitDef = {
 				seekeraccuracy = 25,
 				suppression_noFlank = 1,
 				critchance = 0.05,
-				energypershot = 160,
+				energypershot = 320,
 				category = {phalanx = true, seeker = true, energy = true},
 			},
 			

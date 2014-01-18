@@ -105,7 +105,7 @@ local unitDef = {
 				description = "Twin high-caliber railguns fire medium-velocity shells with a creamy high-explosive filling. Effective against larger ships.",
 				minimumrange = 400,
 				critchance = 0.1,
-				energypershot = 90,
+				energypershot = 180,
 				category = {ballistic = true, railgun = true},
 			},
 			
@@ -147,7 +147,7 @@ local unitDef = {
 				damagetype = "energy",
 				description = "A standard high-power laser weapon, effective against all targets.",
 				critchance = 0.05,
-				energypershot = 50,
+				energypershot = 100,
 				category = {laser = true, energy = true},
 			},
 			
@@ -194,7 +194,7 @@ local unitDef = {
 				minimumrange = 700,
 				suppression_noFlank = 1,
 				critchance = 0.075,
-				energypershot = 360,
+				energypershot = 720,
 				jammable = true,
 				--eccm = 20,
 				category = {seeker = true, missile = true},
@@ -252,7 +252,7 @@ local unitDef = {
 				seekeraccuracy = 25,
 				suppression_noFlank = 1,
 				critchance = 0.05,
-				energypershot = 160,
+				energypershot = 320,
 				category = {phalanx = true, seeker = true, energy = true},
 			},
 			

@@ -126,6 +126,7 @@ local unitDef = {
 				damagetype = "energy",
 				description = "A powerful directed-energy weapon effective against even heavy targets.",
 				critchance = 0.075,
+				energypershot = 240,
 			},
 			
 			craterMult		= 0,
@@ -177,7 +178,7 @@ local unitDef = {
 				minimumrange = 1200,
 				suppression_noFlank = 1,
 				critchance = 0.1,
-				energypershot = 1200,
+				energypershot = 2160,
 				jammable = true,
 				eccm = 15,
 			},
@@ -226,6 +227,7 @@ local unitDef = {
 				damagetype = "kinetic",
 				description = "A heavy rapid-fire kinetic weapon for defending big ships from small ones.",
 				critchance = 0.05,
+				energypershot = 5,
 			},
 			
 			craterMult		= 0,
@@ -245,7 +247,7 @@ local unitDef = {
 			interceptedByShieldType = 1,
 			noSelfDamage		= true,
 			range			= 1500,
-			reloadtime		= .1,
+			reloadtime		= .133,
 			rgbColor		= ".3 .3 1",
 			soundStart		= "weapon/cannon/vulcan_heavy_s",
 			soundHit		= "weapon/cannon/klighthit",

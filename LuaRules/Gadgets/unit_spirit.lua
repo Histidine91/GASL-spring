@@ -24,7 +24,7 @@ if gadgetHandler:IsSyncedCode() then
 local spSetUnitRulesParam = Spring.SetUnitRulesParam
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-local INITIAL_SPIRIT = 0	-- don't change this except for testing
+local INITIAL_SPIRIT = 95	-- don't change this except for testing
 -- make sure these values matche the ones in unit_morale
 -- FIXME: should probably use a global config for these...
 local BASE_MORALE = 50

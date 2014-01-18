@@ -16,11 +16,11 @@ local shieldArm = {}
 local phalanx, shield = piece('phalanx', 'shield')
 
 local weapons = {
-    {aimpoint = railgun, muzzles = {railgunFlare}, index = 1, emit = 1026},	-- railgun
+    {aimpoint = railgun, muzzles = {railgunFlare}, index = 1, emit = 1028},	-- railgun
     {aimpoint = vulcan, muzzles = {vulcanFlare}, index = 1, emit = 1029},	-- vulcan
     {aimpoint = missile, muzzles = {missile1, missile2}, index = 1},	-- missile
     {aimpoint = base, muzzles = {}, index = 1},	-- phalanx
-    {aimpoint = railgun, muzzles = {railgunFlare}, index = 1, emit = 1030}	-- fatalArrow
+    {aimpoint = railgun, muzzles = {railgunFlare}, index = 1, emit = 1028}	-- fatalArrow
 }
 do
     local muzzles = weapons[4].muzzles
@@ -46,6 +46,8 @@ local SIG_SPECIAL = 4
 --------------------------------------------------------------------------------
 local isUsingSpecial = false
 local dead = false
+local specialShots = 0
+local specialTarget
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function DamageLoop()
@@ -78,22 +80,48 @@ local function FeatherLoop()
     while true do
 	local spirit = spGetUnitRulesParam(unitID, "spirit")
 	if spirit == 100 then
-	    EmitSfx(engine_L, 1027)
-	    EmitSfx(engine_R, 1027)
+	    EmitSfx(engine_L, 1025)
+	    EmitSfx(engine_R, 1025)
 	end
 	Sleep(500)
     end
 end
 
+local function FatalArrowThread(params)
+    Signal(SIG_SPECIAL)
+    SetSignalMask(SIG_SPECIAL)
+    isUsingSpecial = true
+    GG.FlightControl.SetUnitForcedSpeed(unitID, 0)
+    while GG.FlightControl.GetUnitTrueSpeed(unitID) > 0 do
+	Sleep(200)
+    end
+    
+    while specialShots > 0 do
+	if (not specialTarget) or Spring.GetUnitIsDead(specialTarget) then
+	    specialTarget = GG.FatalArrow.GetTarget(unitID)
+	    if not specialTarget then
+		specialShots = 0	-- all targets dead, cancel
+	    end
+	end
+	Sleep(100)
+    end
+    Sleep(1000)
+    
+    GG.FlightControl.SetUnitForcedSpeed(unitID, nil)
+    isUsingSpecial = false
+end
 
 function FatalArrowTrigger(params)
-    -- TODO
+    specialShots = 3
+    specialTarget = nil
+    GG.FatalArrow.SearchForTargets(unitID, params[1]) 
+    StartThread(FatalArrowThread)
 end
 
 local function DebugPhalanx()
     while true do
 	for i=1,8 do
-	    EmitSfx(piece("phalanx"..i), 1026)
+	    EmitSfx(piece("phalanx"..i), 1029)
 	end
 	Sleep(300)
     end
@@ -171,6 +199,42 @@ function script.Shot(num)
     if data.index > #data.muzzles then
 	data.index = 1
     end
+    
+    if num == 5 then
+	if specialShots == 3 then
+	    local unitDefID = Spring.GetUnitDefID(unitID)
+	    local unitTeam = Spring.GetUnitTeam(unitID)
+	    --local specialTargetDefID = Spring.GetUnitDefID(specialTarget)
+	    --local specialTargetTeam = Spring.GetUnitTeam(specialTarget)
+	    GG.EventWrapper.AddEvent("specialWeapon", 0, unitID, unitDefID, unitTeam, specialTarget, specialTargetDefID, specialTargetTeam)
+	end
+	specialShots = specialShots - 1
+    end
+end
+
+function script.BlockShot(weaponID, targetID, userTarget)
+    local minRange = minRanges[weaponID]
+    local energyPerShot = (GG.Energy) and energyPerShot[weaponID]
+    if minRange then
+	local distance
+	if targetID then
+	    distance = Spring.GetUnitSeparation(unitID, targetID, true)
+	elseif userTarget then
+	    local cmd = Spring.GetUnitCommands(unitID, 1)[1]
+	    if cmd.id == CMD.ATTACK then
+		local tx,ty,tz = unpack(cmd.params)
+		distance = GetUnitDistanceToPoint(unitID, tx, ty, tz, true)
+	    end
+	end
+	if distance < minRange then return true end
+    end
+    if usingSpecial and (not Spring.GetUnitIsDead(specialTarget)) and specialTarget ~= targetID then
+	return true
+    end
+    if energyPerShot then
+	return (not GG.Energy.UseUnitEnergy(unitID, unitDefID, energyPerShot))
+    end
+    return false
 end
 
 function script.HitByWeapon(x, z, weaponDefID, damage)
@@ -183,8 +247,8 @@ end
 function script.Killed(recentDamage, maxHealth)
     dead = true
     for i=1,8 do
-	EmitSfx(base, 1025)
+	EmitSfx(base, 1027)
 	Sleep(500)
     end
-    EmitSfx(fuselage, 1028)
+    EmitSfx(fuselage, 1026)
 end

@@ -220,7 +220,10 @@ local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distanc
 	return {px, py, pz}
 end
 
-local function GetWantedSpeed(distance, data, def)
+local function GetWantedSpeed(unitID, distance, data, def)
+	if spacecraft[unitID].forcedSpeed then
+		return spacecraft[unitID].forcedSpeed
+	end
 	local wantedSpeed = def.speed
 	local threeSecondDist = def.speed * 60
 	if (distance < def.combatRange) then
@@ -266,6 +269,28 @@ local function SetUnitSpeed(unitID, speed)
 	local vy = math.sin(data.pitch) * speed
 	local vz = math.cos (data.heading) * speed
 	data.velocity = {vx, vy, vz}
+end
+
+local function SetUnitForcedSpeed(unitID, speed)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	data.forcedSpeed = speed
+end
+
+local function GetUnitTurnrate(unitID)
+	if spacecraft[unitID] then
+		return spacecraft[unitID].turnrate
+	end
+end
+
+local function SetUnitTurnrate(unitID, turnrate)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	data.turnrate = turnrate
 end
 
 local function GetUnitVelocity(unitID)
@@ -332,6 +357,14 @@ local function BreakOffTarget(unitID)
 	data.wantedSpeed = def.speed
 end
 
+local function DisableManeuvering(unitID, bool)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	data.maneuveringDisabled = bool
+end
+
 local function DisableUnit(unitID)
 	if not spacecraft[unitID] then
 		return
@@ -391,7 +424,7 @@ function gadget:Initialize()
 		}
 		spacecraftDefs[i].turnDiameter = 0.2/spacecraftDefs[i].turnrate * ud.speed
 		spacecraftDefs[i].maxTurnAngle = math.max(spacecraftDefs[i].turnrate*3, 0.15)
-		Spring.Echo(ud.name, spacecraftDefs[i].turnrate)
+		--Spring.Echo(ud.name, spacecraftDefs[i].turnrate)
 		--Spring.Echo(ud.name, ud.xsize, spacecraftDefs[i].avoidDistance)
 	end
 	local units = Spring.GetAllUnits()
@@ -405,12 +438,16 @@ function gadget:Initialize()
 	GG.FlightControl = {
 		GetUnitSpeed = GetUnitSpeed,
 		SetUnitSpeed = SetUnitSpeed,
+		SetUnitForcedSpeed = SetUnitForcedSpeed,
 		GetUnitVelocity = GetUnitVelocity,
 		SetUnitVelocity = SetUnitVelocity,
+		GetUnitTurnrate = GetUnitTurnrate,
+		SetUnitTurnrate = SetUnitTurnrate,
 		SetUnitHeading = SetUnitHeading,
 		SetUnitPosition = SetUnitPosition,
 		SetChaseTarget = SetChaseTarget,
 		BreakOffTarget = BreakOffTarget,
+		DisableManeuvering = DisableManeuvering,
 		DisableUnit = DisableUnit,
 		EnableUnit = EnableUnit,
 	}
@@ -435,6 +472,7 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 				wantedSpeed = 0,
 				attackSpeedState = spacecraftDefs[unitDefID].initAttackSpeedState,
 				velocity = {0,0,0},
+				turnrate = spacecraftDefs[unitDefID].turnrate,
 				rotationVelocity = {0,0,0},
 				commandCache = nil,
 				commandCacheTTL = 0,
@@ -454,6 +492,8 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 			--Spring.MoveCtrl.SetPosition(unitID,x,math.random(-100, 200),z)
 			--Spring.MoveCtrl.SetPosition(unitID,x,up and 150 or 0,z)
 			up = not up
+			
+			Script.SetWatchUnit(unitID, true)
 		end
 	end
 end
@@ -558,8 +598,8 @@ function gadget:GameFrame(f)
 					end
 					if tx and ty and tz then
 						distance = GetDistance(ux, uy, uz, tx, ty, tz)
-						local minRange = specialWeapons[specialCMDs[cmdID]].minRange
-						local maxRange = specialWeapons[specialCMDs[cmdID]].maxRange
+						local minRange = specialPowers[specialCMDs[cmdID]].minRange
+						local maxRange = specialPowers[specialCMDs[cmdID]].maxRange
 						if distance > maxRange then
 							data.behavior = 2
 							data.moveGoal = {tx, ty, tz}
@@ -570,7 +610,7 @@ function gadget:GameFrame(f)
 							data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, minRange + 150, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 						else
 							data.behavior = 2
-							data.wantedSpeed = GetWantedSpeed(distance, data, def)
+							data.wantedSpeed = GetWantedSpeed(unitID, distance, data, def)
 							data.moveGoal = {tx, ty, tz}
 						end
 					end
@@ -612,7 +652,7 @@ function gadget:GameFrame(f)
 						if data.behavior == 2 then
 							-- too close, switch to avoid behavior
 							data.moveGoal = {GetUnitMidPos(targetID)}
-							data.wantedSpeed = GetWantedSpeed(distance, data, def)
+							data.wantedSpeed = GetWantedSpeed(unitID, distance, data, def)
 							local avoidDistance = math.max(def.minimumRange, targetDef.avoidDistance, MIN_AVOID_DISTANCE)
 							if distance < avoidDistance then
 								data.behavior = 3
@@ -640,7 +680,7 @@ function gadget:GameFrame(f)
 							if distance > def.combatRange or distance2 < MOVE_DISTANCE_THRESHOLD then
 								data.behavior = 2
 								data.moveGoal = {GetTargetIntercept(unitID, targetID, distance)}
-								data.wantedSpeed = GetWantedSpeed(distance, data, def)
+								data.wantedSpeed = GetWantedSpeed(unitID, distance, data, def)
 								data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
 								--Spring.Echo("Got enough distance, closing in again")
 							end
@@ -650,7 +690,7 @@ function gadget:GameFrame(f)
 						else
 							data.behavior = 2
 							data.moveGoal = {GetTargetIntercept(unitID, targetID, distance)}
-							data.wantedSpeed = GetWantedSpeed(distance, data, def)
+							data.wantedSpeed = GetWantedSpeed(unitID, distance, data, def)
 							data.timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER
 						end
 						--if f%120 == 0 and data.lastMoveGoal and data.moveGoal and data.lastMoveGoal[1] == data.lastMoveGoal[1] and data.lastMoveGoal[3] == data.moveGoal[3] then
@@ -696,6 +736,11 @@ function gadget:GameFrame(f)
 					local vectorX, vectorZ = moveGoal[1] - px , moveGoal[3] - pz  
 					local dxz = math.sqrt(vectorX^2 + vectorZ^2)
 					wantedPitch = -math.atan2(dy, dxz)
+					if wantedPitch > math.pi/2 then
+						wantedPitch = math.pi/2 - 0.01
+					elseif wantedPitch < -math.pi/2 then
+						wantedPitch = -math.pi/2 + 0.01
+					end
 					wantedHeading = spGetHeadingFromVector(vectorX, vectorZ)/65536*2*pi + pi
 					wantedHeading = NormalizeHeading(wantedHeading)
 					deltaHeading = math.abs(wantedHeading - heading) - pi
@@ -720,7 +765,10 @@ function gadget:GameFrame(f)
 				--wantedHeading = wantedHeading*correction
 				
 				local slowState = spGetUnitRulesParam(unitID,"slowState") or 0
-				local turnrate = def.turnrate * (1 - slowState)
+				local turnrate = data.turnrate * (1 - slowState)
+				if data.maneuveringDisabled then
+					turnrate = 0
+				end
 				
 				--pitch = GetNewPitch(pitch, wantedPitch, turnrate)
 				----[[
@@ -761,10 +809,16 @@ function gadget:GameFrame(f)
 				if distance < def.turnDiameter and math.abs(deltaHeading) > def.maxTurnAngle then
 					speed = 0
 				end
+				
 				local maxSpeed = def.speed * (1 - slowState)
 				if speed > maxSpeed then
 					speed = maxSpeed
 				end
+				
+				if data.forcedSpeed then
+					speed = data.forcedSpeed
+				end
+				
 				data.speed = speed
 				
 				-- energy usage

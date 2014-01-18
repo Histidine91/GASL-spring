@@ -333,10 +333,11 @@ local unitDef = {
 	sfxTypes = {
 		explosionGenerators = {
 			"custom:damage_fire",
-			"custom:missile",
-			"custom:gunmuzzle",
 			"custom:feather",
 			"custom:teleport",
+			"custom:missile",
+			"custom:gunmuzzle",
+			"custom:missiletrailred",
 		},
 	},
 	customParams  =  {

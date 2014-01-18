@@ -744,14 +744,13 @@ do
 		end
       end
 
-	  --// SPECIAL WEAPON
-	  --[[
-	  local specialReloadState = GetUnitRulesParam(unitID,"specialReloadFrame")
-      if (specialReloadState and specialReloadState > gameFrame) then
-		local special = 1-(specialReloadState-gameFrame)/(ud.customParams.specialreloadtime or 1*30)
+      --// SPECIAL ABILITIES
+      local specialPowerCooldown = GetUnitRulesParam(unitID,"specialPowerCooldown")
+      if (specialPowerCooldown and specialPowerCooldown > 0) then
+	local specialPowerCooldownLength = GetUnitRulesParam(unitID,"specialPowerCooldownLength")
+	local special = (specialPowerCooldownLength - specialPowerCooldown)/specialPowerCooldownLength
         AddBar("special reload",special,"reload2",(fullText and floor(special*100)..'%') or '')
       end	  
-	  ]]--
 	  
       --// RELOAD
       if (ci.reloadTime>=options.minReloadTime.value) then

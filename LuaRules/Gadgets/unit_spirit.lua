@@ -34,6 +34,7 @@ local spiritDefs = {
   [UnitDefNames.luckystar.id] = true,
   [UnitDefNames.kungfufighter.id] = true,
   [UnitDefNames.happytrigger.id] = true,
+  [UnitDefNames.sharpshooter.id] = true,
 }
 local spiritUnits = {}
 _G.spiritUnits = spiritUnits
@@ -62,7 +63,7 @@ local function SetSpirit(unitID, unitDefID, unitTeam, newSpirit)
     if currSpirit < 100 and newSpirit == 100 then
       GG.EventWrapper.AddEvent("spiritFull", 10, unitID, unitDefID, unitTeam)
       SendToUnsynced("spirit_full", unitID)	-- handled by unit script with CEG
-      GG.SpecialWeapon.SetEnabled(unitID, unitDefID, unitTeam, true)
+      GG.SpecialPower.RefreshCommandEnableState(unitID, unitDefID, unitTeam)
       Spring.PlaySoundFile("sounds/spirit_full.wav", 1.0, "ui")
     end
     spSetUnitRulesParam(unitID, "spirit", newSpirit)

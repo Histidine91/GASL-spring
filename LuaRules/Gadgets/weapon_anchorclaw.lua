@@ -106,7 +106,7 @@ function gadget:GameFrame(n)
 	local schedule = targetSchedule[n]
 	if schedule then
 		for proID, proOwnerID in pairs(schedule) do
-			local targetID = GG.SpecialWeapon.GetTarget(proOwnerID)
+			local targetID = GG.SpecialPower.GetTarget(proOwnerID)
 			if targetID and type(targetID) == "number" and (not Spring.GetUnitIsDead(targetID)) then
 				Spring.SetProjectileTarget(proID, targetID, string.byte('u'))
 			else

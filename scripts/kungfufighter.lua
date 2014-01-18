@@ -16,7 +16,7 @@ local armJoint_L, armJoint_R, arm_L, arm_R, claw_L, claw_R = piece('armjoint_l',
 local engine_L, engine_R = piece('engine_l', 'engine_r')
 
 local weapons = {
-    {aimpoint = base, muzzles = {vulcanFlare_L, vulcanFlare_R}, index = 1, emit = 1026},	-- vulcan
+    {aimpoint = base, muzzles = {vulcanFlare_L, vulcanFlare_R}, index = 1, emit = 1028},	-- vulcan
     {aimpoint = fuselage, muzzles = {missile_L1, missile_R1, missile_L2, missile_R2, missile_L3, missile_R3}, index = 1},	-- missile
     {aimpoint = hmissileFlare, muzzles = {hmissileFlare}, index = 1},	-- big missile
     {aimpoint = arm_L, muzzles = {claw_L}, index = 1},	-- left claw
@@ -27,9 +27,14 @@ local gunRotate = 0
 --------------------------------------------------------------------------------
 -- constants
 --------------------------------------------------------------------------------
+local unitDefID = Spring.GetUnitDefID(unitID)
+
 local SIG_DAMAGE = 1
 local SIG_RESTORE = 2
 local SIG_SPECIAL = 4
+local SIG_BURNDRIVE = 8
+
+local BURN_DRIVE_SPEED = UnitDefs[unitDefID].speed/30 * 3
 
 --------------------------------------------------------------------------------
 -- variables
@@ -69,8 +74,8 @@ local function FeatherLoop()
     while true do
 	local spirit = spGetUnitRulesParam(unitID, "spirit")
 	if spirit == 100 then
-	    EmitSfx(engine_L, 1027)
-	    EmitSfx(engine_R, 1027)
+	    EmitSfx(engine_L, 1025)
+	    EmitSfx(engine_R, 1025)
 	end
 	Sleep(500)
     end
@@ -99,12 +104,33 @@ function AnchorClawTrigger()
     StartThread(AnchorClawThread)
 end
 
+local function BurnDriveThread(cmdParams)
+    Signal(SIG_BURNDRIVE)
+    SetSignalMask(SIG_BURNDRIVE)
+    GG.FlightControl.DisableManeuvering(unitID, true)
+    GG.FlightControl.SetUnitForcedSpeed(unitID, BURN_DRIVE_SPEED)
+    
+    for i=1,150 do
+	--EmitSfx(engine_L, 1029)
+	--EmitSfx(engine_R, 1029)
+	Sleep(33)
+    end
+    
+    GG.FlightControl.DisableManeuvering(unitID, false)
+    GG.FlightControl.SetUnitForcedSpeed(unitID, nil)
+    Spring.GiveOrderToUnit(unitID, CMD.INSERT, {0, CMD.MOVE, 0, cmdParams[1], cmdParams[2], cmdParams[3], cmdParams[4]}, {"alt"})
+end
+
+function BurnDriveTrigger(cmdParams)
+    StartThread(BurnDriveThread, cmdParams)
+end
+
 --[[
 local function DebugMissiles()
     while true do
 	for i=1,3 do
-	    EmitSfx(piece("missile_l"..i), 1026)
-	    EmitSfx(piece("missile_r"..i), 1026)
+	    EmitSfx(piece("missile_l"..i), 1028)
+	    EmitSfx(piece("missile_r"..i), 1028)
 	end
 	Sleep(300)
     end
@@ -112,8 +138,8 @@ end
 
 local function DebugClaws()
     while true do
-	EmitSfx(claw_L, 1026)
-	EmitSfx(claw_R, 1026)
+	EmitSfx(claw_L, 1028)
+	EmitSfx(claw_R, 1028)
 	Sleep(300)
     end
 end
@@ -198,8 +224,8 @@ end
 function script.Killed(recentDamage, maxHealth)
     dead = true
     for i=1,8 do
-	EmitSfx(base, 1025)
+	EmitSfx(base, 1027)
 	Sleep(500)
     end
-    EmitSfx(fuselage, 1028)
+    EmitSfx(fuselage, 1026)
 end

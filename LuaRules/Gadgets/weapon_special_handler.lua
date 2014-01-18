@@ -123,7 +123,9 @@ local function ExecuteCommand(cmdData, unitID, unitDefID, unitTeam, cmdParams)
       unitDefID2 = Spring.GetUnitDefID(unitID2)
       unitTeam2 = spGetUnitTeam(unitID2)
     end
-    GG.EventWrapper.AddEvent("specialWeapon", 0, unitID, unitDefID, unitTeam, unitID2, unitDefID2, unitTeam2)
+    if not cmdData.noEvent then
+      GG.EventWrapper.AddEvent("specialWeapon", 0, unitID, unitDefID, unitTeam, unitID2, unitDefID2, unitTeam2)
+    end
   else
     local cooldown = cmdData.cooldown or 30
     Spring.SetUnitRulesParam(unitID, "specialPowerCooldown", cooldown)
@@ -239,6 +241,17 @@ function gadget:Initialize()
     SetTarget = SetTarget,
     GetTarget = GetTarget,
   }
+  
+  local units = Spring.GetAllUnits()
+  for i=1,#units do
+    local unitID = units[i]
+    local unitDefID = Spring.GetUnitDefID(unitID)
+    gadget:UnitCreated(unitID, unitDefID)
+    local cooldown = Spring.GetUnitRulesParam(unitID, "specialPowerCooldown")
+    if cooldown and cooldown > 0 then
+      coolingDownUnits[unitID] = cooldown
+    end
+  end
 end
 
 function gadget:GameFrame(n)

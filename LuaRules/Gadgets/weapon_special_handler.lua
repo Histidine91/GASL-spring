@@ -29,7 +29,7 @@ local spGetUnitVectors	= Spring.GetUnitVectors
 
 local COOLDOWN_INTERVAL = 3
 
-local specialAbilitiesEnabled = Spring.GetModOptions().enableabilities ~= 0
+local specialAbilitiesEnabled = Spring.GetModOptions().enableabilities ~= "0"
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local targets = {}	--[unitID] = targetID

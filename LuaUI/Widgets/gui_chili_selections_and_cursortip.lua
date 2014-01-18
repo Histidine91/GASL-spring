@@ -1970,7 +1970,7 @@ local function MakeTooltip()
 	end
 	----------
 	local cur_ttstr = screen0.currentTooltip or groundTooltip or spGetCurrentTooltip()
-	local type, data = spTraceScreenRay(mx, my)
+	local type, data = spTraceScreenRay(mx, my, false, false, true, true)
 	if (not changeNow) and cur_ttstr ~= '' and old_ttstr == cur_ttstr and old_data == data then
 		PlaceToolTipWindow2(mx+20,my-20)
 		return

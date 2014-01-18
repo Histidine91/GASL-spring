@@ -28,29 +28,38 @@ local unitNames = {
 local function WriteStats(i, grid)
   local otherUnits = (i == -1)
   local dead = ((Spring.GetGameRulesParam("deaths_" .. i) or 0) > 0) and (not otherUnits)
-  
   local color = dead and colorRed or colorWhite
-  Label:New{ parent = grid, caption = unitNames[i], y = 0, align="left", fontSize = 15, fontShadow = true}
   
   local kills = Spring.GetGameRulesParam("kills_" .. i) or 0
-  Label:New{ parent = grid, caption = color .. kills .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
   
   local evaluation = math.floor((Spring.GetGameRulesParam("killCost_" .. i) or 0) + (Spring.GetGameRulesParam("damageCost_" .. i) or 0))
   if dead then evaluation = 0 end
-  Label:New{ parent = grid, caption = color .. evaluation .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
   
   local bonus = math.floor(Spring.GetGameRulesParam("repair_" .. i) or 0)
-  --if dead then bonus == 0 end
-  Label:New{ parent = grid, caption = color .. bonus .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+  if dead then bonus = 0 end
   
   local score = evaluation + bonus
-  Label:New{ parent = grid, caption = color .. score .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
   
-  local totalKills = otherUnits and "-" or (kills + (modOptions["kills"..i] or 0))
-  Label:New{ parent = grid, caption = color .. totalKills .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+  if score == 0 and (not dead) then	-- absent (FIXME: get a proper way to detect)
+    Label:New{ parent = grid, caption = unitNames[i], y = 0, align="left", fontSize = 15, fontShadow = true}
+    for i=2,7 do
+      Label:New{ parent = grid, caption = "-", y = 0, align="right", fontSize = 15, fontShadow = true}
+    end
+  else
+    Label:New{ parent = grid, caption = unitNames[i], y = 0, align="left", fontSize = 15, fontShadow = true}
+    Label:New{ parent = grid, caption = color .. kills .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+    Label:New{ parent = grid, caption = color .. evaluation .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+    Label:New{ parent = grid, caption = color .. bonus .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+    Label:New{ parent = grid, caption = color .. score .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+    
+    local totalKills = otherUnits and "-" or (kills + (modOptions["kills"..i] or 0))
+    Label:New{ parent = grid, caption = color .. totalKills .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+    
+    local totalScore = otherUnits and "-" or (score + (modOptions["score"..i] or 0))
+    Label:New{ parent = grid, caption = color .. totalScore .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+  end
   
-  local totalScore = otherUnits and "-" or (score + (modOptions["score"..i] or 0))
-  Label:New{ parent = grid, caption = color .. totalScore .. "\008", y = 0, align="right", fontSize = 14, fontShadow = true }
+  
 end
 
 local function DisplayStats()
@@ -77,12 +86,19 @@ local function DisplayStats()
     width = "100%",
     height = "100%",
   }
+  local subpanel = panel
+  --local subpanel = Chili.Panel:New{
+  --  parent = panel,
+  --  y = "10%",
+  --  width = "100%",
+  --  height = "90%",
+  --}
   
   local title = Label:New{
     parent = panel, caption = "Performance Evaluation", x = 8, y = 8, align="left", fontSize = 20, fontShadow = true
   }
   local grid = Chili.Grid:New{
-    parent = panel,
+    parent = subpanel,
     rows = 9,
     columns = 7,
     y = "10%",
@@ -90,7 +106,7 @@ local function DisplayStats()
     bottom = 32,
   }
   local button_close = Chili.Button:New{
-    parent = panel,
+    parent = subpanel,
     caption = 'Close', 
     OnMouseUp = { function(self)
       window:Dispose()
@@ -109,6 +125,7 @@ local function DisplayStats()
   WriteStats(-1, grid)
   
   Spring.SendCommands('endgraph 0')
+  Spring.PlaySoundFile("sounds/debriefing.wav", 1.0, "userinterface")
 end
 
 function widget:GameOver()

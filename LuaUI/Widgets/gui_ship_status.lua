@@ -246,7 +246,7 @@ local function AddUnitDisplay(unitID, unitDefID, index, powerIndex, hotkey, pare
 		height = 64,
 		backgroundColor = {0, 0, 0, 0},
 	}
-	units[index].panel:SetLayer(index)
+	units[index].panel:SetLayer(powerIndex)
 	
 	units[index].button = Button:New{
 		parent = units[index].panel;

@@ -1,5 +1,8 @@
 local CopyTable = Spring.Utilities.CopyTable
-local MergeTable = Spring.Utilities.MergeTable
+
+local function MergeTableReverse(table1, table2)
+  return Spring.Utilities.MergeTable(table2, table1)
+end
 
 local corona = {
   life        = math.huge,
@@ -22,36 +25,43 @@ coronaOrange.colormap = {{1, 0.5, 0, 0.01}}
 
 local tbl = {
   luckystar = {
-    {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_l"})},
-    {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {pos={0,0,3}, piece="engine_l"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {pos={0,0,3}, piece="engine_r"})},
     {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_l"}},    
     {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_r"}},  
   },
   kungfufighter = {
-    {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_l"})},
-    {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {pos={0,0,3}, piece="engine_l"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {pos={0,0,3}, piece="engine_r"})},
     {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_l"}},    
     {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_r"}},     
   },
   happytrigger = {
-    {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_l"})},
-    {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {pos={0,0,3}, piece="engine_l"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {pos={0,0,3}, piece="engine_r"})},
     {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_l"}},    
     {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_r"}},      
   },
   sharpshooter = {
-    {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_l"})},
-    {class='StaticParticles', options=MergeTable(corona, {pos={0,0,3}, piece="engine_r"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {pos={0,0,3}, piece="engine_l"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {pos={0,0,3}, piece="engine_r"})},
     {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_l"}},    
     {class='AirJet', options={color={0.2,0.6,1}, width=3, length=40, distortion=0, piece="engine_r"}},      
-  },  
+  },
+  placeholdersior = {
+    maxDeltaSpeed = 0.4,
+    {class='StaticParticles', options=MergeTableReverse(corona, {size=100, pos={0,0,10}, piece="engine_l"})},
+    {class='StaticParticles', options=MergeTableReverse(corona, {size=100, pos={0,0,10}, piece="engine_r"})},
+    {class='AirJet', options={color={0.2,0.6,1}, width=14, length=120, distortion=0, piece="engine_l"}},    
+    {class='AirJet', options={color={0.2,0.6,1}, width=14, length=120, distortion=0, piece="engine_r"}},      
+  }, 
   yngcommando = {
-    {class='StaticParticles', options=MergeTable(coronaOrange, {size=12, piece="engine"}, true)},
+    {class='StaticParticles', options=MergeTableReverse(coronaOrange, {size=12, piece="engine"}, true)},
     {class='AirJet', options={color={1,0.6,0.2}, width=2.5, length=32, distortion=0, piece="engine"}},
   },
   yngtiger = {
-    {class='StaticParticles', options=MergeTable(coronaOrange, {size=12, piece="exhaust_l"}, true)},
-    {class='StaticParticles', options=MergeTable(coronaOrange, {size=12, piece="exhaust_r"}, true)},
+    {class='StaticParticles', options=MergeTableReverse(coronaOrange, {size=12, piece="exhaust_l"}, true)},
+    {class='StaticParticles', options=MergeTableReverse(coronaOrange, {size=12, piece="exhaust_r"}, true)},
     {class='AirJet', options={color={1,0.6,0.2}, width=2.5, length=32, distortion=0, piece="exhaust_l"}},
     {class='AirJet', options={color={1,0.6,0.2}, width=2.5, length=32, distortion=0, piece="exhaust_r"}},
   },  

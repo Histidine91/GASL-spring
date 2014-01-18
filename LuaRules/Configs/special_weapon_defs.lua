@@ -10,7 +10,7 @@ specialCMDs = {
 	--[CMD_FLIER_DANCE] = "flierdance",
 	[CMD_STRIKE_BURST] = "strikeburst",
 	--[CMD_REPAIR_WAVE] = "repairwave",
-	--[CMD_FATAL_ARROW] = "fatalarrow",
+	[CMD_FATAL_ARROW] = "fatalarrow",
 	
 	[CMD_BURN_DRIVE] = "burndrive"
 }
@@ -64,7 +64,23 @@ specialPowers = {
 		scriptFunction = "StrikeBurstTrigger",
 		isSpiritAttack = true,
 	},
-	
+	fatalarrow = {
+		minRange = 2000,
+		maxRange = 6000,
+		maxAngle = math.rad(30),
+		cmdDesc = {
+			id      = CMD_FATAL_ARROW,
+			name    = "Fatal Arrow",
+			action  = "specialweapon",
+			cursor  = "DGun",
+			texture = "LuaUI/Images/Commands/Bold/action.png",
+			type    = CMDTYPE.ICON_UNIT,
+			tooltip = color_skyblue.."Special Attack: Fatal Arrow\008\nFire three railgun shots to erase target(s) at extreme range",
+		},
+		scriptFunction = "FatalArrowTrigger",
+		isSpiritAttack = true,
+		noEvent = true,
+	},	
 	burndrive = {
 		minRange = 0,
 		maxRange = 999999,
@@ -90,4 +106,5 @@ unitDefsWithSpecials = {
 	[UnitDefNames.luckystar.id] = {"hypercannon"},
 	[UnitDefNames.kungfufighter.id] = {"burndrive", "anchorclaw"},
 	[UnitDefNames.happytrigger.id] = {"strikeburst"},
+	[UnitDefNames.sharpshooter.id] = {"fatalarrow"},
 }

@@ -18,7 +18,7 @@ local unitGroups = {
       --[UnitDefNames.trickmaster.id] = 3,
       [UnitDefNames.happytrigger.id] = 4,
       --[UnitDefNames.harvester.id] = 5,
-      --[UnitDefNames.sharpshooter.id] = 6,
+      [UnitDefNames.sharpshooter.id] = 6,
       --[UnitDefNames.elsior.id] = 0,
       [UnitDefNames.placeholdersior.id] = 0,
 }

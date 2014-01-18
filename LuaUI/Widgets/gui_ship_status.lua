@@ -94,18 +94,22 @@ local angelDefs = {
   [UnitDefNames.luckystar.id] = {hasSpirit = true},
   [UnitDefNames.kungfufighter.id] = {hasSpirit = true},
   [UnitDefNames.happytrigger.id] = {hasSpirit = true},
+  [UnitDefNames.sharpshooter.id] = {hasSpirit = true},
   [UnitDefNames.placeholdersior.id] = {hasSpirit = false},
 }
 
 local hasEnergyDefs = {}
+local powerDefs = {}
 local suppressionImmuneDefs = {}
 
 for i=1,#UnitDefs do
-	local energy = tonumber(UnitDefs[i].customParams.energy)
+	local ud = UnitDefs[i]
+	local energy = tonumber(ud.customParams.energy)
 	if energy ~= -1 then
 		hasEnergyDefs[i] = energy
 	end
-	suppressionImmuneDefs[i] = UnitDefs[i].customParams.suppressionmod == "0"
+	suppressionImmuneDefs[i] = ud.customParams.suppressionmod == "0"
+	powerDefs[i] = ud.power
 end
 
 local exceptionList = {}
@@ -134,6 +138,8 @@ local units = {} -- [index] = {unitID, unitDefID, panel, button, image, [healthb
 local spiritOverlayPhase = 0
 local damagePings = {}	-- [unitID] = phase
 local spiritSwirls = {}	-- [unitID] = phase
+
+local myTeamID = Spring.GetMyTeamID()
 
 --------------------------------------------------------------------------------
 -- FUNCTIONS
@@ -240,6 +246,7 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		height = 64,
 		backgroundColor = {0, 0, 0, 0},
 	}
+	units[index].panel:SetLayer(index)
 	
 	units[index].button = Button:New{
 		parent = units[index].panel;
@@ -431,7 +438,7 @@ local function UpdateUnitInfo(unitID)
 		return
 	end
 	local spirit = GetUnitRulesParam(unitID, "spirit") or 0
-	local energy = GetUnitRulesParam(unitID, "energy")
+	local energy = GetUnitRulesParam(unitID, "energy") or 0
 	local suppression = GetUnitRulesParam(unitID, "suppression") or 0
 
 	unitData.healthbar.color = GetHealthColor(health/maxHealth)
@@ -440,7 +447,7 @@ local function UpdateUnitInfo(unitID)
 		unitData.spiritbar:SetValue(spirit)
 	end
 	if unitData.energybar then
-		unitData.energybar:SetValue(energy or 0)
+		unitData.energybar:SetValue(energy)
 	end
 	if unitData.suppressionbar then
 		unitData.suppressionbar:SetValue(suppression)
@@ -463,18 +470,33 @@ end
 
 
 local function AddUnit(unitID, unitDefID, teamID)
+	if unitsByID[unitID] then
+		return
+	end
 	local parent = stack_neutral
 	if not Spring.IsUnitAllied(unitID) then
 		parent = stack_enemy
-	else
-		if angelDefs[unitDefID] then
-			parent = stack_angels
-		end
+	elseif teamID == myTeamID then
+		parent = stack_ally
+	elseif angelDefs[unitDefID] then
+		parent = stack_angels
 	end
 
 	local index = #units + 1
+	local indexFound = false
+	for i=1,#units do
+	  local unitData = units[i]
+	  if indexFound then
+	    unitsByID[unitData.unitID] = unitsByID[unitData.unitID] + 1
+	  elseif powerDefs[unitDefID] > powerDefs[units[i].unitDefID] then
+	    index = i
+	    indexFound = true
+	  end
+	end
+	
 	unitsByID[unitID] = index
-	units[index] = {unitID = unitID, unitDefID = unitDefID, parent = parent}
+	local newEntry = {unitID = unitID, unitDefID = unitDefID, parent = parent}
+	table.insert(units, index, newEntry)
 	AddUnitDisplay(unitID, unitDefID, index, '', parent, parent == stack_angels)	-- FIXME hotkey
 	UpdateUnitInfo(unitID)
 	damagePings[unitID] = 0

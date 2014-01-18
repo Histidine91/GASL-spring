@@ -31,6 +31,10 @@ local icontypes = {
 		bitmap="icons/happytrigger.png",
 		size=2.4,
 	},
+	sharpshooter = {
+		bitmap="icons/sharpshooter.png",
+		size=2.2,
+	},
 	placeholdersior = {
 		bitmap="icons/placeholdersior.png",
 		size=4,

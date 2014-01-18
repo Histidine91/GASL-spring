@@ -63,6 +63,10 @@ local tbl = {
     {class='StaticParticles', options=MergeTable(fx.staticLightRed, {size=150})},
     {class='Ribbon', options={width=3, size=64, color={1, 0.1, 0.1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
+  sharpshooter_phalanx = {
+    {class='StaticParticles', options=MergeTable(fx.staticLightBlue, {size=100})},
+    {class='Ribbon', options={width=3, size=64, color={0.1, 0.1, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  },
   --energybomb = {
   --  {class='Ribbon', options={width=3, size=4, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   --}

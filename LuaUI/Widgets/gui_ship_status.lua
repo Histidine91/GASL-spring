@@ -476,10 +476,10 @@ local function AddUnit(unitID, unitDefID, teamID)
 	local parent = stack_neutral
 	if not Spring.IsUnitAllied(unitID) then
 		parent = stack_enemy
-	elseif teamID == myTeamID then
-		parent = stack_ally
 	elseif angelDefs[unitDefID] then
 		parent = stack_angels
+	elseif teamID == myTeamID then
+		parent = stack_ally
 	end
 
 	local index = #units + 1

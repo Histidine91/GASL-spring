@@ -679,7 +679,7 @@ function gadget:GameFrame(f)
 							if distance < avoidDistance then
 								data.behavior = 3
 								local tx, ty, tz = GetUnitMidPos(targetID)
-								data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange, def.minAvoidanceAngle, def.maxAvoidanceAngle)
+								data.moveGoal = GetDistanceFromTargetMoveGoal(tx, ty, tz, heading, def.combatRange + 150, def.minAvoidanceAngle, def.maxAvoidanceAngle)
 								data.lastDistance = distance
 								data.wantedSpeed = def.speed
 								--Spring.Echo(unitID .. " last distance = " .. distance)

@@ -45,6 +45,7 @@ return {
     name		= "Energy Bomb",
     areaOfEffect	= 128,
     avoidFriendly	= false,
+    burnblow            = true,
     burst		= 3,
     burstRate		= 0.6,
     collideFriendly	= false,
@@ -61,7 +62,7 @@ return {
     craterBoost		= 0,
 
     damage = {
-      default = 250,
+      default = 400,
     },
     
     duration		= .05,

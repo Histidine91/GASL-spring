@@ -251,7 +251,7 @@ local unitDef = {
 			craterBoost		= 0,
 			
 			damage = {
-				default = 12000,
+				default = 12500,
 			},
 			
 			explosiongenerator = "custom:death_med",
@@ -272,7 +272,7 @@ local unitDef = {
 			tolerance	= 3000,
 			tracks		= true,
 			turret		= true,
-			turnrate	= 11000,
+			turnrate	= 14000,
 			weaponType 	= "MissileLauncher",
 			weaponAcceleration = 100,
 			weaponVelocity	= 300,
@@ -297,7 +297,7 @@ local unitDef = {
 			craterBoost		= 0,
 			
 			damage = {
-				default = 12000,
+				default = 12500,
 			},
 			
 			explosiongenerator = "custom:death_med",
@@ -318,7 +318,7 @@ local unitDef = {
 			tolerance	= 3000,
 			tracks		= true,
 			turret		= true,
-			turnrate	= 11000,
+			turnrate	= 14000,
 			weaponType 	= "MissileLauncher",
 			weaponAcceleration = 100,
 			weaponVelocity	= 300,

@@ -1,16 +1,16 @@
--- supergun_flare
--- supergun_smoke
--- supergun_shockwave
+-- lrpc_flare
+-- lrpc_smoke
+-- lrpc_shockwave
 
 return {
-  ["supergun_flare"] = {
+  ["lrpc_flare"] = {
     clouds0 = {
       air                = true,
       class              = [[CSimpleParticleSystem]],
       count              = 1,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.98,
         colormap           = [[1 0.25 0.04 0.4  0 0 0 0.001]],
@@ -37,8 +37,8 @@ return {
       class              = [[CSimpleParticleSystem]],
       count              = 1,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.98,
         colormap           = [[1 1 0.04 0.1  0.04 0.04 0.04 0.2   0 0 0 0.001   0 0 0 0.001]],
@@ -65,8 +65,8 @@ return {
       class              = [[CSimpleParticleSystem]],
       count              = 1,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.98,
         colormap           = [[1 0.25 0.04 0.4  0 0 0 0.001]],
@@ -93,8 +93,8 @@ return {
       class              = [[CSimpleParticleSystem]],
       count              = 1,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.98,
         colormap           = [[1 1 0.04 0.1  0.04 0.04 0.04 0.2   0 0 0 0.001   0 0 0 0.001]],
@@ -121,8 +121,8 @@ return {
       class              = [[CSimpleParticleSystem]],
       count              = 1,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.98,
         colormap           = [[1 1 0.04 0.1  0.04 0.04 0.04 0.2   0 0 0 0.001   0 0 0 0.001]],
@@ -146,14 +146,14 @@ return {
     },
   },
 
-  ["supergun_smoke"] = {
+  ["lrpc_smoke"] = {
     clouds0 = {
       air                = true,
       class              = [[CSimpleParticleSystem]],
       count              = 5,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.99,
         colormap           = [[0.04 0.04 0.04 0.5  0.04 0.04 0.04 0.2   0 0 0 0.001]],
@@ -177,14 +177,14 @@ return {
     },
   },
 
-  ["supergun_shockwave"] = {
+  ["lrpc_shockwave"] = {
     clouds0 = {
       air                = true,
       class              = [[CSimpleParticleSystem]],
       count              = 0,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.96,
         colormap           = [[0.12 0.06 0.04 0.08  0.04 0.04 0.04 0.1   0 0 0 0.001]],
@@ -211,8 +211,8 @@ return {
       class              = [[CSimpleParticleSystem]],
       count              = 1,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.96,
         colormap           = [[0.04 0.04 0.04 0.15  0.04 0.04 0.04 0.1   0 0 0 0.001]],
@@ -239,8 +239,8 @@ return {
       class              = [[CSimpleParticleSystem]],
       count              = 1,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.96,
         colormap           = [[0.055 0.045 0.001 0.1  0.04 0.04 0.04 0.1   0 0 0 0.001]],
@@ -267,8 +267,8 @@ return {
       class              = [[CSimpleParticleSystem]],
       count              = 15,
       ground             = true,
-      underwater         = 0,
-      water              = false,
+      underwater         = true,
+      water              = true,
       properties = {
         airdrag            = 0.96,
         colormap           = [[0.1 0.05 0 0.5   0 0 0 0.001]],

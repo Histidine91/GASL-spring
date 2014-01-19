@@ -127,6 +127,13 @@ local function DebugPhalanx()
     end
 end
 
+local function DebugMuzzleFlare()
+    while true do
+	EmitSfx(railgunFlare, 1030)
+	Sleep(1000)
+    end
+end
+
 function script.Create()
     Turn(pod_L, z_axis, math.rad(12))
     Turn(pod_R, z_axis, math.rad(-12))
@@ -156,6 +163,7 @@ function script.Create()
     
     StartThread(FeatherLoop)
     --StartThread(DebugPhalanx)
+    --StartThread(DebugMuzzleFlare)
 end
 
 function script.MoveRate(rate)

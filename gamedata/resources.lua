@@ -83,7 +83,7 @@ local resources = {
 			light_white = 'light_white.png',
 			light_pink = 'light_pink.png',
 			
-			phalanxtrail_pink = 'phalanxtrail_pink.png',
+			kfoam= "other/foam.tga",
 			
 			null = 'null.tga',
 		}

@@ -296,7 +296,7 @@ local unitDef = {
 			},
 			
 			damage                  = {
-				default = 12000,
+				default = 10000,
 			},
 			
 			duration		= 0.05,
@@ -336,7 +336,7 @@ local unitDef = {
 			"custom:missile",
 			"custom:cannon_muzzle",
 			"custom:gunmuzzle",
-			"custom:supergun",
+			"custom:lrpc_flare",
 		},
 	},
 	customParams  =  {

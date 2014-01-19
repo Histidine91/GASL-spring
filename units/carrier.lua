@@ -72,6 +72,7 @@ local unitDef = {
 	-- Misc
 	smoothAnim = false,
 	selfDestructCountdown = 6,
+	movestate = 0,
 	
 	sfxTypes = {
 		explosionGenerators = {
@@ -88,7 +89,6 @@ local unitDef = {
 		type = "large",
 		helptext = "An escort carrier for supporting small wings of fighters in the field. Lightly armored and armed for its size.",
 		cost = 3000,
-		occupationStrength = 2,
 		combatrange = 1000,
 		inertiafactor = 0.995,
 		armor = 150,

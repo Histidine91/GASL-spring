@@ -251,7 +251,7 @@ local unitDef = {
 			craterBoost		= 0,
 			
 			damage = {
-				default = 12500,
+				default = 15000,
 			},
 			
 			explosiongenerator = "custom:death_med",
@@ -263,7 +263,7 @@ local unitDef = {
 			model		= "claw_l.s3o",
 			myGravity	= 0,
 			noSelfDamage	= true,
-			range		= 1600,
+			range		= 1800,
 			reloadTime	= 1,
 			smoketrail 	= false,
 			soundHit	= "explosion/ex_med7",
@@ -297,7 +297,7 @@ local unitDef = {
 			craterBoost		= 0,
 			
 			damage = {
-				default = 12500,
+				default = 15000,
 			},
 			
 			explosiongenerator = "custom:death_med",
@@ -309,7 +309,7 @@ local unitDef = {
 			model		= "claw_r.s3o",
 			myGravity	= 0,
 			noSelfDamage	= true,
-			range		= 1600,
+			range		= 1800,
 			reloadTime	= 1,
 			smoketrail 	= false,
 			soundHit	= "explosion/ex_med7",
@@ -337,7 +337,7 @@ local unitDef = {
 			"custom:teleport",
 			"custom:missile",
 			"custom:gunmuzzle",
-			"custom:missiletrailred",
+			"custom:muzzlekineticlarge",
 		},
 	},
 	customParams  =  {

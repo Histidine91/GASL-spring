@@ -11,6 +11,16 @@ local fx = {
     count       = 1,
     repeatEffect = true,
   },
+  glowingLightWhite = {
+    life        = 60,
+    lifeSpread  = 0,
+    size        = 20,
+    sizeSpread  = 0,
+    colormap    = { {1, 1, 1, 0.02}, {1, 1, 1, 0.005}, {1, 1, 1, 0.02} },
+    texture     = 'bitmaps/GPL/smallflare.tga',
+    count       = 1,
+    repeatEffect = true,
+  },  
   staticLightWhite = {
     life        = math.huge,
     lifeSpread  = 0,
@@ -37,6 +47,10 @@ for name, color in pairs(lightColors) do
 	fx[key] = Spring.Utilities.CopyTable(fx.blinkyLightWhite, true)
 	fx[key]["colormap"][1] = color
 	
+	key = "glowingLight"..name
+	fx[key] = Spring.Utilities.CopyTable(fx.staticLightWhite, true)
+	fx[key]["colormap"][1] = color
+	
 	key = "staticLight"..name
 	fx[key] = Spring.Utilities.CopyTable(fx.staticLightWhite, true)
 	fx[key]["colormap"][1] = color
@@ -56,7 +70,7 @@ local tbl = {
     {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
   kungfufighter_anchorclaw_l = {
-    {class='StaticParticles', options=MergeTable(fx.staticLightRed, {size=150})},
+    {class='StaticParticles', options=MergeTable(fx.glowingLightRed, {size=150})},
     {class='Ribbon', options={width=3, size=64, color={1, 0.1, 0.1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
   kungfufighter_anchorclaw_r = {

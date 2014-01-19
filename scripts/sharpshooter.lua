@@ -48,6 +48,8 @@ local isUsingSpecial = false
 local dead = false
 local specialShots = 0
 local specialTarget
+
+local previousFireState = 2
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function DamageLoop()
@@ -92,29 +94,33 @@ local function FatalArrowThread(params)
     SetSignalMask(SIG_SPECIAL)
     isUsingSpecial = true
     GG.FlightControl.SetUnitForcedSpeed(unitID, 0)
-    while GG.FlightControl.GetUnitTrueSpeed(unitID) > 0 do
+    while GG.FlightControl.GetUnitTrueSpeed(unitID) > 0.5 do
 	Sleep(200)
     end
+    Sleep(1000)
     
     while specialShots > 0 do
-	if (not specialTarget) or Spring.GetUnitIsDead(specialTarget) then
-	    specialTarget = GG.FatalArrow.GetTarget(unitID)
-	    if not specialTarget then
-		specialShots = 0	-- all targets dead, cancel
-	    end
+	specialTarget = GG.FatalArrow.GetTarget(unitID)
+	if not specialTarget then
+	    specialShots = 0	-- all targets dead, cancel
 	end
-	Sleep(100)
+	Sleep(250)
     end
+    GG.FatalArrow.ClearTargets(unitID)
     Sleep(1000)
     
     GG.FlightControl.SetUnitForcedSpeed(unitID, nil)
     isUsingSpecial = false
+    Spring.GiveOrderToUnit(unitID, CMD.FIRE_STATE, {previousFireState}, 0)
 end
 
 function FatalArrowTrigger(params)
+    local states = Spring.GetUnitStates(unitID)
+    previousFireState = states.firestate
+    Spring.GiveOrderToUnit(unitID, CMD.FIRE_STATE, {0}, 0)
     specialShots = 3
-    specialTarget = nil
-    GG.FatalArrow.SearchForTargets(unitID, params[1]) 
+    GG.FatalArrow.SearchForTargets(unitID, params[1])
+    --specialTarget = GG.FatalArrow.GetTarget(unitID)
     StartThread(FatalArrowThread)
 end
 
@@ -236,7 +242,8 @@ function script.BlockShot(weaponID, targetID, userTarget)
 	end
 	if distance < minRange then return true end
     end
-    if usingSpecial and (not Spring.GetUnitIsDead(specialTarget)) and specialTarget ~= targetID then
+    
+    if isUsingSpecial and not (specialTarget and Spring.GetUnitIsDead(specialTarget)) and specialTarget ~= targetID then
 	return true
     end
     if energyPerShot then

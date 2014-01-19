@@ -87,9 +87,11 @@ local function AnchorClawThread()
     isUsingSpecial = true
     
     EmitSfx(claw_L, 2051)
+    EmitSfx(claw_L, 1029)
     Hide(claw_L)
     Sleep(1000)
     EmitSfx(claw_R, 2052)
+    EmitSfx(claw_R, 1029)
     Hide(claw_R)
     
     Sleep(4000)
@@ -107,7 +109,7 @@ end
 local function BurnDriveThread(cmdParams)
     Signal(SIG_BURNDRIVE)
     SetSignalMask(SIG_BURNDRIVE)
-    GG.FlightControl.DisableManeuvering(unitID, true)
+    GG.FlightControl.DisableUnitManeuvering(unitID, true)
     GG.FlightControl.SetUnitForcedSpeed(unitID, BURN_DRIVE_SPEED)
     
     for i=1,150 do

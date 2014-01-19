@@ -33,8 +33,8 @@ specialPowers = {
 		isSpiritAttack = true,
 	},
 	anchorclaw = {
-		minRange = 300,
-		maxRange = 1500,
+		minRange = 400,
+		maxRange = 1800,
 		maxAngle = math.rad(30),
 		cmdDesc = {
 			id      = CMD_ANCHOR_CLAW,
@@ -65,9 +65,9 @@ specialPowers = {
 		isSpiritAttack = true,
 	},
 	fatalarrow = {
-		minRange = 2000,
+		minRange = 1600,
 		maxRange = 6000,
-		maxAngle = math.rad(30),
+		maxAngle = math.rad(5),
 		cmdDesc = {
 			id      = CMD_FATAL_ARROW,
 			name    = "Fatal Arrow",

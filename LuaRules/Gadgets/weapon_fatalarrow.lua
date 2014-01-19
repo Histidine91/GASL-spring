@@ -13,15 +13,15 @@ function gadget:GetInfo()
 end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-if (not gadgetHandler:IsSyncedCode()) then
-	return false
+local CONE_ANGLE = math.rad(30)
+local function GetTargetCircleRadius(distance)
+	return distance*math.tan(CONE_ANGLE)
 end
 
+if (gadgetHandler:IsSyncedCode()) then
 --------------------------------------------------------------------------------
 -- SYNCED
 --------------------------------------------------------------------------------
-local CONE_ANGLE = 30	-- degrees
-
 local targets = {}	-- [unitID] = {target1, target2, target3}
 local targetsByTargetID = {}	-- [unitID] = attackerID
 local allow = false
@@ -31,11 +31,28 @@ local function GetTarget(unitID)
 	if not targetArray then
 		return nil
 	end
+	if #targetArray == 0 then
+		targets[unitID] = nil
+		return nil
+	end
 	local targetID = targetArray[1]
 	allow = true
 	Spring.GiveOrderToUnit(unitID, CMD.ATTACK, {targetID}, 0)
+	Spring.SetUnitTarget(unitID, targetID)
 	allow = false
 	return targetID
+end
+
+local function ClearTargets(unitID)
+	local targetArray = targets[unitID]
+	if not targetArray then
+		return nil
+	end
+	for i=1,#targetArray do
+		local targetID = targetArray[i]
+		targetsByTargetID[targetID] = nil
+	end
+	targets[unitID] = nil
 end
 
 --[[
@@ -63,13 +80,14 @@ local function SearchForTargets(unitID, targetID)
 	local count = 1
 	local unitTeam = Spring.GetUnitTeam(unitID)
 	local distance = Spring.GetUnitSeparation(unitID, targetID, false)
-	local radius = distance*math.tan(CONE_ANGLE)
+	local radius = GetTargetCircleRadius(distance)
 	local extraTargets = Spring.GetUnitsInCylinder(tx, tz, radius)
 	for _,etID in pairs(extraTargets) do
 		local etTeam = Spring.GetUnitTeam(etID)
-		if Spring.AreTeamsAllied(unitTeam, etTeam) then
-			targets[unitID][count] = etID
+		if not Spring.AreTeamsAllied(unitTeam, etTeam) then
 			count = count + 1
+			targets[unitID][count] = etID
+			targetsByTargetID[etID] = unitID
 			if count == 5 then
 				break
 			end
@@ -90,7 +108,7 @@ function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
 	targetsByTargetID[unitID] = nil
 end
 
-function gadget:AllowUnitCommand(unitID, unitDefID, teamID, cmdID, cmdParams, cmdOptions)
+function gadget:AllowCommand(unitID, unitDefID, teamID, cmdID, cmdParams, cmdOptions)
 	if allow then
 		return true
 	end
@@ -101,7 +119,7 @@ function gadget:Initialize()
 	GG.FatalArrow = {
 		GetTarget = GetTarget,
 		SearchForTargets = SearchForTargets,
-		AttackTarget = AttackTarget,
+		ClearTargets = ClearTargets,
 	}
 end
 
@@ -111,3 +129,8 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+else
+--------------------------------------------------------------------------------
+-- unsynced
+--------------------------------------------------------------------------------
+end

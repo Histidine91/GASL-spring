@@ -225,7 +225,7 @@ function script.BlockShot(weaponID, targetID, userTarget)
 	end
 	if distance < minRange then return true end
     end
-    if usingSpecial and (not Spring.GetUnitIsDead(specialTarget)) and specialTarget ~= targetID then
+    if isUsingSpecial and (not Spring.GetUnitIsDead(specialTarget)) and specialTarget ~= targetID then
 	return true
     end
     if energyPerShot then

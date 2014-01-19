@@ -337,6 +337,18 @@ local function SetUnitHeading(unitID, heading)
 	Spring.MoveCtrl.SetHeading(unitID, heading*65536/2/pi)
 end
 
+local function SetUnitRotationVelocity(unitID, rvx, rvy, rvz)
+	local data = spacecraft[unitID]
+	if not data then
+		return
+	end
+	local rotVel = data.rotationVelocity
+	rotVel[1] = rvx
+	rotVel[2] = rvy
+	rotVel[3] = rvz
+	Spring.MoveCtrl.SetRotationVelocity(unitID, rvx, rvy, rvz)
+end
+
 local function SetChaseTarget(unitID, targetID)
 	if not spacecraft[unitID] then
 		return
@@ -373,7 +385,7 @@ local function BreakOffTarget(unitID)
 	data.wantedSpeed = def.speed
 end
 
-local function DisableManeuvering(unitID, bool)
+local function DisableUnitManeuvering(unitID, bool)
 	local data = spacecraft[unitID]
 	if not data then
 		return
@@ -461,10 +473,11 @@ function gadget:Initialize()
 		GetUnitTurnrate = GetUnitTurnrate,
 		SetUnitTurnrate = SetUnitTurnrate,
 		SetUnitHeading = SetUnitHeading,
+		SetUnitRotationVelocity = SetUnitRotationVelocity,
 		SetUnitPosition = SetUnitPosition,
 		SetChaseTarget = SetChaseTarget,
 		BreakOffTarget = BreakOffTarget,
-		DisableManeuvering = DisableManeuvering,
+		DisableUnitManeuvering = DisableUnitManeuvering,
 		DisableUnit = DisableUnit,
 		EnableUnit = EnableUnit,
 	}
@@ -520,6 +533,8 @@ function gadget:UnitDestroyed(u,ud,team)
 	--	Spring.Echo(spacecraft[u].pitch)
 	--end
 	spacecraft[u] = nil
+	disabledUnits[u] = nil
+	waitWaitList[u] = nil
 end
 
 

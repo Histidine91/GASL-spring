@@ -46,6 +46,7 @@ local portraitList = {	--VFS.DirList(PORTRAIT_DIR)
 	"vanilla_normal",
 	
 	"chitose_normal",
+	"chitose_annoyed",
 	"chitose_happy",
 	"chitose_sad",
 	"chitose_angry",

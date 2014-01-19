@@ -93,7 +93,7 @@ for i=1,#UnitDefs do
 		combatRange = tonumber(customParams.combatrange) or 1000,
 		maneuverability = math.floor((1 - (customParams.inertiafactor or 0.98)) * 1000),
 		ecm = customParams.ecm or 0,
-		jammerStrength = ("%.0f"):format(customParams.missilejamstrength or ((customParams.ecm or 0)^0.5)*7.5),
+		jammerStrength = ("%.0f"):format(customParams.missilejamstrength or 0),
 		morale = tonumber(customParams.morale),
 		energy = tonumber(customParams.energy),
 		suppressionMod = tonumber(customParams.suppressionmod) or 1,
@@ -372,7 +372,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		parent = screen0,
 		name   = 'unitinfo_window';
 		width = 600;
-		height = 580;
+		height = 600;
 		x = vsx/2 - 300; 
 		y = vsy/2 - 300;
 		draggable = true,
@@ -638,7 +638,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		parent = scroll_main,
 		y = 420,
 		width = '100%',
-		height = 125,
+		height = 145,
 	}
 	local panel_pilot_stats = Panel:New{
 		parent = panel_pilot,
@@ -655,7 +655,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		width = 111,
 		height= 125,
 		file = pilot and pilot.portrait or nil,
-		--file2 = "LuaUI/Images/portraits/frame.png",
+		file2 = "LuaUI/Images/portraits/frame.png",
 		keepAspect = true,
 	}
 	local panel_pilot_biodata = Panel:New{

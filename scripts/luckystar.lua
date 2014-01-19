@@ -15,7 +15,7 @@ local engine_L, engine_R = piece('engine_l', 'engine_r')
 
 local weapons = {
     {aimpoint = laser, muzzles = {laserflare}, index = 1},	-- laser
-    {aimpoint = base, muzzles = {vulcanFlare_L, vulcanFlare_R}, index = 1, emit = 1026},	-- vulcan
+    {aimpoint = base, muzzles = {vulcanFlare_L, vulcanFlare_R}, index = 1, emit = 1028},	-- vulcan
     {aimpoint = missile, muzzles = {missile1, missile2, missile3}, index = 1},	-- missile
     {aimpoint = base, muzzles = {}, index = 1},	-- phalanx
     {aimpoint = laser, muzzles = {laserflare}, index = 1}	-- hyperCannon
@@ -77,8 +77,8 @@ local function FeatherLoop()
     while true do
 	local spirit = spGetUnitRulesParam(unitID, "spirit")
 	if spirit == 100 then
-	    EmitSfx(engine_L, 1027)
-	    EmitSfx(engine_R, 1027)
+	    EmitSfx(engine_L, 1025)
+	    EmitSfx(engine_R, 1025)
 	end
 	Sleep(500)
     end
@@ -166,7 +166,8 @@ end
 
 function script.AimWeapon(num)
     GG.UpdateWeaponAccuracy(unitID, unitDefID, num)
-    return (not isUsingSpecial)
+    if num == 5 then return false	--isUsingSpecial
+    else return (not isUsingSpecial) end
 end
 
 function script.Shot(num)
@@ -190,8 +191,8 @@ end
 function script.Killed(recentDamage, maxHealth)
     dead = true
     for i=1,8 do
-	EmitSfx(base, 1025)
+	EmitSfx(base, 1027)
 	Sleep(500)
     end
-    EmitSfx(fuselage, 1028)
+    EmitSfx(fuselage, 1026)
 end

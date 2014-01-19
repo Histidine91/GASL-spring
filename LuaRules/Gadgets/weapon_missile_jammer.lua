@@ -41,7 +41,7 @@ for i=1,#UnitDefs do
 	if ud.customParams.ecm or ud.customParams.missilejamstrength then
 		jammerDefs[i] = {
 			jammerRadius = tonumber(ud.customParams.missilejamradius) or (ud.xsize*50 + 125),
-			jammerStrength = ud.customParams.missilejamstrength or ((ud.customParams.ecm or 0)^0.5)*7.5,
+			jammerStrength = ud.customParams.missilejamstrength or 0,
 		}
 	end
 end

@@ -53,7 +53,7 @@ end
 for i=1,#WeaponDefs do
 	local wd = WeaponDefs[i]
 	local damage = wd.damages[0]
-	weapons[i] = {damage = damage, suppression = wd.customParams and wd.customParams.suppression or damage*0.01/100, noFlank = tobool(wd.customParams.suppression_noflank)}
+	weapons[i] = {damage = damage, suppression = wd.customParams and wd.customParams.suppression or damage*0.02/100, noFlank = tobool(wd.customParams.suppression_noflank)}
 end
 
 --------------------------------------------------------------------------------

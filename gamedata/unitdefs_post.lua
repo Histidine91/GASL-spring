@@ -136,7 +136,12 @@ for name, ud in pairs(UnitDefs) do
 	end
 end
 
--- All units stealthed, disable radar
+for name,ud in pairs(UnitDefs) do
+    ud.customparams = ud.customparams or {}
+    ud.customparams.missilejamstrength = ud.customparams.missilejamstrength or (30 + 20*(ud.customparams.ecm or 0)/100)
+end
+
+-- LOS settings
 for name, ud in pairs(UnitDefs) do
     ud.radardistance = 0
     --ud.stealth = true

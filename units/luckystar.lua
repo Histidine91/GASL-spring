@@ -292,7 +292,7 @@ local unitDef = {
 				ap = 0,
 				damagetype = "energy",
 				description = "An immensely powerful beam that wipes anything in its path.",
-				critchance = 0.05,
+				--critchance = 0.05,
 				special = true,
 				statsdamage = 200*30*5,
 				statsrange = 3000,
@@ -337,10 +337,10 @@ local unitDef = {
 	sfxTypes = {
 		explosionGenerators = {
 			"custom:damage_fire",
+			"custom:feather",
+			"custom:teleport",			
 			"custom:missile",
 			"custom:gunmuzzle",
-			"custom:feather",
-			"custom:teleport",
 		},
 	},
 	customParams  =  {

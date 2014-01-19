@@ -80,9 +80,8 @@ local unitDef = {
 		maxavoidanceangle = 150,
 		armor = 60,
 		--ecm = 0,
-		missilejamstrength = 20,
 		canresupply = true,
-		suppressionmod = 1.4,
+		suppressionmod = 1.1,
 	},
 }
 

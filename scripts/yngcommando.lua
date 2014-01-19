@@ -26,9 +26,9 @@ local function DamageLoop()
     local health, maxHealth = Spring.GetUnitHealth(unitID)
     while(health/maxHealth < 0.5) do
 	SetUnitValue(COB.CEG_DAMAGE, math.floor(25 - (health/maxHealth)*0.5))
-	EmitSfx(wingL, 1024)
+	EmitSfx(tankR, 1024)
 	if ((health/maxHealth) < 0.3) then
-	    EmitSfx(tankR, 1024)
+	    EmitSfx(wingL, 1024)
 	end
 	Sleep(50)
     end

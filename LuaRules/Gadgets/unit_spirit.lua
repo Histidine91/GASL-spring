@@ -74,7 +74,7 @@ GG.SetUnitSpirit = SetSpirit
 local function CalculateSpiritChange(unitDefID, damage)
   local unitDef = UnitDefs[unitDefID]
   local health = unitDef.health
-  local power = unitDef.customParams.cost
+  local power = unitDef.customParams.cost	--unitDef.customParams.power
   return damage/health * power / 20
 end
 
@@ -87,7 +87,11 @@ local function AddSpirit(unitID, unitDefID, unitTeam, targetID, targetDefID, dam
     if morale then
       local diffMorale = morale - BASE_MORALE
       local mult = diffMorale/BASE_MORALE * MORALE_DAMAGE_SCALE_FACTOR
-      damage = damage / (1-mult)	-- FIXME: might want to protect against div0
+      if mult == 1 then
+	damage = 0
+      else
+	damage = damage / (1-mult)
+      end
     end
   end
   

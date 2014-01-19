@@ -172,8 +172,8 @@ local pilotDefsPre = {
 				minor = colors.red .. "Kung-Fu Fighter\008 has " .. colors.yellow .. "maxed spirit\008!"
 			},
 			repair = {
-				{image = portraits.ranpha_veryhappy, text = "Resupply complete.\nYou sure know the way to a girl's heart..."},
-				minor = colors.red .. "Kung-Fu Fighter\008 has " .. colors.green .. "completed resupply\008!"
+				{image = portraits.ranpha_happy, text = "Repairs are done.\nI'm ready to kick ass again!"},
+				minor = colors.red .. "Kung-Fu Fighter\008 has " .. colors.green .. "completed repair\008!"
 			},
 			resupply = {
 				{image = portraits.ranpha_starryeyed, text = "Resupply complete.\nYou sure know the way to a girl's heart..."},
@@ -457,7 +457,7 @@ local pilotDefsPre = {
 				{image = portraits.chitose_pain, text = "Unit #6, no longer combat-capable!"},
 			},
 			kill = {
-				{image = portraits.chitose_angry, text = "Sharpshooter, target has been defeated."},
+				{image = portraits.chitose_normal, text = "Sharpshooter, target has been defeated."},
 				{image = portraits.chitose_happy, text = "Unit #6, target is no longer a threat."},
 				{image = portraits.chitose_aggressive, text = "Enemy down!\nI won't let you hurt my friends."},
 			},
@@ -500,7 +500,7 @@ local pilotDefsPre = {
 			},
 			unitEnergy_critical = {
 				{image = portraits.chitose_concerned, text = "Unit #6, energy levels critical.\nPlease resupply me, Tact."},
-				{image = portraits.chitose_concerned, text = "Sharpshooter, requesting resupply ASAP."},
+				{image = portraits.chitose_normal, text = "Sharpshooter, requesting resupply ASAP."},
 				minor = colors.midnightblue .. "Sharpshooter\008 down to " .. colors.orange .. "30% energy\008!"
 			},
 			unitEnergy_low = {
@@ -515,13 +515,13 @@ local pilotDefsPre = {
 				{image = portraits.chitose_happy, text = "Your aiming is naive.\nEvasion successful."},
 			},
 			spiritFull = {
-				{image = portraits.chitose_angry, text = "Power at maximum.\nThey will not escape justice today."},
+				{image = portraits.chitose_aggressive, text = "Power at maximum.\nThey will not escape justice today."},
 				{image = portraits.chitose_happy, text = "I'm ready to put an arrow through their hearts.\nTact, please give the order."},
 				minor = colors.midnightblue .. "Sharpshooter\008 has " .. colors.yellow .. "maxed spirit\008!"
 			},
 			repair = {
 				{image = portraits.chitose_happy, text = "Repairs complete.\nThank you very much."},
-				minor = colors.midnightblue .. "Sharpshooter\008 has " .. colors.green .. "completed resupply\008!"
+				minor = colors.midnightblue .. "Sharpshooter\008 has " .. colors.green .. "completed repair\008!"
 			},
 			resupply = {
 				{image = portraits.chitose_happy, text = "Repairs complete.\nThank you very much."},
@@ -538,6 +538,7 @@ local pilotDefsPre = {
 			specialWeapon = {
 				{image = portraits.chitose_aggressive, text = "Judgement!\nFatal Arrow!"},
 				{image = portraits.chitose_aggressive, text = "This is your end!\nFatal Arrow!"},
+				{image = portraits.chitose_aggressive, text = "Time for retribution!\nFatal Arrow, fire!"},
 			},
 		}
 	},
@@ -563,7 +564,7 @@ local pilotDefsPre = {
 			unitDamaged_moderate = {
 				{name = "Lester", image = portraits.lester_bitter, text = "We can't keep going like this.\nTact, get us out of the line of fire!"},
 				{name = "Lester", image = portraits.lester_aggresive, text = "Multiple hull breaches! We're trailing atmosphere!"},
-				{name = "Almo", image = portraits.almo_surprised, text = "Commander, we're taking heavy damage!\nGet the Angel Wing to cover us!"},
+				{name = "Almo", image = portraits.coco_surprised, text = "Commander, we're taking heavy damage!\nGet the Angel Wing to cover us!"},
 				{name = "Almo", image = portraits.almo_surprised, text = "We're under heavy fire!\nDamage control teams are reaching capacity!"},
 				minor = colors.yellow .. "Elsior\008 is " .. colors.orange .. "50% damaged\008!"
 			},
@@ -581,6 +582,7 @@ local pilotDefsPre = {
 				{name = "Lester", image = portraits.lester_bitter, text = "Tch... that left a nasty hole in our hull."},
 			},
 			unitSuppressed_severe = {
+				{name = "Lester", image = portraits.lester_aggressive, text = "Tch... We're not gonna make it at this rate..."},
 				{name = "Almo", image = portraits.almo_shocked, text = "Kyaa!\nWe're getting overwhelmed!"},
 				minor = colors.yellow .. "Elsior\008 is " .. colors.red .. "80% suppressed\008!"
 			},

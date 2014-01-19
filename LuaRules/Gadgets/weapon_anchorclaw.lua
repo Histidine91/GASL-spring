@@ -52,7 +52,7 @@ function gadget:ProjectileCreated(proID, proOwnerID, weaponID)
 		clawProjectiles[proID] = true
 		local frame = Spring.GetGameFrame() + DELAY_BEFORE_RESEEK
 		targetSchedule[frame] = targetSchedule[frame] or {}
-		targetSchedule[frame][proID] = proOwnerID
+		targetSchedule[frame][proID] = {proOwnerID = proOwnerID, weaponID = weaponID}
 	end
 end	
 
@@ -105,12 +105,13 @@ end
 function gadget:GameFrame(n)
 	local schedule = targetSchedule[n]
 	if schedule then
-		for proID, proOwnerID in pairs(schedule) do
+		for proID, data in pairs(schedule) do
+			local proOwnerID = data.proOwnerID
 			local targetID = GG.SpecialPower.GetTarget(proOwnerID)
 			if targetID and type(targetID) == "number" and (not Spring.GetUnitIsDead(targetID)) then
-				Spring.SetProjectileTarget(proID, targetID, string.byte('u'))
+				GG.Seeker.RegisterSeekerTarget(proID, data.weaponID, proOwnerID, targetID, true)
 			else
-				-- TODO: reseek
+				GG.Seeker.RetargetProjectile(proID)
 			end
 		end
 	end

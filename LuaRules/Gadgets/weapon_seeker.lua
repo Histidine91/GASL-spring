@@ -84,6 +84,11 @@ local function RegisterSeekerTarget(proID, weaponID, unitID, targetID, seekToTar
 	if seekToTarget then
 		Spring.SetProjectileTarget(proID, targetID, string.byte('u'))
 	end
+	
+	if not weaponID then
+		return
+	end
+	
 	local loseLockTime = seekerDefs[weaponID].ttl
 	if loseLockTime then
 		loseLockTime = loseLockTime + gameframe
@@ -110,10 +115,11 @@ local function RetargetProjectile(proID)
 	local weaponID = seekerProjectiles[proID].weapon
 	local def = seekerDefs[weaponID]
 	local units = spGetUnitsInSphere(px, py, pz, def.retarget)
-	for i=1,#units do
-		local team = spGetUnitTeam(units[i])
-		if not spAreTeamsAllied(team, seekerProjectiles[proID].team) then
-			RegisterSeekerTarget(proID, weaponID, seekerProjectiles[proID].unit, units[i], true)
+	for _,unitID in pairs(units) do	-- using pairs might help randomize it a bit
+		local team = spGetUnitTeam(unitID)
+		if team and not spAreTeamsAllied(team, seekerProjectiles[proID].team) then
+			RegisterSeekerTarget(proID, weaponID, seekerProjectiles[proID].unit, unitID, true)
+			break
 		end
 	end
 end
@@ -176,6 +182,9 @@ function gadget:ProjectileCreated(proID, proOwnerID, weaponID)
 	if seekerDefs[weaponID] then
 		seekerProjectiles[proID] = {weapon = weaponID, team = Spring.GetUnitTeam(proOwnerID), unit = proOwnerID}
 		local targetType, targetID = Spring.GetProjectileTarget(proID)
+		if targetType ~= string.byte('u') then
+			return
+		end
 		seekerProjectiles[proID].target = targetID
 		RegisterSeekerTarget(proID, weaponID, proOwnerID, targetID, false)
 	end
@@ -185,6 +194,18 @@ function gadget:ProjectileDestroyed(proID)
 	local targetID = seekerProjectiles[proID] and seekerProjectiles[proID].target
 	DeregisterSeekerTarget(proID, targetID)
 	seekerProjectiles[proID] = nil
+end
+
+function gadget:Initialize()
+	GG.Seeker = {
+		RegisterSeekerTarget = RegisterSeekerTarget,
+		DeregisterSeekerTarget = DeregisterSeekerTarget,
+		RetargetProjectile = RetargetProjectile,
+	}
+end
+
+function gadget:Shutdown()
+	GG.Seeker = nil
 end
 
 --------------------------------------------------------------------------------

@@ -116,6 +116,16 @@ local function DisplayStats()
     height = 24,
     bottom = 4,
   }
+  local image = Chili.Image:New{
+    parent = subpanel,
+    y = 8,
+    right = 16,
+    width = 64,
+    height= 64,
+    file = "LuaUI/Images/logo_angels.png",
+    keepAspect = true,
+    color = {1,1,1,0.5},
+  }
   for i=1,#columns do
     Label:New{ parent = grid, caption = columns[i], y = 0, align= (i == 1) and "center" or "right", fontSize = 15, fontShadow = true }
   end

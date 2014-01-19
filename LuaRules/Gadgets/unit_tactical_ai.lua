@@ -43,6 +43,7 @@ for i=1,#UnitDefs do
       unitStats[i].armor = tonumber(ud.customParams.armor) or 100
       unitStats[i].speed = ud.speed
       unitStats[i].healthPerCost = ud.health/(ud.customParams.cost or 1000)
+      unitStats[i].large = (ud.customParams.type == "large")
 end
 
 --------------------------------------------------------------------------------
@@ -52,6 +53,7 @@ local function GetUnitMidPos(unitID)
 	return x,y,z
 end
 
+-- note: lower is better
 local function GetTargetingScore(unitID, unitDefID, targetID, targetDefID)
       local config = unitConfigs[unitDefID] or defaults
       local stats = unitStats[targetDefID]
@@ -65,23 +67,30 @@ local function GetTargetingScore(unitID, unitDefID, targetID, targetDefID)
       local apScore = 0
       local ap, armor = config.ap, stats.armor
       if ap > armor then
-	    apScore = ap - armor * config.apModOver
+	    apScore = (ap - armor) * config.apModOver
       else
-	    apScore = armor - ap * config.apModUnder
+	    apScore = (armor - ap) * config.apModUnder
       end
       
       local speedScore = 0
       local mySpeed, targetSpeed = unitStats[unitDefID].speed, stats.speed
       if mySpeed > targetSpeed then
-	    speedScore = mySpeed - targetSpeed * config.speedModOver
+	    speedScore = (mySpeed - targetSpeed) * config.speedModOver
       else
-	    speedScore = targetSpeed - mySpeed * config.speedModUnder
+	    speedScore = (targetSpeed - mySpeed) * config.speedModUnder
+      end
+      
+      local largeTargetScore = 0
+      if stats.large then
+	    largeTargetScore = -config.largeTargetBonus
       end
       
       local hpScore = stats.healthPerCost * config.hpPerCostMod
       local rand = random(0, config.randomMod)
       
-      return distanceScore + apScore + speedScore + hpScore + rand
+      local totalScore = (distanceScore + apScore + speedScore + hpScore + largeTargetScore) + rand
+      --Spring.Echo(UnitDefs[targetDefID].name, distanceScore, apScore, speedScore, hpScore, largeTargetScore, totalScore)
+      return totalScore
 end
 
 local function PickTarget(unitID, unitDefID, unitTeam, searchRange)

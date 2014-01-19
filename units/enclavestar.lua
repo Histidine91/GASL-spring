@@ -8,15 +8,15 @@ local unitDef = {
 	mass = 1000,
 	icontype = "enclavestar",
 	category = "LARGE ARMORED WEAK TARGET ANY",
-	footprintX = 6,
-	footprintZ = 6,
+	footprintX = 9,
+	footprintZ = 9,
 	maxDamage = 25000,
 	idleTime = 0,
 	idleAutoHeal = 0,
 	objectName = "enclavestar.s3o",
 	SoundCategory = "CARRIER",
 	collisionVolumeType = "Box",
-	collisionVolumeScales = "60 60 90",
+	collisionVolumeScales = "75 60 90",
 	collisionVolumeTest = true,
 
 	-- Movement
@@ -59,6 +59,7 @@ local unitDef = {
 			"custom:death_med",
 			"custom:death_large",
 			"custom:death_multimed",
+			"custom:reactionless_drive",
 		},
 	},
 	customParams  =  {

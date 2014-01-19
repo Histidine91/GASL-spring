@@ -5,7 +5,7 @@ include("constants.lua")
 -- pieces
 --------------------------------------------------------------------------------
 
-local hull, engine = piece('hull', 'engine')
+local hull, engine_L, engine_R = piece('hull', 'engine_l', 'engine_r')
 local missiles = {}
 local bay1, bay2 = piece('bay1', 'bay2')
 local bays = {bay1, bay2}
@@ -99,6 +99,17 @@ end
 function SetSpawnDefs(defs)
     spawnDefs = defs
 end
+
+local function EngineLoop()
+    while true do
+	local speed = GG.FlightControl and GG.FlightControl.GetUnitSpeed(unitID) or 0
+	if speed > 0 then
+	    EmitSfx(engine_L, 1027)
+	    EmitSfx(engine_R, 1027)
+	end
+	Sleep(500 - speed * 100)
+    end
+end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 function script.Create()
@@ -111,7 +122,10 @@ function script.Create()
     end
     Turn(bay1, y_axis, math.rad(-90))
     Turn(bay2, y_axis, math.rad(90))
+    Turn(engine_L, y_axis, math.pi)
+    Turn(engine_R, y_axis, math.pi)
     StartThread(EnclaveSpawnLoop)
+    StartThread(EngineLoop)
 end
 
 function script.AimWeapon(num)

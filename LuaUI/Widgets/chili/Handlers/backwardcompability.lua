@@ -1,5 +1,5 @@
 --//=============================================================================
---// 
+--//
 
 function BackwardCompa(obj)
 	obj.font = obj.font or {}
@@ -9,11 +9,14 @@ function BackwardCompa(obj)
 	obj.font.size = obj.font.size or obj.fontSize
 	obj.font.size = obj.font.size or obj.fontsize
 	obj.font.shadow = obj.font.shadow or obj.fontShadow
-	obj.bolderColor = obj.borderColor or obj.borderColor1
 	obj.fontOutline = nil
 	obj.textColor = nil
 	obj.captionColor = nil
 	obj.fontSize = nil
 	obj.fontsize = nil
 	obj.fontShadow = nil
+
+	local minimumSize = obj.minimumSize or {}
+	obj.minWidth  = obj.minWidth or minimumSize[1]
+	obj.minHeight = obj.minHeight or minimumSize[2]
 end

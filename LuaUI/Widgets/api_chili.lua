@@ -8,12 +8,13 @@ function widget:GetInfo()
     author    = "jK",
     date      = "WIP",
     license   = "GPLv2",
-    version   = "2.0",
-    layer     = 1000,
+    version   = "2.1",
+    layer     = -1000,
     enabled   = true,  --  loaded by default?
     handler   = true,
     api       = true,
-    alwaysStart    = true,
+    hidden    = true,
+    alwaysStart = true,
   }
 end
 
@@ -31,12 +32,13 @@ local tf
 --------------------------------------------------------------------------------
 -- Chili's location
 
-local function GetDirectory(filepath) 
-    return filepath and filepath:gsub("(.*/)(.*)", "%1") 
-end 
+local function GetDirectory(filepath)
+    return filepath and filepath:gsub("(.*/)(.*)", "%1")
+end
 
+assert(debug)
 local source = debug and debug.getinfo(1).source
-local DIR = GetDirectory(source) or (LUAUI_DIRNAME.."Widgets/")
+local DIR = GetDirectory(source) or ((LUA_DIRNAME or LUAUI_DIRNAME) .."Widgets/")
 CHILI_DIRNAME = DIR .. "chili/"
 
 --------------------------------------------------------------------------------
@@ -73,6 +75,7 @@ end
 --------------------------------------------------------------------------------
 
 function widget:DrawScreen()
+  gl.Color(1,1,1,1)
   if (not screen0:IsEmpty()) then
     gl.PushMatrix()
     local vsx,vsy = gl.GetViewSizes()
@@ -81,10 +84,27 @@ function widget:DrawScreen()
     screen0:Draw()
     gl.PopMatrix()
   end
+  gl.Color(1,1,1,1)
+end
+
+
+function widget:DrawLoadScreen()
+  gl.Color(1,1,1,1)
+  if (not screen0:IsEmpty()) then
+    gl.PushMatrix()
+    local vsx,vsy = gl.GetViewSizes()
+    gl.Scale(1/vsx,1/vsy,1)
+    gl.Translate(0,vsy,0)
+    gl.Scale(1,-1,1)
+    screen0:Draw()
+    gl.PopMatrix()
+  end
+  gl.Color(1,1,1,1)
 end
 
 
 function widget:TweakDrawScreen()
+  gl.Color(1,1,1,1)
   if (not screen0:IsEmpty()) then
     gl.PushMatrix()
     local vsx,vsy = gl.GetViewSizes()
@@ -93,22 +113,21 @@ function widget:TweakDrawScreen()
     screen0:TweakDraw()
     gl.PopMatrix()
   end
-end
-
-
-function widget:Update()
-  tk.Update()
-  tf.Update()
+  gl.Color(1,1,1,1)
 end
 
 
 function widget:DrawGenesis()
+  gl.Color(1,1,1,1)
+  tf.Update()
   th.Update()
+  tk.Update()
+  gl.Color(1,1,1,1)
 end
 
 
 function widget:IsAbove(x,y)
-  return (not screen0:IsEmpty()) and screen0:IsAbove(x,y)
+  return screen0:IsAbove(x,y)
 end
 
 
@@ -159,10 +178,14 @@ function widget:KeyRelease()
   return _keyPressed -- block engine actions when we processed it
 end
 
+function widget:TextInput(utf8, ...)
+  return screen0:TextInput(utf8, ...)
+end
 
-function widget:ViewResize(vsx, vsy) 
+
+function widget:ViewResize(vsx, vsy)
 	screen0:Resize(vsx, vsy)
-end 
+end
 
 widget.TweakIsAbove      = widget.IsAbove
 widget.TweakMousePress   = widget.MousePress

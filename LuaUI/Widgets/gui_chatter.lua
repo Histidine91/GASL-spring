@@ -182,7 +182,8 @@ local function CreateEventPanel(params)
 	static = params.staticOverlay or false
 	warning = params.warningOverlay or false
 	
-	stackPanel:AddChild(panel, nil, 1)
+	stackPanel:AddChild(panel)
+	panel:SetLayer(1)
 	table.insert(chatItems, 1, {panel = panel, name = nameLabel, textBox = textBox, image = params.image})
 	ShowWindow()
 	

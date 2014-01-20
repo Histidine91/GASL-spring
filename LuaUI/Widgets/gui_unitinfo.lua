@@ -806,7 +806,9 @@ function widget:Initialize()
 	Control = Chili.Control
 	screen0 = Chili.Screen0
 	
-	InfoLabel = Label:Inherit{}
+	InfoLabel = Label:Inherit{
+		drawcontrolv2 = true,
+	}
 	function InfoLabel:HitTest(x,y) return self end
 	
 	vsx,vsy = Spring.GetWindowGeometry()

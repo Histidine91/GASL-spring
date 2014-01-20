@@ -1608,7 +1608,12 @@ local function MakeToolTip_UD(tt_table)
 	if mexDefID == tt_table.unitDef.id then
 		extraText = ", Income +" .. strFormat("%.2f", WG.mouseoverMexIncome)
 	end
-	
+
+	local unitName = tt_table.unitDef.humanName
+	if tt_table.unitDef.customParams.shortname then
+		unitName = tt._table.unitDef.customParams.shortname
+	end	
+		
 	local tt_structure = {
 		leftbar = {
 			tt_table.morph_data 
@@ -1617,7 +1622,7 @@ local function MakeToolTip_UD(tt_table)
 			{ name = 'cost', icon = 'LuaUI/images/ibeam.png', text = cyan .. numformat(tt_table.unitDef.metalCost), },
 		},
 		main = {
-			{ name = 'udname', icon = iconPath, text = tt_table.unitDef.humanName .. extraText, fontSize=2 },
+			{ name = 'udname', icon = iconPath, text = unitName .. extraText, fontSize=2 },
 			{ name = 'tt', text = tt_table.unitDef.tooltip, wrap=true },
 			{ name='health', icon = 'LuaUI/images/commands/Bold/health.png',  text = numformat(tt_table.unitDef.health), },
 			--[[
@@ -1646,12 +1651,15 @@ end
 
 local function MakeToolTip_Unit(data, tooltip)
 	local unitID = data
-	local team, fullname
+	local team, shortname
 	tt_unitID = unitID
 	team = spGetUnitTeam(tt_unitID) 
 	tt_ud = UnitDefs[ spGetUnitDefID(tt_unitID) or -1]
 	
-	fullname = ((tt_ud and tt_ud.humanName) or "")	
+	shortname = ((tt_ud and tt_ud.humanName) or "")
+	if tt_ud.customParams.shortname then
+		shortname = tt_ud.customParams.shortname
+	end
 		
 	if not (tt_ud) then
 		--fixme
@@ -1682,7 +1690,7 @@ local function MakeToolTip_Unit(data, tooltip)
 			{ name= 'cost', icon = 'LuaUI/images/ibeam.png', text = cyan .. numformat((tt_ud and tt_ud.metalCost) or '0') },
 		},
 		main = {
-			{ name='uname', icon = iconPath, text = fullname .. '\n(' .. teamColor .. playerName .. white ..')', fontSize=2, },
+			{ name='uname', icon = iconPath, text = shortname .. '\n(' .. teamColor .. playerName .. white ..')', fontSize=2, },
 			{ name='utt', text = unittooltip, wrap=true },
 			{ name='hp', directcontrol = 'hp_unit', },
 			{ name='res', directcontrol = 'resources_unit' },
@@ -1712,7 +1720,10 @@ local function MakeToolTip_SelUnit(data, tooltip)
 		return false
 	end
 
-	local fullname = (stt_ud.humanName or "")	
+	local shortname = ((stt_ud and stt_ud.humanName) or "")
+	if stt_ud and stt_ud.customParams.shortname then
+		shortname = stt_ud.customParams.shortname
+	end	
 	
 	local unittooltip	= GetUnitDesc(stt_unitID, stt_ud)
 	local iconPath		= GetUnitIcon(stt_ud)
@@ -1727,7 +1738,7 @@ local function MakeToolTip_SelUnit(data, tooltip)
 			{ name= 'cost', icon = 'LuaUI/images/ibeam.png', text = cyan .. numformat((stt_ud and stt_ud.metalCost) or '0') },
 		},
 		main = {
-			{ name='uname', icon = iconPath, text = fullname, fontSize=2, },
+			{ name='uname', icon = iconPath, text = shortname, fontSize=2, },
 			{ name='utt', text = unittooltip, wrap=true },
 			{ name='hp', directcontrol = 'hp_selunit', },
 			stt_ud.isBuilder and { name='bp', directcontrol = 'bp_selunit', } or {},

@@ -118,7 +118,7 @@ local function BurnDriveThread(cmdParams)
 	Sleep(33)
     end
     
-    GG.FlightControl.DisableManeuvering(unitID, false)
+    GG.FlightControl.DisableUnitManeuvering(unitID, false)
     GG.FlightControl.SetUnitForcedSpeed(unitID, nil)
     Spring.GiveOrderToUnit(unitID, CMD.INSERT, {0, CMD.MOVE, 0, cmdParams[1], cmdParams[2], cmdParams[3], cmdParams[4]}, {"alt"})
 end

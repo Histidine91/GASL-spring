@@ -218,23 +218,23 @@ local unitDef = {
 		
 		AUTOCANNON = {
 			name			= "Defense Autocannon",
-			areaOfEffect		= 12,
+			areaOfEffect		= 8,
 			avoidFriendly		= false,
 			collideFriendly		= false,
 			
 			customParams	= {
-				ap = 70,
+				ap = 62.5,
 				damagetype = "kinetic",
 				description = "A heavy rapid-fire kinetic weapon for defending big ships from small ones.",
 				critchance = 0.05,
-				energypershot = 5,
+				energypershot = 4,
 			},
 			
 			craterMult		= 0,
 			craterBoost		= 0,
 			
 			damage = {
-				default = 25,
+				default = 20,
 			},
 			
 			duration		= .02,
@@ -246,7 +246,7 @@ local unitDef = {
 			intensity		= 1,
 			interceptedByShieldType = 1,
 			noSelfDamage		= true,
-			range			= 1500,
+			range			= 1450,
 			reloadtime		= .133,
 			rgbColor		= ".3 .3 1",
 			soundStart		= "weapon/cannon/vulcan_heavy_s",

@@ -97,7 +97,7 @@ function GG.TrackRepairStats(repairerID, repairerDefID, repairerTeam, unitID, un
 	end
 	local index = angelsByUnitDef[repairerDefID]
 	if index then
-		angels[index].repair = angels[index].repair + amount
+		angels[index].repair = angels[index].repair + amount * 0.25
 	end
 end
 

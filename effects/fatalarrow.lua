@@ -1,7 +1,7 @@
 -- based on galiblow.lua from ZK
 return {
 
-   ["resupply_fade"] = {
+   ["fatalarrow_fade"] = {
       usedefaultexplosions = false,
       galifading = {
 	 air                = true,
@@ -11,19 +11,19 @@ return {
 	 water              = true,
 	 underwater	 = true,
 	 properties = {
-	    length 		= 55,
-	    width		= 86,
-	    alpha		= 0.45,
+	    length 		= 16,
+	    width		= 20,
+	    alpha		= 0.6,
 	    alphaDecay 		= 0.01,
-	    lengthGrowth	= -25,
+	    lengthGrowth	= -4,
 	    dir 		= [[0, -1 2r, 0]],
-	    color 		= [[0.8, 0.3, 0.15]],
+	    color 		= [[0.8, 0.8, 1]],
 	},
       },	
    },
 
 
-  ["resupply_spike"] = {
+  ["fatalarrow_spike"] = {
       usedefaultexplosions = false,
       gravspike1 = {
 	 air                = true,
@@ -33,18 +33,18 @@ return {
 	 water              = true,
 	 underwater	 = true,
 	 properties = {
-	    length 		= 75,
-	    width		= 20,
-	    alpha		= 0.67,
+	    length 		= 24,
+	    width		= 8,
+	    alpha		= 0.7,
 	    alphaDecay 		= 0.02,
-	    lengthGrowth	= 35,
+	    lengthGrowth	= 8,
 	    dir 		= [[dir]],
-	    color 		= [[1, 1, 0.2]],
+	    color 		= [[0.8, 0.8, 1]],
 	 },
       },
    },
 
-   ["resupply"] = {
+   ["fatalarrow_activate"] = {
     usedefaultexplosions = false,
     foom = {
       air                = true,
@@ -55,7 +55,7 @@ return {
       underwater	 = true,
       properties = {
         delay              = 2,
-        explosiongenerator = [[custom:resupply_spike]],
+        explosiongenerator = [[custom:fatalarrow_spike]],
         pos                = [[0, 0, 0]],
 	dir                = [[0, 1, 0]]
       },
@@ -69,7 +69,7 @@ return {
       underwater	 = true,
       properties = {
         delay              = 2,
-        explosiongenerator = [[custom:resupply_spike]],
+        explosiongenerator = [[custom:fatalarrow_spike]],
         pos                = [[0, 0, 0]],
 	dir                = [[0, -1, 0]]
       },
@@ -83,7 +83,7 @@ return {
       underwater	 = true,
       properties = {
         delay              = 7,
-        explosiongenerator = [[custom:resupply_fade]],
+        explosiongenerator = [[custom:fatalarrow_fade]],
         pos                = [[0, 0, 0]],
       },
     },

@@ -88,11 +88,15 @@ local function HyperCannonLoop()
     Signal(SIG_SPECIAL)
     SetSignalMask(SIG_SPECIAL)
     isUsingSpecial = true
+    Spring.SetUnitRulesParam(unitID, "isUsingSpecial", 1)
+    
     for i=1,HYPER_CANNON_TIME do
 	EmitSfx(laserflare, 2052)
 	Sleep(33)
     end
+    
     isUsingSpecial = false
+    Spring.SetUnitRulesParam(unitID, "isUsingSpecial", 0)
     GG.FlightControl.SetChaseTarget(unitID, nil)
 end
 

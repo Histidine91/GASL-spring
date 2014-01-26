@@ -27,7 +27,7 @@ VFS.Include("LuaRules/Configs/customcmds.h.lua")
 local WINDOW_WIDTH = 540
 local WINDOW_HEIGHT = 144
 local IMAGE_WIDTH = 89
-local IMAGE_HEIGHT = 100
+local IMAGE_HEIGHT = 125*0.8
 local PANEL_HEIGHT = 36
 local PANEL_HEIGHT_MINOR = 24
 local NAME_WIDTH = 80
@@ -134,6 +134,7 @@ local function CreateImage(params)
 		x = 5;
 		keepAspect = true,
 		file = params.image,
+		file2 = "LuaUI/Images/portraits/frame.png",
 		--color = (params.warningOverlay) and {1,0.5,0.5,1} or {1,1,1,1},
 	}
 end
@@ -361,6 +362,9 @@ end
 
 function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdOpts, cmdParams)
 	if commands[cmdID] then
+		if Spring.GetUnitRulesParam(unitID, "isUsingSpecial") == 0 then
+			return
+		end
 		ProcessEvent("commandReceived", 5, unitID, unitDefID, unitTeam)
 	end
 end

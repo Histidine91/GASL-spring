@@ -109,6 +109,8 @@ local function StrikeBurstThread()
     Signal(SIG_SPECIAL)
     SetSignalMask(SIG_SPECIAL)
     isUsingSpecial = true
+    Spring.SetUnitRulesParam(unitID, "isUsingSpecial", 1)
+    
     Turn(phalanxArm_L, z_axis, math.rad(-24), math.rad(240))
     Turn(phalanxArm_R, z_axis, math.rad(24), math.rad(240))
     Turn(phalanx_L, y_axis, math.rad(-90), math.rad(360))
@@ -135,6 +137,7 @@ local function StrikeBurstThread()
     Turn(phalanx_R, y_axis, 0, math.rad(120))
     SetPhalanxPointVectors()
     isUsingSpecial = false
+    Spring.SetUnitRulesParam(unitID, "isUsingSpecial", 0)
     GG.FlightControl.SetChaseTarget(unitID, nil)
     Spring.SetUnitTarget(unitID, 0)
 end

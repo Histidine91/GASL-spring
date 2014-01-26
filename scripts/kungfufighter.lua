@@ -85,6 +85,7 @@ local function AnchorClawThread()
     Signal(SIG_SPECIAL)
     SetSignalMask(SIG_SPECIAL)
     isUsingSpecial = true
+    Spring.SetUnitRulesParam(unitID, "isUsingSpecial", 1)
     
     EmitSfx(claw_L, 2051)
     EmitSfx(claw_L, 1029)
@@ -96,8 +97,9 @@ local function AnchorClawThread()
     
     Sleep(4000)
     isUsingSpecial = false
-    Sleep(5000)
+    Spring.SetUnitRulesParam(unitID, "isUsingSpecial", 0)
     
+    Sleep(5000)
     Show(claw_L)
     Show(claw_R)
 end

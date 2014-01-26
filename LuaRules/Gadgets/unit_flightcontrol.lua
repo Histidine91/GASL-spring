@@ -586,7 +586,7 @@ function gadget:GameFrame(f)
 			local heading = fresh and data.heading or spGetUnitHeading(unitID)/65536*2*math.pi
 			heading = NormalizeHeading(heading)
 			local dx, dy, dz = spGetUnitDirection(unitID)
-			local pitch = -math.atan2(dy, (dx^2+dy^2)^0.5)
+			local pitch = -math.atan2(dy, (dx^2+dz^2)^0.5)
 			--local roll
 			local distance = 0
 			local waiting = false	-- for Godot
@@ -894,6 +894,10 @@ function gadget:GameFrame(f)
 			data.velocity = {vx, vy, vz}
 			Spring.SetUnitVelocity(unitID, vx, vy, vz)
 			Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
+			
+			Spring.SetUnitRulesParam(unitID, "heading", heading)
+			Spring.SetUnitRulesParam(unitID, "pitch", pitch)
+			Spring.SetUnitRulesParam(unitID, "roll", data.roll)
 		end
 	end
 end

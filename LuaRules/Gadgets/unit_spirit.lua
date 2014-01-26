@@ -52,24 +52,33 @@ function GG.GetUnitSpirit(unitID)
   return spiritUnits[unitID] and spiritUnits[unitID].spirit
 end
 
-local function SetSpirit(unitID, unitDefID, unitTeam, newSpirit)
+local function SetSpiritRaw(unitID, unitDefID, unitTeam, newSpirit)
+  local currSpirit = spiritUnits[unitID].spirit
+  if newSpirit > 100 then
+    newSpirit = 100
+  end
+  local unitDefID = Spring.GetUnitDefID(unitID)
+  local unitTeam = Spring.GetUnitTeam(unitTeam)
+  spiritUnits[unitID].spirit = newSpirit
+  spSetUnitRulesParam(unitID, "spirit", newSpirit)
+  if currSpirit < 100 and newSpirit == 100 then
+    GG.EventWrapper.AddEvent("spiritFull", 10, unitID, unitDefID, unitTeam)
+    SendToUnsynced("spirit_full", unitID)	-- handled by unit script with CEG
+    GG.SpecialPower.RefreshCommandEnableState(unitID, unitDefID, unitTeam)
+    Spring.PlaySoundFile("sounds/spirit_full.wav", 1.0, "ui")
+  end
+  spSetUnitRulesParam(unitID, "spirit", newSpirit)
+end
+
+local function SetSpirit(unitID, newSpirit)
   if spiritUnits[unitID] then
-    local currSpirit = spiritUnits[unitID].spirit
-    if newSpirit > 100 then
-      newSpirit = 100
-    end	
-    spiritUnits[unitID].spirit = newSpirit
-    spSetUnitRulesParam(unitID, "spirit", newSpirit)
-    if currSpirit < 100 and newSpirit == 100 then
-      GG.EventWrapper.AddEvent("spiritFull", 10, unitID, unitDefID, unitTeam)
-      SendToUnsynced("spirit_full", unitID)	-- handled by unit script with CEG
-      GG.SpecialPower.RefreshCommandEnableState(unitID, unitDefID, unitTeam)
-      Spring.PlaySoundFile("sounds/spirit_full.wav", 1.0, "ui")
-    end
-    spSetUnitRulesParam(unitID, "spirit", newSpirit)
+    local unitDefID = Spring.GetUnitDefID(unitID)
+    local unitTeam = Spring.GetUnitTeam(unitTeam)
+    SetSpiritRaw(unitID, unitDefId, unitTeam, newSpirit)
   end
 end
 GG.SetUnitSpirit = SetSpirit
+GG.SetUnitSpiritRaw = SetSpiritRaw
 
 local function CalculateSpiritChange(unitDefID, damage)
   local unitDef = UnitDefs[unitDefID]
@@ -97,7 +106,7 @@ local function AddSpirit(unitID, unitDefID, unitTeam, targetID, targetDefID, dam
   
   local delta = CalculateSpiritChange(targetDefID, damage)
   local newSpirit = currSpirit + delta
-  SetSpirit(unitID, unitDefID, unitTeam, newSpirit)
+  SetSpiritRaw(unitID, unitDefID, unitTeam, newSpirit)
 end
 
 --------------------------------------------------------------------------------

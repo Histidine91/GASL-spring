@@ -61,7 +61,11 @@ local function AddEvent(_, eventType, magnitude, unitID, unitDefID, unitTeam, un
 end
 
 function gadget:Initialize()
-    gadgetHandler:AddSyncAction("WrapEvent", AddEvent)
+	gadgetHandler:AddSyncAction("WrapEvent", AddEvent)
+end
+
+function gadget:Shutdown()
+	gadgetHandler:RemoveSyncAction("WrapEvent")
 end
   
 --------------------------------------------------------------------------------

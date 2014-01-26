@@ -479,6 +479,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		y = 0,
 		width = "100%",
 		height = "33%",
+		tooltip = "HP represents the ship's structural integrity. When a ship's HP drops to zero, it is destroyed or forced to withdraw.",
 	}
 	local label_hp = Label:New{
 		parent = panel_hp;
@@ -487,7 +488,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		align="left";
 		fontSize = 12;
 		fontShadow = true;
-		tooltip = "HP represents the ship's structural integrity. When a ship's HP drops to zero, it is destroyed or forced to withdraw.",
+		
 	}
 	local hp, maxHP = Spring.GetUnitHealth(unitID)
 	local progress_hp = Progressbar:New{
@@ -639,6 +640,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		y = 420,
 		width = '100%',
 		height = 145,
+		backgroundColor = {0, 0, 0, 0},
 	}
 	local panel_pilot_stats = Panel:New{
 		parent = panel_pilot,

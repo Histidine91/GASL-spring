@@ -4,7 +4,7 @@ local unitDef = {
 	description = "Carrier/Tender Ship",
 
 	-- Required Tags
-	power = 1200,
+	power = 750,
 	mass = 1000,
 	icontype = "enclavestar",
 	category = "LARGE ARMORED WEAK TARGET ANY",
@@ -67,7 +67,7 @@ local unitDef = {
 		helptext = "These large vessels form the home of the Neinzul enclave mind-hives, and provide manufacturing and support facilities for the Younglings. Lightly armed and armored for its size.",
 		type = "large",
 		role = "support",
-		cost = 4000,
+		cost = 3000,
 		useflightcontrol = 1,
 		combatspeed = 1,
 		combatrange = 2500,

@@ -8,7 +8,7 @@ local spGetUnitRulesParam = Spring.GetUnitRulesParam
 --------------------------------------------------------------------------------
 
 local base, fuselage, pod_L, pod_R, prong_L, prong_R = piece('base', 'fuselage', 'pod_l', 'pod_r', 'prong_l', 'prong_r')
-local railgun, railgunFlare = piece('railgun', 'railgunflare')
+local railgun, railgunFlare, bowEmit = piece('railgun', 'railgunflare', 'bowemit')
 local vulcan, vulcanFlare = piece('vulcan', 'vulcanflare')
 local missile, missile1, missile2 = piece('missile', 'missile1', 'missile2')
 local engine_L, engine_R = piece('engine_l', 'engine_r')
@@ -20,7 +20,7 @@ local weapons = {
     {aimpoint = vulcan, muzzles = {vulcanFlare}, index = 1, emit = 1029},	-- vulcan
     {aimpoint = missile, muzzles = {missile1, missile2}, index = 1},	-- missile
     {aimpoint = base, muzzles = {}, index = 1},	-- phalanx
-    {aimpoint = railgun, muzzles = {railgunFlare}, index = 1, emit = 1028}	-- fatalArrow
+    {aimpoint = railgun, muzzles = {railgunFlare}, index = 1, emit = 1030}	-- fatalArrow
 }
 do
     local muzzles = weapons[4].muzzles
@@ -93,6 +93,7 @@ local function FatalArrowThread(params)
     Signal(SIG_SPECIAL)
     SetSignalMask(SIG_SPECIAL)
     isUsingSpecial = true
+    Spring.SetUnitRulesParam(unitID, "isUsingSpecial", 1)
     GG.FlightControl.SetUnitForcedSpeed(unitID, 0)
     while GG.FlightControl.GetUnitTrueSpeed(unitID) > 0.5 do
 	Sleep(200)
@@ -111,6 +112,7 @@ local function FatalArrowThread(params)
     
     GG.FlightControl.SetUnitForcedSpeed(unitID, nil)
     isUsingSpecial = false
+    Spring.SetUnitRulesParam(unitID, "isUsingSpecial", 0)
     Spring.GiveOrderToUnit(unitID, CMD.FIRE_STATE, {previousFireState}, 0)
 end
 
@@ -121,6 +123,7 @@ function FatalArrowTrigger(params)
     specialShots = 3
     GG.FatalArrow.SearchForTargets(unitID, params[1])
     --specialTarget = GG.FatalArrow.GetTarget(unitID)
+    EmitSfx(bowEmit, 1031)
     StartThread(FatalArrowThread)
 end
 

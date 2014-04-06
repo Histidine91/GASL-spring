@@ -78,6 +78,7 @@ local function GetScatterImpactPoint(projectileID, targetID, maxSpread, speed)
 end
 
 local function RegisterSeekerTarget(proID, weaponID, unitID, targetID, seekToTarget)
+	seekerProjectiles[proID] = seekerProjectiles[proID] or {weapon = weaponID, team = Spring.GetUnitTeam(unitID), unit = unitID}
 	seekerProjectiles[proID].target = targetID
 	seekersByTarget[targetID] = seekersByTarget[targetID] or {}
 	seekersByTarget[targetID][proID] = true
@@ -115,12 +116,19 @@ local function RetargetProjectile(proID)
 	local weaponID = seekerProjectiles[proID].weapon
 	local def = seekerDefs[weaponID]
 	local units = spGetUnitsInSphere(px, py, pz, def.retarget)
-	for _,unitID in pairs(units) do	-- using pairs might help randomize it a bit
+	if not units then return end
+	local tries = 0
+	while tries < #units do
+		local index = math.random(1,#units)
+		local unitID = units[index]
 		local team = spGetUnitTeam(unitID)
 		if team and not spAreTeamsAllied(team, seekerProjectiles[proID].team) then
 			RegisterSeekerTarget(proID, weaponID, seekerProjectiles[proID].unit, unitID, true)
 			break
+		else
+			--table.remove(units, index)
 		end
+		tries = tries + 1
 	end
 end
 

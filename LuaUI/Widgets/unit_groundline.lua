@@ -23,7 +23,6 @@ local glPopMatrix = gl.PopMatrix
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-local iconTypes = include("Configs/icontypes.lua")
 local teamColors = {}
 local draw = false
 

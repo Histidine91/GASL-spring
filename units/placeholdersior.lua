@@ -19,7 +19,7 @@ local unitDef = {
 	collisionVolumeType = "Box",
 	collisionVolumeScales = "110 50 220",
 	collisionVolumeTest = true,
-	collide = 0,
+	collide = false,
 
 	-- Movement
 	canFly = true,

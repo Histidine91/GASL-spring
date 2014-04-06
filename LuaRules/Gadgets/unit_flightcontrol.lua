@@ -1036,7 +1036,7 @@ else
 --------------------------------------------------------------------------------
 --UNSYNCED
 --------------------------------------------------------------------------------
-
+--[[
 local function GetUnitMidPos(unitID)
 	local _,_,_,x,y,z = spGetUnitPosition(unitID, true)
 	return x,y,z
@@ -1058,6 +1058,6 @@ function gadget:DrawWorld()
 		gl.BeginEnd(GL.LINES, DrawLine, ux - data.radius, uy + 20, uz, ux + data.radius, uy + 20, uz)
 	end
 end
-
+]]
 
 end

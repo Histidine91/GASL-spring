@@ -683,8 +683,8 @@ function DrawProgressbar(obj)
 
   local skLeft,skTop,skRight,skBottom = unpack4(obj.tiles)
 
-  gl.Color(obj.backgroundColor)
   if not obj.noSkin then
+    gl.Color(obj.backgroundColor)
     TextureHandler.LoadTexture(0,obj.TileImageBK,obj)
     local texInfo = gl.TextureInfo(obj.TileImageBK) or {xsize=1, ysize=1}
     local tw,th = texInfo.xsize, texInfo.ysize

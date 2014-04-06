@@ -535,7 +535,6 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 				fresh = true,
 				lastCollisionAvoidance = -99999
 			}
-			Spring.Echo(unitID, Spring.GetUnitRadius(unitID))
 			spacecraft[unitID].heading = NormalizeHeading(spacecraft[unitID].heading)
 			cmdSetAttackSpeed.params[1] = spacecraft[unitID].attackSpeedState
 			Spring.InsertUnitCmdDesc(unitID, cmdSetAttackSpeed)
@@ -779,11 +778,12 @@ function gadget:GameFrame(f)
 				-- collision warning: dodge if needed
 				if data.speed > 0 then
 					local radius = data.radius
-					local safetyRange = radius + 250
+					local safetyRange = radius*2 + 250
 					local potentialColidees = Spring.GetUnitsInSphere(px, py, pz, safetyRange)
 					for i=1,#potentialColidees do
 						local otherUnitID = potentialColidees[i]
-						if spacecraft[otherUnitID] and otherUnitID ~= unitID and otherUnitID ~= command.params[1] then
+						local otherUnitData = spacecraftDefs[spacecraft[otherUnitID].unitDefID]
+						if spacecraft[otherUnitID] and otherUnitID ~= unitID and otherUnitID ~= command.params[1] and def.mass/otherUnitData.mass < 3 then
 							local ox, oy, oz = GetUnitMidPos(otherUnitID)
 							local otherUnitPos = {ox, oy, oz}
 							local vec = {ox - px, oy - py, oz - pz}

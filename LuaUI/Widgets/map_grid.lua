@@ -51,7 +51,7 @@ end
 
 function widget:DrawWorldPreUnit()
   --gl.LineWidth(2)
-  if showGrid then
+  if showGrid and not (WG.Cutscene and WG.Cutscene.IsInCutscene()) then
     gl.Color(1,1,1,0.7)
     gl.CallList(boundary)
     gl.CallList(grid)

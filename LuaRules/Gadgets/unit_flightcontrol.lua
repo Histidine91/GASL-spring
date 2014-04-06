@@ -64,6 +64,8 @@ local BASE_THRUSTER_ENERGY_USAGE = 0.1	-- used every update interval, so a lot m
 local ACCELERATION_ENERGY_USAGE_MULT = 3
 local TARGET_SEEK_RANGE = 3000
 local TARGET_SEEK_RANGE_LONG = 9000
+local MAX_COLLISION_AVOIDANCE_PERIOD = 30*8
+local COLLISION_AVOIDANCE_TTL = 120
 
 local MOVE_COMMANDS = {
 	[CMD.MOVE] = true,
@@ -86,9 +88,11 @@ local BEHAVIOR_STRINGS = {
 
 local spacecraftDefs = {}
 local spacecraft = {}
-local waitWaitList = {}
+--local waitWaitList = {}
 local disabledUnits = {}
+local noCollideUnits = {}
 
+_G.spacecraft = spacecraft
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local function GetDistance(x1, y1, z1, x2, y2, z2)
@@ -197,7 +201,8 @@ local function GetNewHeading(old, wanted, turnrate)
 end
 
 local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distance, minAngle, maxAngle)
-	local angleXZ = math.random(-100, 100)
+	maxAngle = maxAngle or math.pi
+	local angleXZ = math.random(0, 100)
 	
 	-- tend to send units back to y = 0
 	local minY, maxY = -60, 60
@@ -211,6 +216,11 @@ local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distanc
 	
 	angleXZ = angleXZ * maxAngle/100 + initialHeading
 	angleYZ = angleYZ * maxAngle/100
+	angleXZ = math.max(minAngle, angleXZ)
+	
+	if math.random() > 0.5 then
+		angleXZ = -angleXZ
+	end
 	
 	local px = tx + math.sin(angleXZ)*distance
 	local py = ty + math.sin(angleYZ)*distance --* 0.4
@@ -225,6 +235,18 @@ local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distanc
 	
 	--Spring.Echo(px - tx, py - ty, pz - tz)
 	return {px, py, pz}
+end
+
+local function GetCollisionAvoidanceMoveGoal(tx, ty, tz, sideVector, topVector, dist)
+	local basePos = {tx, ty, tz}
+	local avoidAngle = math.random(0, 360)
+	avoidAngle = math.rad(avoidAngle)
+	local xmult, ymult = math.cos(avoidAngle), math.sin(avoidAngle)
+	local pos = {}
+	for i=1,3 do
+		pos[i] = basePos[i] + (sideVector[i] * xmult + topVector[i]*ymult)*dist
+	end
+	return pos
 end
 
 local function GetWantedSpeed(unitID, distance, data, def)
@@ -439,7 +461,7 @@ function gadget:Initialize()
 			acceleration = tonumber(customParams.acceleration) or 0.5,	-- unused
 			brakerate = tonumber(customParams.brakerate) or 1,		-- unused
 			inertiaFactor = tonumber(customParams.inertiafactor) or INERTIA_FACTOR,
-			avoidDistance = tonumber(customParams.avoiddistance) or ud.xsize*15 + 200,
+			avoidDistance = tonumber(customParams.avoiddistance) or ud.xsize*16 + 200,
 			minAvoidanceAngle = math.rad(tonumber(customParams.minavoidanceangle) or 40),
 			maxAvoidanceAngle = math.rad(tonumber(customParams.maxavoidanceangle) or 150),
 			rollAngle = tonumber(customParams.rollangle) or 0,
@@ -449,6 +471,7 @@ function gadget:Initialize()
 			thrusterEnergyUse = customParams.thrusterenergyuse or 1,
 			initAttackSpeedState = tonumber(customParams.attackspeedstate or 1),
 			--standoff = (customParams.standoff and true) or false,	-- unimplemented
+			mass = ud.mass,
 		}
 		spacecraftDefs[i].turnDiameter = 0.2/spacecraftDefs[i].turnrate * ud.speed
 		spacecraftDefs[i].maxTurnAngle = math.max(spacecraftDefs[i].turnrate*3, 0.15)
@@ -504,12 +527,15 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 				velocity = {0,0,0},
 				turnrate = spacecraftDefs[unitDefID].turnrate,
 				rotationVelocity = {0,0,0},
+				radius = Spring.GetUnitRadius(unitID)*2,--UnitDefs[unitDefID].xsize * 8,
 				commandCache = nil,
 				commandCacheTTL = 0,
 				timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER,
 				forceChaseTarget = nil,
 				fresh = true,
+				lastCollisionAvoidance = -99999
 			}
+			Spring.Echo(unitID, Spring.GetUnitRadius(unitID))
 			spacecraft[unitID].heading = NormalizeHeading(spacecraft[unitID].heading)
 			cmdSetAttackSpeed.params[1] = spacecraft[unitID].attackSpeedState
 			Spring.InsertUnitCmdDesc(unitID, cmdSetAttackSpeed)
@@ -528,13 +554,11 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 	end
 end
 
-function gadget:UnitDestroyed(u,ud,team)
-	--if spacecraft[u] then
-	--	Spring.Echo(spacecraft[u].pitch)
-	--end
-	spacecraft[u] = nil
-	disabledUnits[u] = nil
-	waitWaitList[u] = nil
+function gadget:UnitDestroyed(unitID ,unitDefID,unitTeam)
+	spacecraft[unitID] = nil
+	disabledUnits[unitID] = nil
+	--waitWaitList[unitID] = nil
+	noCollideUnits[unitID] = nil
 end
 
 
@@ -625,8 +649,9 @@ function gadget:GameFrame(f)
 					cmdID = CMD.ATTACK
 					--orbitTarget = false
 				end
+				
+				-- check commands
 				if specialCMDs[cmdID] then
-					local ux, uy, uz = GetUnitMidPos(unitID)
 					local tx, ty, tz
 					if (#command.params == 1) then
 						tx, ty, tz = GetTargetIntercept(unitID, command.params[1])
@@ -634,7 +659,7 @@ function gadget:GameFrame(f)
 						tx, ty, tz = unpack(command.params)
 					end
 					if tx and ty and tz then
-						distance = GetDistance(ux, uy, uz, tx, ty, tz)
+						distance = GetDistance(px, py, pz, tx, ty, tz)
 						local minRange = specialPowers[specialCMDs[cmdID]].minRange
 						local maxRange = specialPowers[specialCMDs[cmdID]].maxRange
 						if distance > maxRange then
@@ -751,6 +776,48 @@ function gadget:GameFrame(f)
 						Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {data.commandCache.tag}, {})
 					end
 				end
+				
+				-- collision warning: dodge if needed
+				if data.speed > 0 then
+					local radius = data.radius
+					local safetyRange = radius + 250
+					local potentialColidees = Spring.GetUnitsInSphere(px, py, pz, safetyRange)
+					for i=1,#potentialColidees do
+						local otherUnitID = potentialColidees[i]
+						if spacecraft[otherUnitID] and otherUnitID ~= unitID and otherUnitID ~= command.params[1] then
+							local ox, oy, oz = GetUnitMidPos(otherUnitID)
+							local otherUnitPos = {ox, oy, oz}
+							local vec = {ox - px, oy - py, oz - pz}
+							local otherRadius = spacecraft[otherUnitID].radius
+							local radiusSum = radius + otherRadius
+							local inCylinder, dist = Spring.Utilities.IsPointInCylinder({px, py, pz}, vec, safetyRange^2, radiusSum^2, otherUnitPos, false)
+							if inCylinder then
+								-- avoid
+								if data.lastCollisionAvoidance + MAX_COLLISION_AVOIDANCE_PERIOD < f then
+									data.lastCollisionAvoidance = f
+									local frontVector, rightVector, topVector = Spring.GetUnitVectors(unitID)
+									local avoidMoveGoal = GetCollisionAvoidanceMoveGoal(ox, oy, oz, rightVector, topVector, radiusSum + 50)
+									data.avoidanceMoveGoal = avoidMoveGoal
+									--Spring.GiveOrderToUnit(unitID, CMD.FIGHT, {avoidMoveGoal[1], avoidMoveGoal[2], avoidMoveGoal[3]}, 0)
+									--Spring.GiveOrderToUnit(unitID, CMD.INSERT, {0, CMD.FIGHT, 0, avoidMoveGoal[1], avoidMoveGoal[2], avoidMoveGoal[3]}, {"alt"})
+									--Spring.Echo(avoidMoveGoal[1] - ox, avoidMoveGoal[2] - oy, avoidMoveGoal[3] - oz)
+									--Spring.Echo("Unit " .. unitID .. " is avoiding other unit " .. otherUnitID .. " due to collision risk")
+								else
+									distance = GetDistance(px, py, pz, data.moveGoal[1], data.moveGoal[2], data.moveGoal[3])
+									data.wantedSpeed = (distance > 100) and def.speed or def.combatSpeed
+									if distance <= MOVE_DISTANCE_THRESHOLD then	-- close enough
+										data.avoidanceMoveGoal = nil
+									end
+								end
+								break
+							end
+						end
+					end
+					
+					if data.lastCollisionAvoidance + COLLISION_AVOIDANCE_TTL < f then
+						data.avoidanceMoveGoal = nil
+					end
+				end
 			end
 			
 			if f%30 == 0 then
@@ -762,7 +829,7 @@ function gadget:GameFrame(f)
 			-- decided what we want to do, now to get there
 			local wantedPitch, wantedHeading
 			local speed = 0
-			local moveGoal = data.moveGoal
+			local moveGoal = data.avoidanceMoveGoal or data.moveGoal
 			local deltaHeading = 0
 			
 			local energy = GG.Energy and GG.Energy.GetUnitEnergy(unitID)
@@ -898,6 +965,69 @@ function gadget:GameFrame(f)
 			Spring.SetUnitRulesParam(unitID, "heading", heading)
 			Spring.SetUnitRulesParam(unitID, "pitch", pitch)
 			Spring.SetUnitRulesParam(unitID, "roll", data.roll)
+			
+			-- collision: knock units apart
+			if (not noCollideUnits[unitID]) then
+				local radius = data.radius
+				local potentialColidees = Spring.GetUnitsInSphere(px, py, pz, radius)
+				for i=1,#potentialColidees do
+					local otherUnitID = potentialColidees[i]
+					if spacecraft[otherUnitID] and otherUnitID ~= unitID and (not noCollideUnits[otherUnitID]) then
+						local distance = spGetUnitSeparation(unitID, otherUnitID)
+						local otherRadius = spacecraft[otherUnitID].radius
+						local radiusSum = radius + otherRadius
+						--Spring.Echo(radiusSum, distance)
+						if distance < radiusSum then
+							--Spring.Echo("collision")
+							-- something tells me this is totally wrong
+							local vx1, vy1, vz1 = GetUnitVelocity(unitID)
+							local vx2, vy2, vz2 = GetUnitVelocity(otherUnitID)
+							local vx, vy, vz = vx1 - vx2, vy1 - vy2, vz1 - vz2
+							local ox, oy, oz = GetUnitMidPos(otherUnitID)
+							local vector = {GG.Vector.Normalized(px - ox, py - oy, pz - oz)}
+							local mass1, mass2 = def.mass, spacecraftDefs[spacecraft[otherUnitID].unitDefID].mass
+							local mass = mass1 + mass2
+							
+							local mx1, my1, mz1 = vx1*mass1, vy1*mass1, vz1*mass1	-- per-axis momentum of unit 1 at collision
+							local mx2, my2, mz2 = vx2*mass2, vy2*mass2, vz2*mass2	-- per-axis momentum of unit 2 at collision
+							--local mx, my, mz = mx1 - mx2, my1 - my2, mz1 - mz2
+							
+							-- protip: get the dot product of the two units' positioning vector and the movement vector of the unit whose impulse is being applied to the system
+							-- multiply that by raw impulse to get the actual impulse to apply
+							local vx1n, vy1n, vz1n = GG.Vector.Normalized(vx1, vy1, vz1)
+							local vx2n, vy2n, vz2n = GG.Vector.Normalized(vx2, vy2, vz2)
+							local dotProduct1 = vx1n * vector[1] + vy1n * vector[2] + vz1n * vector[3]
+							local dotProduct2 = vx2n * -vector[1] + vy2n * -vector[2] + vz2n * -vector[3]
+							--if dotProduct1 < 0 then dotProduct1 = 0 end
+							--if dotProduct2 < 0 then dotProduct2 = 0 end
+							
+							local impulseMult1 = mass2/mass*dotProduct1
+							local impulseMult2 = mass1/mass*dotProduct2
+							
+							-- protip: momentum is conserved
+							-- apply the momentum caused by unit1 on unit2 to unit1 in reverse as well
+							
+							-- apply each unit's momentum to both units
+							local ix1, iy1, iz1 = mx1*impulseMult1, my1*impulseMult1, mz1*impulseMult1
+							local ix2, iy2, iz2 = mx2*impulseMult2, my2*impulseMult2, mz2*impulseMult2
+						
+							
+							SetUnitVelocity(unitID, vx1 + (ix1 - ix2)/mass1, vy1 + (iy1 -iy2)/mass1, vz1 + (iz1 - iz2)/mass1)
+							SetUnitVelocity(otherUnitID, vx2 + (-ix1 + ix2)/mass2, vy1 + (-iy1 + iy2)/mass2, vz2 + (-iz1 + iz2)/mass2)
+							noCollideUnits[unitID] = f + 30
+							noCollideUnits[otherUnitID] = f + 30
+							
+							--FIXME play sound; apply collision damage; add CEG
+						end
+					end
+				end
+			end
+		end
+	end
+	
+	for unitID, expireFrame in pairs(noCollideUnits) do
+		if f - expireFrame > 0 then
+			noCollideUnits[unitID] = nil
 		end
 	end
 end
@@ -906,5 +1036,28 @@ else
 --------------------------------------------------------------------------------
 --UNSYNCED
 --------------------------------------------------------------------------------
+
+local function GetUnitMidPos(unitID)
+	local _,_,_,x,y,z = spGetUnitPosition(unitID, true)
+	return x,y,z
+end
+
+local function DrawLine(x1, y1, z1, x2, y2, z2)
+	gl.Vertex(x1, y1, z1)
+	gl.Vertex(x2, y2, z2)
+end
+
+function gadget:DrawWorld()
+	local spacecraft = SYNCED.spacecraft
+	for unitID,data in spairs(spacecraft) do
+		local amg = data.avoidanceMoveGoal
+		local ux, uy, uz = GetUnitMidPos(unitID)
+		if amg then
+			gl.BeginEnd(GL.LINES, DrawLine, ux, uy, uz, amg[1], amg[2], amg[3])
+		end
+		gl.BeginEnd(GL.LINES, DrawLine, ux - data.radius, uy + 20, uz, ux + data.radius, uy + 20, uz)
+	end
+end
+
 
 end

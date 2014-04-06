@@ -542,7 +542,6 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 			
 			Spring.SetUnitBlocking(unitID, true, true)
 			local x,y,z=Spring.GetUnitPosition(unitID)
-			--Spring.SetUnitPosition(u,x,0,z)
 			Spring.MoveCtrl.Enable(unitID)
 			Spring.MoveCtrl.SetPosition(unitID,x,0,z)
 			--Spring.MoveCtrl.SetPosition(unitID,x,math.random(-100, 200),z)

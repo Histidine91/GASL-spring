@@ -5,7 +5,7 @@ function widget:GetInfo()
       author    = "KingRaptor (L.J. Lim)",
       date      = "2013.08.07.",
       license   = "GNU GPL, v2 or later",
-      layer     = 2,
+      layer     = 1001,
       enabled   = true,
    }
 end

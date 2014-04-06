@@ -395,7 +395,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 	local button_close = Button:New{
 		parent = window_main,
 		caption = 'Close', 
-		OnMouseUp = { function(self) window_main:Dispose() end }, 
+		OnClick = { function(self) window_main:Dispose() end }, 
 		right = 8,
 		height = 24,
 		bottom = 4,

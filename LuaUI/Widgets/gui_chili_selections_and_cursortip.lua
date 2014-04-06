@@ -801,7 +801,7 @@ local function MakeUnitGroupSelectionToolTip()
 		backgroundColor = {0,0,0,0.1},
 		fontSize = 9,
 		caption = pictureWithinCapacity and (options.groupalways.value and "[---]" or "---") or "#", 
-		OnMouseUp = {pictureWithinCapacity and function(self) 
+		OnClick = {pictureWithinCapacity and function(self) 
 			options.groupalways.value = not options.groupalways.value
 			local selUnits = spGetSelectedUnits()
 			widget:SelectionChanged(selUnits) --this will recreate all buttons
@@ -2400,7 +2400,7 @@ function widget:Initialize()
 		dockable = false,
 		resizable   = false;
 		draggable = false,
-		OnMouseDown={ function(self)
+		OnClick={ function(self)
 			local _,_, meta,_ = spGetModKeyState()
 			if not meta then return false end
 			WG.crude.OpenPath('Settings/HUD Panels/Selected Units Window')

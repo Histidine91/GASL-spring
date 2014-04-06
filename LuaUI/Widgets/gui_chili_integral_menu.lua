@@ -242,14 +242,13 @@ local vsx, vsy
 --  FUNCTIONS
 ------------------------
 -- this gets invoked when button is clicked 
-local function ClickFunc(button) 
-	local _,_,left,_,right = Spring.GetMouseState()
+local function ClickFunc(button, x, y, mouse)
+	local left, right = mouse == 1, mouse == 3
 	local alt,ctrl,meta,shift = Spring.GetModKeyState()
 	local index = Spring.GetCmdDescIndex(button.cmdid)
 	if (left) then
 		Spring.SetActiveCommand(index,1,left,right,alt,ctrl,meta,shift)
-	end
-	if (right) then
+	elseif (right) then
 		Spring.SetActiveCommand(index,3,left,right,alt,ctrl,meta,shift)
 	end
 end 
@@ -339,11 +338,8 @@ local function MakeButton(container, cmd, insertItem, index)
 			isDisabled = cmd.disabled;
 			tooltip = tooltip;
 			cmdid = cmd.id;
-			OnMouseDown = {ClickFunc} --activate the clicked command
+			OnClick = {ClickFunc} --activate the clicked command
 		}
-		if cmd.OnClick then 
-			button.OnMouseDown = cmd.OnClick
-		end 
 		if (isState) then 
 			button.padding = {4,4,2.5,2}
 --			button.backgroundColor = {0,0,0,0}
@@ -655,7 +651,7 @@ local function ManageBuildRow()
 				width = (100/MAX_COLUMNS).."%",
 				height = "100%",
 				--caption = '',
-				OnMouseDown = {	function () 
+				OnClick = {	function () 
 					local _,_,left,_,right = Spring.GetMouseState()
 					BuildRowButtonFunc(i, buildRowButtons[i].cmdid, left, right)
 					end},
@@ -664,7 +660,7 @@ local function ManageBuildRow()
 			}
 			if overrun and i == MAX_COLUMNS then
 				buttonArray.button.caption = '...'
-				buttonArray.button.OnMouseDown = nil
+				buttonArray.button.OnClick = nil
 			end
 			buttonArray.button.backgroundColor[4] = 0.3
 			
@@ -977,7 +973,7 @@ function widget:Initialize()
 		minHeight = MIN_HEIGHT,
 		padding = {0, 0, 0, 0},
 		--itemMargin  = {0, 0, 0, 0},
-		OnMouseDown={ function(self) --// click+ space on integral-menu tab will open a Game-menu.
+		OnClick={ function(self) --// click+ space on integral-menu tab will open a Game-menu.
 			local _,_, meta,_ = Spring.GetModKeyState()
 			if not meta then return false end --allow button to continue its function
 			WG.crude.OpenPath(options_path)
@@ -1001,7 +997,7 @@ function widget:Initialize()
 		--backgroundColor = {0.1, 0.1, 0.1, 1},
 --		skinName  = "DarkGlass",
 
-		OnMouseDown={ function(self) --// click+ space on any button on the integral-menu will open a Game-menu.
+		OnClick={ function(self) --// click+ space on any button on the integral-menu will open a Game-menu.
 			-- local forwardSlash = Spring.GetKeyState(0x02F) --reference: uikeys.txt
 			-- if not forwardSlash then return false end
 			local _,_, meta,_ = Spring.GetModKeyState()
@@ -1061,7 +1057,7 @@ function widget:Initialize()
 			y = "0%";
 			padding = {0, 0, 0, 0},
 			itemMargin  = {0, 0, 0, 0},
-			OnMouseDown={ function(self) --// click+ space on any unit-State button will open Unit-AI menu, it overrides similar function above.
+			OnClick={ function(self) --// click+ space on any unit-State button will open Unit-AI menu, it overrides similar function above.
 				-- local forwardSlash = Spring.GetKeyState(0x02F) --reference: uikeys.txt
 				-- if not forwardSlash then return false end
 				local _,_, meta,_ = Spring.GetModKeyState()

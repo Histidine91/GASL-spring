@@ -108,7 +108,7 @@ local function DisplayStats()
   local button_close = Chili.Button:New{
     parent = subpanel,
     caption = 'Close', 
-    OnMouseUp = { function(self)
+    OnClick = { function(self)
       window:Dispose()
       Spring.SendCommands('quit')
     end }, 

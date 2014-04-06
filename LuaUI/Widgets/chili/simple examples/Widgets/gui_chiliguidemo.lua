@@ -144,7 +144,7 @@ President Morales has said the new constitution will pave the way for correcting
 		width = 200,
 		height = 200,
 		children = {
-			Chili.Button:New{backgroundColor = {0,0.6,0,1}, textColor = {1,1,1,1}, caption = "Toggle", OnMouseUp = {ToggleOrientation}},
+			Chili.Button:New{backgroundColor = {0,0.6,0,1}, textColor = {1,1,1,1}, caption = "Toggle", OnClick = {ToggleOrientation}},
 			Chili.Button:New{caption = "2"},
 			Chili.Button:New{caption = "3"},
 			Chili.Button:New{caption = "4", margin = {10, 10, 10, 10}},

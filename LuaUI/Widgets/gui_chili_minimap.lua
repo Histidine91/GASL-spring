@@ -1,7 +1,7 @@
 function widget:GetInfo()
   return {
     name      = "Chili Minimap",
-    desc      = "v0.888 Chili Minimap",
+    desc      = "v0.893 Chili Minimap",
     author    = "Licho, CarRepairer",
     date      = "@2010",
     license   = "GNU GPL, v2 or later",
@@ -21,7 +21,7 @@ local glResetMatrices = gl.ResetMatrices
 local echo = Spring.Echo
 
 local iconsize = 20
-local bgColor_panel = {nil,nil,nil,1}
+local bgColor_panel = {nil, nil, nil, 1}
 
 local tabbedMode = false
 --local init = true
@@ -34,12 +34,26 @@ local function toggleTeamColors()
 	end
 end 
 
-
+local ar = Game.mapX/Game.mapY
+local mapIsWider = Game.mapX > Game.mapY
 local function AdjustToMapAspectRatio(w,h)
-	if (Game.mapX > Game.mapY) then
-		return w, w*Game.mapY/Game.mapX+iconsize
+	if mapIsWider then
+		return w, w/ar +iconsize
 	end
-	return h*Game.mapX/Game.mapY, h+iconsize
+	return h*ar, h+iconsize
+end
+
+local function AdjustMapAspectRatioToWindow(x,y,w,h)
+	local newW, newH = w,h
+	local newX, newY = x,y
+	if w/h > ar then
+		newW = ar*h
+		newX = (w-newW)/2
+	else
+		newH = w/ar
+		newY = (h-newH)/2
+	end
+	return newX, newY, newW, newH
 end
 
 local function MakeMinimapWindow()
@@ -49,21 +63,39 @@ options_path = 'Settings/Interface/Map'
 local minimap_path = 'Settings/HUD Panels/Minimap'
 --local radar_path = 'Settings/Interface/Map/Radar View Colors'
 local radar_path = 'Settings/Interface/Map'
-options_order = { 'use_map_ratio', 'hidebuttons', 'initialSensorState', 'alwaysDisplayMexes', 'lastmsgpos', 'clearmapmarks', 'opacity',
+options_order = { 'use_map_ratio', 'buttonsOnRight', 'hidebuttons', 'initialSensorState', 'start_with_showeco','lastmsgpos', 'viewstandard', 'clearmapmarks', 'opacity',
 'lblViews', 'viewheightmap', 'viewblockmap', 'lblLos', 'viewfow',
-'radar_view_colors_label1', 'radar_view_colors_label2', 'radar_fog_color', 'radar_los_color', 'radar_radar_color', 'radar_jammer_color', 'radar_preset_blue_line', 'radar_preset_green', 'radar_preset_only_los'}
+'radar_view_colors_label1', 'radar_view_colors_label2', 'radar_fog_color', 'radar_los_color', 'radar_radar_color', 'radar_jammer_color', 
+'radar_preset_blue_line', 'radar_preset_blue_line_dark_fog', 'radar_preset_green', 'radar_preset_only_los'}
 options = {
+	start_with_showeco = {
+		name = "Initial Showeco state",
+		desc = "Game starts with Showeco enabled",
+		type = 'bool',
+		value = false,
+		OnChange = function(self)
+			if (self.value) then
+				WG.showeco = self.value
+			end
+		end,
+	},
 	use_map_ratio = {
 		name = 'Keep Aspect Ratio',
-		type = 'bool',
-		value = true,
-		advanced = true,
+		type = 'radioButton',
+		value = 'arwindow',
+		items={
+			{key='arwindow', 	name='Aspect Ratio Window'},
+			{key='armap', 		name='Aspect Ratio Map'},
+			{key='arnone', 		name='Map Fills Window'},
+		},
 		OnChange = function(self)
-			if (self.value) then 
-				local w,h = AdjustToMapAspectRatio(300, 200)
+			local arwindow = self.value == 'arwindow'
+			window_minimap.fixedRatio = arwindow
+			if arwindow then 
+				local w,h = AdjustToMapAspectRatio(328,308+iconsize)
 				window_minimap:Resize(w,h,false,false)
 			end 
-			window_minimap.fixedRatio = self.value;			
+			
 		end,
 		path = minimap_path,
 	},
@@ -84,18 +116,20 @@ options = {
 		value = true,
 	},
 	
-	alwaysDisplayMexes = {
-		name = 'Show metal spots',
-		hotkey = {key='f4', mod=''},
-		type ='bool',
-		value = false,
-	},
-	
 	lblViews = { type = 'label', name = 'Views', },
 	
-	--[[ this option was secretly removed
+	buttonsOnRight = {
+		name = 'Map buttons on the right',
+		type = 'bool',
+		value = false,
+		OnChange= function(self) MakeMinimapWindow() end,
+		
+		path = minimap_path,
+	},
+	
+	-- [[ this option was secretly removed
 	viewstandard = {
-		name = 'Clear map drawings',
+		name = 'View standard map',
 		type = 'button',
 		action = 'showstandard',
 	},
@@ -176,6 +210,19 @@ options = {
 		path = radar_path,
 	},
 	
+	radar_preset_blue_line_dark_fog = {
+		name = 'Blue Outline Radar with dark fog',
+		type = 'button',
+		OnChange = function()
+			options.radar_fog_color.value = { 0.05, 0.05, 0.05, 1}
+			options.radar_los_color.value = { 0.5, 0.5, 0.5, 1}
+			options.radar_radar_color.value = { 0, 0, 1, 1}
+			options.radar_jammer_color.value = { 0.1, 0, 0, 1}
+			updateRadarColors()
+		end,
+		path = radar_path,
+	},
+	
 	radar_preset_green = {
 		name = 'Green Area Radar',
 		type = 'button',
@@ -216,9 +263,9 @@ options = {
 		value = 0, min = 0, max = 1, step = 0.01,
 		OnChange = function(self)
 			if self.value == 0 then
-				bgColor_panel = {nil,nil,nil,1}
+				bgColor_panel = {nil, nil, nil, 1}
 			else
-				bgColor_panel = {nil,nil,nil,0}
+				bgColor_panel = {nil, nil, nil, value}
 			end
 			MakeMinimapWindow()
 			
@@ -254,10 +301,18 @@ function widget:Update() --Note: these run-once codes is put here (instead of in
 	widgetHandler:RemoveCallIn("Update") -- remove update call-in since it only need to run once. ref: gui_ally_cursors.lua by jK
 end
 
-local function MakeMinimapButton(file, pos, option)
-	local desc = options[option].desc and (' (' .. options[option].desc .. ')') or ''
-	local action = WG.crude.GetActionName(options_path, options[option])
-	local hotkey = WG.crude.GetHotkey(action)
+local function MakeMinimapButton(file, params)
+	local option = params.option
+	local name, desc, action, hotkey
+	if option then
+		name = options[option].name
+		desc = options[option].desc and (' (' .. options[option].desc .. ')') or ''
+		action = WG.crude.GetActionName(options_path, options[option])
+	end
+	name = name or params.name or ""
+	desc = desc or params.desc or ""
+	action = action or params.action
+	hotkey = WG.crude.GetHotkey(action)
 	
 	if hotkey ~= '' then
 		hotkey = ' (\255\0\255\0' .. hotkey:upper() .. '\008)'
@@ -265,16 +320,10 @@ local function MakeMinimapButton(file, pos, option)
 		
 	return Chili.Button:New{ 
 		height=iconsize, width=iconsize, 
---		file=file,
 		caption="",
 		margin={0,0,0,0},
-		padding={4,3,2,2},
-		bottom=iconsize*0.3, 
-		right=iconsize*pos+5, 
-		
-		tooltip = ( options[option].name .. desc .. hotkey ),
-		
-		--OnClick={ function(self) options[option].OnChange() end }, 
+		padding={2,2,2,2},
+		tooltip = (name .. desc .. hotkey ),
 		OnClick={ function(self)
 			local alt, ctrl, meta, shift = Spring.GetModKeyState()
 			if meta then
@@ -285,13 +334,14 @@ local function MakeMinimapButton(file, pos, option)
 			Spring.SendCommands( action )
 		end },
 		children={
+		  file and
 			Chili.Image:New{
 				file=file,
 				width="100%";
 				height="100%";
 				x="0%";
 				y="0%";
-			}
+			} or nil
 		},
 	}
 end
@@ -307,7 +357,7 @@ MakeMinimapWindow = function()
 	
 	--local w,h = screenWidth*0.32,screenHeight*0.4+iconsize
 	local w,h = 328,308+iconsize
-	if (options.use_map_ratio.value) then
+	if (options.use_map_ratio.value == 'arwindow') then
 		w,h = AdjustToMapAspectRatio(w,h)
 	end
 	
@@ -319,56 +369,53 @@ MakeMinimapWindow = function()
 		end
 	end
 	
-	map_panel = Chili.Panel:New {bottom = (iconsize*1.3), x = 0, y = 0, right = 0,
+	local map_panel_bottom = iconsize*1.3
+	local map_panel_right = 0
+	
+	local buttons_height = iconsize+3
+	local buttons_width = iconsize*10
+	if options.buttonsOnRight.value then
+		map_panel_bottom = 0
+		map_panel_right = iconsize*1.3
+		buttons_height = iconsize*10
+		buttons_width = iconsize+3
+	end
+	
+	map_panel = Chili.Panel:New {
+		bottom = map_panel_bottom,
+		x = 0,
+		y = 0,
+		right = map_panel_right,
+		
 		margin={0,0,0,0},
 		padding = {8,5,8,8},
 		backgroundColor = bgColor_panel
 		}
-	window_minimap = Chili.Window:New{  
-		dockable = true,
-		name = "Minimap",
-		x = 0,  
-		y = 0,
-		color = {nil, nil, nil, options.opacity.value},
-		padding = {0,0,0,0},
-		margin = {0,0,0,0},
-		width  = w,
-		height = h,
-		parent = Chili.Screen0,
-		draggable = false,
-		tweakDraggable = true,
-		resizable = true,
-	    tweakResizable   = true,
-		minimizable = true,
-		fixedRatio = options.use_map_ratio.value,
-		dragUseGrip = false,
-		minWidth = iconsize*10,
-		maxWidth = screenWidth*0.8,
-		maxHeight = screenHeight*0.8,
+	
+	local buttons_panel = Chili.StackPanel:New{
+		orientation = 'horizontal',
+		height=buttons_height,
+		width=buttons_width,
+		bottom = 5,
+		right=5,
+		
+		padding={1,1,1,1},
+		--margin={0,0,0,0},
+		itemMargin={0,0,0,0},
+		
+		autosize = false,
+		resizeItems = false,
+		autoArrangeH = false,
+		autoArrangeV = false,
+		centerItems = false,
+		
 		children = {
-			
---			Chili.Panel:New {bottom = (iconsize), x = 0, y = 0, right = 0, margin={0,0,0,0}, padding = {0,0,0,0}, skinName="DarkGlass"},			
-			map_panel,
-			
-			MakeMinimapButton( 'LuaUI/images/Crystal_Clear_action_flag.png', 1, 'lastmsgpos' ),
-			--MakeMinimapButton( 'LuaUI/images/map/standard.png', 2.5, 'viewstandard' ),
-			MakeMinimapButton( 'LuaUI/images/drawingcursors/eraser.png', 2.5, 'clearmapmarks' ),
-			MakeMinimapButton( 'LuaUI/images/map/heightmap.png', 3.5, 'viewheightmap' ),
-			MakeMinimapButton( 'LuaUI/images/map/blockmap.png', 4.5, 'viewblockmap' ),
-			MakeMinimapButton( 'LuaUI/images/map/metalmap.png', 5.5, 'alwaysDisplayMexes'),
-			MakeMinimapButton( 'LuaUI/images/map/fow.png', 7, 'viewfow' ),
-			
 			Chili.Button:New{ 
 				height=iconsize, width=iconsize, 
 				caption="",
 				margin={0,0,0,0},
-				padding={4,3,2,2},
-				bottom=iconsize*0.3, 
-				right=iconsize*8.5, 
-				
+				padding={2,2,2,2},
 				tooltip = "Toggle simplified teamcolours",
-				
-				--OnClick={ function(self) options[option].OnChange() end }, 
 				OnClick = {toggleTeamColors},
 				children={
 					Chili.Image:New{
@@ -380,6 +427,47 @@ MakeMinimapWindow = function()
 					}
 				},
 			},
+			
+			MakeMinimapButton( 'LuaUI/images/map/fow.png', {option = 'viewfow'} ),
+			
+			Chili.Label:New{ width=iconsize/2, height=iconsize/2, caption='', autosize = false,},
+			
+			MakeMinimapButton( nil, {option = 'viewstandard'} ),
+			MakeMinimapButton( 'LuaUI/images/map/heightmap.png', {option = 'viewheightmap'} ),
+			MakeMinimapButton( 'LuaUI/images/map/blockmap.png', {option = 'viewblockmap'} ),
+			MakeMinimapButton( 'LuaUI/images/map/metalmap.png', {name = "Toggle Eco Display", action = 'showeco', desc = " (show metal, geo spots and pylon fields)"}),	-- handled differently because command is registered in another widget
+			
+			Chili.Label:New{ width=iconsize/2, height=iconsize/2, caption='', autosize = false,},
+			
+			MakeMinimapButton( 'LuaUI/images/drawingcursors/eraser.png', {option = 'clearmapmarks'} ),
+			MakeMinimapButton( 'LuaUI/images/Crystal_Clear_action_flag.png', {option = 'lastmsgpos'} ),
+		},
+	}
+	
+	window_minimap = Chili.Window:New{  
+		dockable = true,
+		name = "Minimap",
+		x = 0,  
+		y = 0,
+		color = {1,1,1, options.opacity.value},
+		padding = {0,0,0,0},
+		margin = {0,0,0,0},
+		width  = w,
+		height = h,
+		parent = Chili.Screen0,
+		draggable = false,
+		tweakDraggable = true,
+		resizable = true,
+	    tweakResizable   = true,
+		minimizable = true,
+		fixedRatio = options.use_map_ratio.value == 'arwindow',
+		dragUseGrip = false,
+		minWidth = iconsize*10,
+		maxWidth = screenWidth*0.8,
+		maxHeight = screenHeight*0.8,
+		children = {
+			map_panel,
+			buttons_panel,
 		},
 	}
 end
@@ -471,6 +559,11 @@ function widget:DrawScreen()
 		return 
 	end
 	local cx,cy,cw,ch = Chili.unpack4(map_panel.clientArea)
+	
+	if (options.use_map_ratio.value == 'armap') then
+		cx,cy,cw,ch = AdjustMapAspectRatioToWindow(cx,cy,cw,ch)
+	end
+	
 	--if (lw ~= window_minimap.width or lh ~= window_minimap.height or lx ~= window_minimap.x or ly ~= window_minimap.y) or init then
 	if (lw ~= cx or lh ~= ch or lx ~= cx or ly ~= cy) then
 		--[[

@@ -114,7 +114,7 @@ local function ExecuteCommand(cmdData, unitID, unitDefID, unitTeam, cmdParams)
   end
   
   if cmdData.isSpiritAttack then
-    GG.SetUnitSpirit(unitID, unitDefID, unitTeam, 0)
+    GG.SetUnitSpiritRaw(unitID, unitDefID, unitTeam, 0)
     GG.SetUnitSuppression(unitID, 0)
     
     local unitID2, unitDefID2, unitTeam2

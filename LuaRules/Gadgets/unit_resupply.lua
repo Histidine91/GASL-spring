@@ -215,6 +215,7 @@ local function ResupplyUnit(fighterID, carrierID)
 		GG.Energy.SetUnitEnergy(carrierID, 0)
 	end
 	GG.SetUnitSuppression(fighterID, 0)
+	--GG.SetUnitSpiritRaw(fighterID, fighterDefID, fighterTeam, 0)
 	
 	local _,_,_,x,y,z = Spring.GetUnitPosition(fighterID, true)
 	Spring.SpawnCEG("resupply", x, y, z, 0, 1, 0, 20)
@@ -481,7 +482,7 @@ else
 --------------------------------------------------------------------------------
 -- UNSYNCED
 --------------------------------------------------------------------------------
-local carriers = SYNCED.carriers
+--local carriers = SYNCED.carriers
 local spGetUnitTeam = Spring.GetUnitTeam
 --local spGetUnitAllyTeam = Spring.GetUnitAllyTeam
 local spGetLocalTeamID = Spring.GetLocalTeamID

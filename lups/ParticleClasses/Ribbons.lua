@@ -44,6 +44,7 @@ Ribbon.Default = {
 
   life     = math.huge,
   unit     = nil,
+  projectile=nil,
   piece    = 0,
   width    = 1,
   size     = 24, --//max 256
@@ -63,6 +64,7 @@ Ribbon.Default = {
 
 local spGetUnitDefID         = Spring.GetUnitDefID
 local spGetUnitIsDead        = Spring.GetUnitIsDead
+local spIsUnitValid          = Spring.IsUnitValid
 local spIsSphereInView       = Spring.IsSphereInView
 local spGetUnitVelocity      = Spring.GetUnitVelocity
 local spGetUnitPiecePosition = Spring.GetUnitPiecePosition
@@ -143,6 +145,7 @@ function Ribbon:Draw()
     local dir = self.oldPos[j]
     glUniform( oldPosUniform[quads0+1] , dir[1], dir[2], dir[3] )
   end
+
   --// define color and add speed blending (don't show ribbon for slow/landing units!)
   if (self.blendfactor<1) then
     local clr = self.color
@@ -236,9 +239,7 @@ end
 -----------------------------------------------------------------------------------------------------------------
 
 function Ribbon:Update(n)
-  if self.unit then
-    self.isvalid = not spGetUnitIsDead(self.unit)
-  end
+  self.isvalid = (self.unit and not spGetUnitIsDead(self.unit)) or (self.projectile and Spring.GetProjectileDefID(self.projectile))
 
   if (self.isvalid) then
     local x,y,z
@@ -262,19 +263,13 @@ function Ribbon:Update(n)
       end
     end
   else
-    local lastIndex = self.posIdx 
-    self.posIdx = (self.posIdx % self.size)+1
-    self.oldPos[self.posIdx] = self.oldPos[lastIndex]
-    
-    self.blendfactor = self.blendfactor - n * self.decayRate
+    self.blendfactor = self.blendfactor - n * 0.01
   end
 end
 
 
 function Ribbon:Visible()
-  if (self.unit) then
-    self.isvalid = not spGetUnitIsDead(self.unit)	-- FIXME equivalent for projectiles?
-  end
+  self.isvalid = (self.unit and not spGetUnitIsDead(self.unit)) or (self.projectile and Spring.GetProjectileDefID(self.projectile))
   local pos = self.oldPos[self.posIdx]
   return (self.blendfactor>0) and (spIsSphereInView(pos[1],pos[2],pos[3], self.radius))
 end
@@ -312,17 +307,17 @@ end
 
 function Ribbon:CreateParticle()
   if (self.size>256) then self.size=256
-  elseif (self.size<5) then self.size=5 end
+  elseif (self.size<2) then self.size=2 end
 
   self.posIdx = 1
   self.quads0 = self.size-1
   self.blendfactor = 1
 
-  local x,y,z
+  local x,y,z 
   if self.unit then
-    x, y, z = spGetUnitPiecePosDir(self.unit,self.piecenum)
+    x,y,z = spGetUnitPiecePosDir(self.unit,self.piecenum)
   elseif self.projectile then
-    x, y, z = spGetProjectilePosition(self.projectile)
+	x,y,z = spGetProjectilePosition(self.projectile)
   end
   local curpos = {x,y,z}
 

@@ -332,7 +332,7 @@ function Ribbon:CreateParticle()
 
   local udid  = self.unit and spGetUnitDefID(self.unit)
   local weapon = self.weapon
-  local speed = self.speed or (UnitDefs[udid] and UnitDefs[udid].speed) or (WeaponDefs[weapon] and WeaponDefs[weapon].projectilespeed*30) or 100
+  local speed = self.speed or (UnitDefs[udid] and UnitDefs[udid].speed) or (weapon and WeaponDefs[weapon] and WeaponDefs[weapon].projectilespeed*30) or 100
   self.radius = (speed/30.0)*self.size
 
   if (not DLists[self.quads0]) then

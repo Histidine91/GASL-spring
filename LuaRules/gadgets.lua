@@ -20,7 +20,7 @@
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local HANDLER_BASENAME = "gadgets.lua"
-local isMission = VFS.FileExists("mission.lua")
+local isMission = VFS.FileExists("mission.lua")	-- or Game.gameName:find("Scenario Editor")
 
 local DepthMod = 10
 local DepthValue = -1
@@ -78,6 +78,7 @@ VFS.Include(SCRIPT_DIR .. 'utilities.lua', nil, VFSMODE)
 
 local actionHandler = VFS.Include(HANDLER_DIR .. 'actions.lua', nil, VFSMODE)
 
+local reverseCompat = (Game.version:find('91.0') == 1)
 --------------------------------------------------------------------------------
 
 function pgl() -- (print gadget list)  FIXME: move this into a gadget
@@ -443,6 +444,8 @@ function gadgetHandler:NewGadget()
   gadget.gadgetHandler = {}
   local gh = gadget.gadgetHandler
   local self = self
+
+  gh.gadgetHandler = self	-- NOT IN BASE (required for api_subdir_gadgets)
 
   gadget.include  = function (f)
     return VFS.Include(f, gadget, VFSMODE)
@@ -941,21 +944,26 @@ end
 
 function gadgetHandler:RegisterCMDID(gadget, id)
   if not LOG_SECTION then
-	LOG_SECTION = "ERROR"
+    LOG_SECTION = "ERROR"
   end
-  if (id < 1000) then
+  if not id then
     Spring.Log(LOG_SECTION, LOG.ERROR, 'Gadget (' .. gadget.ghInfo.name .. ') ' ..
-                'tried to register a reserved CMD_ID')
-    Script.Kill('Reserved CMD_ID code: ' .. id)
-  end
+               'tried to register a NIL CMD_ID')
+  else
+    if (id < 1000) then
+      Spring.Log(LOG_SECTION, LOG.ERROR, 'Gadget (' .. gadget.ghInfo.name .. ') ' ..
+                 'tried to register a reserved CMD_ID')
+      Script.Kill('Reserved CMD_ID code: ' .. id)
+    end
 
-  if (self.CMDIDs[id] ~= nil) then
-    Spring.Log(LOG_SECTION, LOG.ERROR, 'Gadget (' .. gadget.ghInfo.name .. ') ' ..
-                'tried to register a duplicated CMD_ID')
-    Script.Kill('Duplicate CMD_ID code: ' .. id)
-  end
+    if (self.CMDIDs[id] ~= nil) then
+      Spring.Log(LOG_SECTION, LOG.ERROR, 'Gadget (' .. gadget.ghInfo.name .. ') ' ..
+                 'tried to register a duplicated CMD_ID')
+      Script.Kill('Duplicate CMD_ID code: ' .. id)
+    end
 
-  self.CMDIDs[id] = gadget
+    self.CMDIDs[id] = gadget
+  end
 end
 
 --------------------------------------------------------------------------------
@@ -1042,7 +1050,7 @@ function gadgetHandler:GotChatMsg(msg, player)
     end
   end
 
-  if (IsSyncedCode()) then
+  if (reverseCompat and IsSyncedCode()) then
     SendToUnsynced(player, msg)
   end
 
@@ -1181,6 +1189,14 @@ function gadgetHandler:AllowCommand(unitID, unitDefID, unitTeam,
   return true
 end
 
+function gadgetHandler:AllowStartPosition(cx, cy, cz, playerID, readyState, rx, ry, rz)
+  for _,g in ipairs(self.AllowStartPositionList) do
+    if (not g:AllowStartPosition(cx, cy, cz, playerID, readyState, rx, ry, rz)) then
+      return false
+    end
+  end
+  return true
+end
 
 function gadgetHandler:AllowUnitCreation(unitDefID, builderID,
                                          builderTeam, x, y, z, facing)
@@ -1395,7 +1411,7 @@ function gadgetHandler:UnitPreDamaged(unitID, unitDefID, unitTeam,
 								   a, b, c, d)
   local projectileID,attackerID
   local attackerDefID,attackerTeam
-  if Game.version:find('91.0') then 
+  if reverseCompat then 
 	attackerID = a 
     attackerDefID = b
     attackerTeam = c
@@ -1430,7 +1446,7 @@ function gadgetHandler:UnitDamaged(unitID, unitDefID, unitTeam,
                                    damage, paralyzer, weaponID, projectileID, 
                                    attackerID, attackerDefID, attackerTeam)
 		
-  if Game.version:find('91.0') then
+  if reverseCompat then
     attackerTeam = attackerDefID
     attackerDefID = attackerID
     attackerID = projectileID
@@ -1627,14 +1643,61 @@ end
 --  Misc call-ins
 --
 
+local Explosion_GadgetMap = {}
+local Explosion_GadgetSingle = {}
+
+local Explosion_first = true
+
+function gadgetHandler:Explosion(weaponID, px, py, pz, ownerID)
+	if Explosion_first then
+		for _,g in ipairs(self.ExplosionList) do
+			local weaponDefs = g:Explosion_GetWantedWeaponDef()
+			for _,wdid in ipairs(weaponDefs) do
+				if Explosion_GadgetSingle[wdid] or Explosion_GadgetMap[wdid] then
+					if Explosion_GadgetMap[wdid] then
+						Explosion_GadgetMap[wdid].count = Explosion_GadgetMap[wdid].count + 1
+						Explosion_GadgetMap[wdid].data[Explosion_GadgetMap[wdid].count] = g
+					else
+						Explosion_GadgetMap[wdid] = {
+							count = 2,
+							data = {Explosion_GadgetSingle[wdid], g}
+						}
+						Explosion_GadgetSingle[wdid] = nil
+					end
+				else
+					Explosion_GadgetSingle[wdid] = g
+				end
+			end
+		end
+		Explosion_first = false
+	end
+	
+	local noGfx = false
+	local single = Explosion_GadgetSingle[weaponID]
+	local map = Explosion_GadgetMap[weaponID]
+	if single then
+		noGfx = single:Explosion(weaponID, px, py, pz, ownerID)
+	elseif map then
+		local gadgets = map
+		local data = gadgets.data
+		local g
+		for i = 1, gadgets.count do
+			g = data[i]
+			noGfx = noGfx or g:Explosion(weaponID, px, py, pz, ownerID)
+		end
+	end
+	return noGfx or false
+end
+
+--[[ Base
 function gadgetHandler:Explosion(weaponID, px, py, pz, ownerID)
   local noGfx = false
   for _,g in ipairs(self.ExplosionList) do
-    noGfx = noGfx or g:Explosion(weaponID, px, py, pz, ownerID)
+	noGfx = noGfx or g:Explosion(weaponID, px, py, pz, ownerID)
   end
   return noGfx
 end
-
+--]]
 
 --------------------------------------------------------------------------------
 --
@@ -1856,74 +1919,6 @@ end
 -- OVERRIDES
 --
 
-function gadgetHandler:NewGadget()
-  local gadget = {}
-  -- load the system calls into the gadget table
-  for k,v in pairs(System) do
-    gadget[k] = v
-  end
-  gadget._G = _G         -- the global table
-  gadget.GG = self.GG    -- the shared table
-  gadget.gadget = gadget -- easy self referencing
-
-  -- wrapped calls (closures)
-  gadget.gadgetHandler = {}
-  local gh = gadget.gadgetHandler
-  local self = self
-
-  gh.gadgetHandler = self	-- FIXME: not in base
-
-  gadget.include  = function (f)
-    return VFS.Include(f, gadget, VFSMODE)
-  end
-
-  gh.RaiseGadget  = function (_) self:RaiseGadget(gadget)      end
-  gh.LowerGadget  = function (_) self:LowerGadget(gadget)      end
-  gh.RemoveGadget = function (_) self:RemoveGadget(gadget)     end
-  gh.GetViewSizes = function (_) return self:GetViewSizes()    end
-  gh.GetHourTimer = function (_) return self:GetHourTimer()    end
-  gh.IsSyncedCode = function (_) return IsSyncedCode()         end
-
-  gh.UpdateCallIn = function (_, name)
-    self:UpdateGadgetCallIn(name, gadget)
-  end
-  gh.RemoveCallIn = function (_, name)
-    self:RemoveGadgetCallIn(name, gadget)
-  end
-
-  gh.RegisterCMDID = function(_, id)
-    self:RegisterCMDID(gadget, id)
-  end
-
-  gh.RegisterGlobal = function(_, name, value)
-    return self:RegisterGlobal(gadget, name, value)
-  end
-  gh.DeregisterGlobal = function(_, name)
-    return self:DeregisterGlobal(gadget, name)
-  end
-  gh.SetGlobal = function(_, name, value)
-    return self:SetGlobal(gadget, name, value)
-  end
-
-  gh.AddChatAction = function (_, cmd, func, help)
-    return actionHandler.AddChatAction(gadget, cmd, func, help)
-  end
-  gh.RemoveChatAction = function (_, cmd)
-    return actionHandler.RemoveChatAction(gadget, cmd)
-  end
-
-  if (not IsSyncedCode()) then
-    gh.AddSyncAction = function(_, cmd, func, help)
-      return actionHandler.AddSyncAction(gadget, cmd, func, help)
-    end
-    gh.RemoveSyncAction = function(_, cmd)
-      return actionHandler.RemoveSyncAction(gadget, cmd)
-    end
-  end
-
-  return gadget
-end
-
 function gadgetHandler:GetViewSizes()
   --FIXME remove
   return gl.GetViewSizes()	-- ours
@@ -2024,9 +2019,9 @@ function gadgetHandler:GotChatMsg(msg, player)
     end
   end
 
-  if (IsSyncedCode()) then
+  if (reverseCompat and IsSyncedCode()) then
     SendToUnsynced("proxy_ChatMsg", msg, player)	-- ours
-	--SendToUnsynced(player, msg)	-- base
+    --SendToUnsynced(player, msg)	-- base
   end
   return false
 end
@@ -2119,6 +2114,16 @@ function gadgetHandler:GameSetup(state, ready, playerStates)
   return false
 end
 
+--[[
+-- makes available to gadgets with handler = true
+function gadgetHandler:AddSyncAction(gadget, cmd, func, help)
+	return actionHandler.AddSyncAction(gadget, cmd, func, help)
+end
+
+function gadgetHandler:RemoveSyncAction(gadget, cmd)
+	return actionHandler.RemoveSyncAction(gadget, cmd)
+end
+]]
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

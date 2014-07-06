@@ -57,18 +57,19 @@ for name, color in pairs(lightColors) do
 end
 
 local tbl = {
+  --luckystar_missile = {
+  --  {class='Ribbon', options={width=3, size=64, color={1, 1, 1, 0.8}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  --},
   luckystar_phalanx = {
     {class='StaticParticles', options=MergeTable(fx.staticLightPink, {size=100})},
     {class='Ribbon', options={width=3, size=64, color={1, 0.1, 0.8, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
-  happytrigger_phalanx = {
-    {class='StaticParticles', options=MergeTable(fx.staticLightSkyBlue, {size=100})},
-    {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
-  },
-  happytrigger_phalanx_sb = {
-    {class='StaticParticles', options=MergeTable(fx.staticLightSkyBlue, {size=100})},
-    {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
-  },
+  --kungfufighter_missile_dogfight = {
+  --  {class='Ribbon', options={width=2.5, size=64, color={1, 1, 1, 0.8}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  --},
+  --kungfufighter_missile_harpoon = {
+  --  {class='Ribbon', options={width=4, size=64, color={1, 1, 1, 0.8}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  --},   
   kungfufighter_anchorclaw_l = {
     {class='StaticParticles', options=MergeTable(fx.glowingLightRed, {size=150})},
     {class='Ribbon', options={width=3, size=64, color={1, 0.1, 0.1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
@@ -77,6 +78,23 @@ local tbl = {
     {class='StaticParticles', options=MergeTable(fx.staticLightRed, {size=150})},
     {class='Ribbon', options={width=3, size=64, color={1, 0.1, 0.1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
+  --happytrigger_missile = {
+  --  {class='Ribbon', options={width=3, size=64, color={1, 1, 1, 0.8}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  --},
+  --happytrigger_missile_sb = {
+  --  {class='Ribbon', options={width=3, size=64, color={1, 1, 1, 0.8}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  --},    
+  happytrigger_phalanx = {
+    {class='StaticParticles', options=MergeTable(fx.staticLightSkyBlue, {size=100})},
+    {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  },
+  happytrigger_phalanx_sb = {
+    {class='StaticParticles', options=MergeTable(fx.staticLightSkyBlue, {size=100})},
+    {class='Ribbon', options={width=3, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  },
+  --sharpshooter_missile_fang = {
+  --  {class='Ribbon', options={width=3.5, size=64, color={1, 1, 1, 0.8}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  --},  
   sharpshooter_phalanx = {
     {class='StaticParticles', options=MergeTable(fx.staticLightBlue, {size=100})},
     {class='Ribbon', options={width=3, size=64, color={0.1, 0.1, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
@@ -88,6 +106,9 @@ local tbl = {
     {class='StaticParticles', options=MergeTable(fx.staticLightSkyBlue, {size=150})},
     {class='Ribbon', options={width=5, size=64, color={0.1, 0.5, 1, 1}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
   },
+  --placeholdersior_missile_trebuchet = {
+  --  {class='Ribbon', options={width=5, size=64, color={1, 1, 1, 0.8}, texture="bitmaps/phalanxtrail.png", persistAfterDeath=true}},
+  --},   
 }
 local tbl2 = {}
 

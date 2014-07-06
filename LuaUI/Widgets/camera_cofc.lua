@@ -413,6 +413,7 @@ local spGetUnitPosition		= Spring.GetUnitPosition
 local spGetUnitViewPosition	= Spring.GetUnitViewPosition
 local spGetUnitDirection	= Spring.GetUnitDirection
 local spGetUnitVelocity		= Spring.GetUnitVelocity
+local spGetUnitRadius		= Spring.GetUnitRadius
 local spIsAboveMiniMap		= Spring.IsAboveMiniMap
 local spSendCommands		= Spring.SendCommands
 local spSetCameraState		= Spring.SetCameraState
@@ -469,7 +470,7 @@ local HALFPI		= PI/2
 local HALFPIMINUS	= HALFPI-0.01
 local RADperDEGREE = PI/180
 
-local CAM_TRACK_PERIOD = 0.01
+local CAM_TRACK_PERIOD = 0.001
 local OVERVIEW_DISTICON = 100
 
 local fpsmode = false
@@ -898,11 +899,10 @@ TrackUnit = function(unitID, instant)
 	local tx, ty, tz = spGetUnitViewPosition(unitID)
 	--local vx, vy, vz = spGetUnitDirection(unitID)
 	--local rotX, rotY, rotZ = GetRotationFromVector(vx, vy, vz)
-	--local oldcam = cam
-	--local velocity = {spGetUnitVelocity(unitID)}
-	--tx = tx + velocity[1]*Game.gameSpeed*4/3
-	--ty = ty + velocity[2]*Game.gameSpeed*4/3
-	--tz = z + velocity[3]*Game.gameSpeed*4/3
+	local velocity = {spGetUnitVelocity(unitID)}
+	--tx = tx + velocity[1]*Game.gameSpeed*2/3
+	--ty = ty + velocity[2]*Game.gameSpeed*2/3
+	--tz = tz + velocity[3]*Game.gameSpeed*2/3
 	
 	local tcam = overview_mode and trackCamOverview or trackCam
 	
@@ -917,6 +917,9 @@ TrackUnit = function(unitID, instant)
 	local dist = tcam.dist
 	local pitch = tcam.pitch -- + (overview_mode and 0 or rotX)
 	local yaw = tcam.heading -- + (overview_mode and 0 or rotY)
+	
+	local radius = spGetUnitRadius(unitID) * 1.2 + 50
+	if dist < radius then dist = radius end
 	
 	if overview_mode then
 		--yaw = 0
@@ -944,11 +947,21 @@ TrackUnit = function(unitID, instant)
 	cam.rx = 0-pitch
 	cam.ry = yaw
 	cam.rz = thirdPerson_roll
+	cam.vx = velocity[1]
+	cam.vy = velocity[2]
+	cam.vz = velocity[3]
 	
 	local delta = (((cam.px - oldcam.px)^2 + (cam.py - oldcam.py)^2 + (cam.pz - oldcam.pz)^2)^0.5)
-	--Spring.Echo(cam.px, cam.py, cam.pz, cam.rx, cam.ry, cam.rz)
-	if delta <= 0 then delta = 0 end --CAM_TRACK_PERIOD end
-	spSetCameraState(cam, instant and 0 or 0.25) -- 4.5
+	delta = delta / 1000
+	--if delta <= 0.15 then delta = 0 end --CAM_TRACK_PERIOD end
+	
+	--for i,v in pairs(cam) do
+	--  if oldcam[i] == v then
+	--    cam[i] = nil
+	--  end
+	--end
+	
+	spSetCameraState(cam, instant and 0 or delta)
 	--Spring.SetCameraTarget(cam.px, cam.py, cam.pz, 0.5)
 end
 
@@ -1209,11 +1222,10 @@ local wantReturnCam = false
 function widget:Update(dt)
 	local framePassed = math.ceil(dt/0.0333) --estimate how many gameframe would've passes based on difference in time??
 	updateTimer = updateTimer + dt
+	if thirdPerson_trackunit then
+		TrackUnit(thirdPerson_trackunit)
+	end
 	if updateTimer >= CAM_TRACK_PERIOD then
-		if thirdPerson_trackunit then
-			TrackUnit(thirdPerson_trackunit)
-		end
-		
 		local command = spGetActiveCommand()
 		if command ~= 0 and not overview_mode then
 			wantReturnCam = true
@@ -1225,8 +1237,8 @@ function widget:Update(dt)
 		updateTimer = 0
 	end
 	if hideCursor then
-        spSetMouseCursor('%none%')
-    end
+		spSetMouseCursor('%none%')
+	end
 	
 	--//HANDLE TIMER FOR VARIOUS SECTION
 	--timer to block tracking when using mouse

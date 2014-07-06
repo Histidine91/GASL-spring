@@ -136,68 +136,14 @@ local function GetNewSpeed(old, wanted, accel, brake)
 	return new
 end
 
-local function GetNewPitch(old, wanted, turnrate)
-	if wanted > (math.pi/2) then
-		wanted = math.pi/2 - 0.1
-	elseif wanted < (-math.pi/2) then
-		wanted = -math.pi/2 + 0.1
-	end
-	local new = old
-	if old < wanted then
-		new = old + turnrate
-		if new > wanted then
-			new = wanted
-		end
+local function GetWantedRotation(delta, turnrate)
+	if delta == 0 then
+		return 0
+	elseif delta < 0 then
+		return math.max(delta, -turnrate)
 	else
-		new = old - turnrate
-		if new < wanted then
-			new = wanted
-		end
+		return math.min(delta, turnrate)
 	end
-	return new
-end
-
---[[
-local function GetNewPitch(old, wanted, turnrate)
-	old = NormalizeHeading(old)
-	
-	local new = old
-	if old < wanted then
-		dir = 1	-- up
-	else
-		dir = -1 -- down
-	end
-	if math.abs(old - wanted) > math.rad(180) then
-		dir = dir * -1
-	end
-	new = new + turnrate*dir
-	if old < wanted and new > wanted then
-		new = wanted
-	elseif old > wanted and new < wanted then
-		new = wanted
-	end
-	return new
-end]]--
-
-local function GetNewHeading(old, wanted, turnrate)
-	old = NormalizeHeading(old)
-	
-	local new = old
-	if old < wanted then
-		dir = -1	-- right
-	else
-		dir = 1 	-- left
-	end
-	if math.abs(old - wanted) > math.rad(180) then
-		dir = dir * -1
-	end
-	new = new + turnrate*dir
-	if old < wanted and new > wanted then
-		new = wanted
-	elseif old > wanted and new < wanted then
-		new = wanted
-	end
-	return new, dir
 end
 
 local function GetDistanceFromTargetMoveGoal(tx, ty, tz, initialHeading, distance, minAngle, maxAngle)
@@ -464,8 +410,8 @@ function gadget:Initialize()
 			avoidDistance = tonumber(customParams.avoiddistance) or ud.xsize*16 + 200,
 			minAvoidanceAngle = math.rad(tonumber(customParams.minavoidanceangle) or 40),
 			maxAvoidanceAngle = math.rad(tonumber(customParams.maxavoidanceangle) or 150),
-			rollAngle = tonumber(customParams.rollangle) or 0,
-			rollSpeed = tonumber(customParams.rollspeed) or ud.turnRate/30/360/pi * 0.25,
+			rollAngle = (tonumber(customParams.rollangle) or 0)/180*pi,
+			rollSpeed = (tonumber(customParams.rollspeed) or ud.turnRate/30 * 0.1)/180*pi,
 			orbitTarget = customParams.orbittarget,
 			hasEnergy = customParams.energy and true,
 			thrusterEnergyUse = customParams.thrusterenergyuse or 1,
@@ -510,7 +456,6 @@ function gadget:Shutdown()
 	GG.FlightControl = nil
 end
 
-local up = false
 function gadget:UnitCreated(unitID, unitDefID, team)
 	if team ~= Spring.GetGaiaTeamID() then
 		if spacecraftDefs[unitDefID] then
@@ -520,6 +465,7 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 				roll = 0,
 				pitch = 0,
 				heading = (spGetUnitHeading(unitID)/65536*2*pi or 0),
+				invert = false,
 				moveGoal = nil,
 				speed = 0,
 				wantedSpeed = 0,
@@ -533,7 +479,7 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 				timeBeforeShakePursuer = TIME_BEFORE_SHAKE_PURSUER,
 				forceChaseTarget = nil,
 				fresh = true,
-				lastCollisionAvoidance = -99999
+				lastCollisionAvoidance = -99999,
 			}
 			spacecraft[unitID].heading = NormalizeHeading(spacecraft[unitID].heading)
 			cmdSetAttackSpeed.params[1] = spacecraft[unitID].attackSpeedState
@@ -544,9 +490,7 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 			Spring.MoveCtrl.Enable(unitID)
 			Spring.MoveCtrl.SetPosition(unitID,x,0,z)
 			--Spring.MoveCtrl.SetPosition(unitID,x,math.random(-100, 200),z)
-			--Spring.MoveCtrl.SetPosition(unitID,x,up and 150 or 0,z)
-			up = not up
-			
+			Spring.MoveCtrl.SetPosition(unitID,x, unitDefID == UnitDefNames.placeholdersior.id and 1000 or 0,z)
 			Script.SetWatchUnit(unitID, true)
 		end
 	end
@@ -589,6 +533,8 @@ function gadget:AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdO
 	return true
 end
 
+local wantedInvert = false
+local lastDeltaPitch = 0
 function gadget:GameFrame(f)
 	for unitID, data in pairs(spacecraft) do
 		--[[
@@ -603,19 +549,25 @@ function gadget:GameFrame(f)
 			local def = spacecraftDefs[unitDefID]
 			local px, py, pz = GetUnitMidPos(unitID)
 			
-			local fresh = data.fresh
-			
-			local heading = fresh and data.heading or spGetUnitHeading(unitID)/65536*2*math.pi
-			heading = NormalizeHeading(heading)
-			local dx, dy, dz = spGetUnitDirection(unitID)
-			local pitch = -math.atan2(dy, (dx^2+dz^2)^0.5)
-			--local roll
 			local distance = 0
 			local waiting = false	-- for Godot
 			
 			local cmdID
 			
+			local frontVector, topVector, rightVector = Spring.GetUnitVectors(unitID)
+			local dx, dy, dz = unpack(frontVector) 
+			local heading = spGetHeadingFromVector(dx, dz)/65536*2*pi
+			local pitch = -math.atan2(dy, (dx^2+dz^2)^0.5)
+			--if pitch < -pi then pitch = -pi - pitch end
+			
+			data.invert = topVector[2] < 0
+			
+			local _,_,roll = Spring.GetUnitRotation(unitID)
+			
+			local fresh = data.fresh
 			if fresh then	-- fix for units instantly pointing south on first turn
+				--pitch = math.pi	-- debug
+				local pitch = math.rad(-80)
 				Spring.MoveCtrl.SetRotation(unitID,pitch,heading,data.roll)
 			end
 			data.fresh = nil
@@ -782,7 +734,7 @@ function gadget:GameFrame(f)
 					local potentialColidees = Spring.GetUnitsInSphere(px, py, pz, safetyRange)
 					for i=1,#potentialColidees do
 						local otherUnitID = potentialColidees[i]
-						local otherUnitData = spacecraftDefs[spacecraft[otherUnitID].unitDefID]
+						local otherUnitData = spacecraft[otherUnitID] and spacecraftDefs[spacecraft[otherUnitID].unitDefID]
 						if spacecraft[otherUnitID] and otherUnitID ~= unitID and otherUnitID ~= command.params[1] and def.mass/otherUnitData.mass < 3 then
 							local ox, oy, oz = GetUnitMidPos(otherUnitID)
 							local otherUnitPos = {ox, oy, oz}
@@ -826,10 +778,10 @@ function gadget:GameFrame(f)
 			end
 			
 			-- decided what we want to do, now to get there
-			local wantedPitch, wantedHeading
+			
 			local speed = 0
 			local moveGoal = data.avoidanceMoveGoal or data.moveGoal
-			local deltaHeading = 0
+			local deltaHeading, deltaPitch = 0, 0
 			
 			local energy = GG.Energy and GG.Energy.GetUnitEnergy(unitID)
 			if energy and energy == 0 then	-- stranded!
@@ -838,32 +790,48 @@ function gadget:GameFrame(f)
 			else
 				Spring.MoveCtrl.SetDrag(unitID, 0)
 				if moveGoal then
-					local dy = moveGoal[2] - py
-					local vectorX, vectorZ = moveGoal[1] - px , moveGoal[3] - pz  
+					local wantedPitch, wantedHeading
+					local vectorY = moveGoal[2] - py
+					local vectorX, vectorZ = moveGoal[1] - px , moveGoal[3] - pz
 					local dxz = math.sqrt(vectorX^2 + vectorZ^2)
-					wantedPitch = -math.atan2(dy, dxz)
-					wantedHeading = spGetHeadingFromVector(vectorX, vectorZ)/65536*2*pi + pi
-					wantedHeading = NormalizeHeading(wantedHeading)
-					deltaHeading = math.abs(wantedHeading - heading) - pi
+					
+					wantedPitch = -math.atan2(vectorY, dxz)
+					wantedHeading = spGetHeadingFromVector(vectorX, vectorZ)/65536*2*pi
+					deltaHeading = NormalizeHeading(wantedHeading - heading)
+					deltaPitch = wantedPitch - pitch
+					
 					if math.abs(deltaHeading) < 0.02 then
-						wantedHeading = heading
-						--Spring.Echo("hold heading")
+						deltaHeading = 0
 					end
 					
 					if math.abs(wantedPitch - pitch) < 0.02 then
-						wantedPitch = pitch
+						deltaPitch = 0
 					end
-				else
-					wantedPitch = pitch
-					wantedHeading = heading
+					
+					-- faster to Immelmann/split-S then turn around
+					-- FIXME: doesn't work
+					-- meh, no-one will notice if they don't do this
+					--[[
+					local wantInvert = false
+					if math.abs(deltaHeading) > math.abs(deltaPitch) then
+						wantInvert = true
+						deltaPitch = -deltaPitch
+						deltaHeading = math.pi - deltaHeading
+					end
+					--if (lastDeltaPitch > 0 and deltaPitch < 0) or (lastDeltaPitch < 0 and deltaPitch > 0) then
+					--	Spring.Echo("stuck")					
+					--end
+					lastDeltaPitch = deltaPitch 
+					if wantInvert ~= wantedInvert then
+						if wantInvert then
+							--Spring.Echo("Want invert", deltaHeading, wantedPitch)
+						else
+							--Spring.Echo("Don't want invert", deltaHeading, wantedPitch)
+						end
+						wantedInvert = wantInvert
+					end
+					]]
 				end
-			
-				-- fixes wrong-way turning with pitch after an Immelmann/split-S
-				--local correction = 1
-				--if pitch > pi/2 or pitch < -pi/2 then		
-				--	correction = -1
-				--end
-				--wantedHeading = wantedHeading*correction
 				
 				local slowState = spGetUnitRulesParam(unitID,"slowState") or 0
 				local turnrate = data.turnrate * (1 - slowState)
@@ -871,42 +839,41 @@ function gadget:GameFrame(f)
 					turnrate = 0
 				end
 				
-				--pitch = GetNewPitch(pitch, wantedPitch, turnrate)
-				----[[
-				
-				local rx, rvx = 0, 0
-				if wantedPitch ~= pitch then
-					rx = GetNewPitch(pitch, wantedPitch, turnrate)
-					rvx = rx - pitch
+				local rvx = 0
+				if deltaPitch ~= 0 then
+					rvx = GetWantedRotation(deltaPitch, turnrate)
 				end
-				local ry, rz, rvy, rvz = 0, 0, 0, 0
-				--]]
+				local rvy, rvz = 0, 0
 				local rollDir = 0
 				
-				if wantedHeading ~= heading then
-					--heading, rollDir = GetNewHeading(heading, wantedHeading, turnrate)
-					ry, rollDir = GetNewHeading(heading, wantedHeading, turnrate)
-					rvy = ry - heading
+				if deltaHeading ~= 0 then
+					rvy = GetWantedRotation(deltaHeading, turnrate)
 				end
 				
-				rz = GetNewPitch(data.roll, -rollDir*def.rollAngle, def.rollSpeed)
-				rvz = rz - data.roll
-				data.roll = rz	--data.roll + rvz
-				
-				local rotVel = data.rotationVelocity
-				rotVel[1] = rvx
-				rotVel[2] = rvy
-				rotVel[3] = rvz
-				if CONTROL_MODE == "rotvel" then
-					Spring.MoveCtrl.SetRotationVelocity(unitID, rvx, rvy, rvz)
-				elseif CONTROL_MODE == "fixedrot" then
-					Spring.MoveCtrl.SetRotation(unitID, rx, ry, rz)
+				if deltaHeading > 0 then
+					if roll < def.rollAngle then
+						rvz = -def.rollSpeed
+					else
+						rvz = 0
+					end
+				elseif deltaHeading < 0 then
+					if roll > -def.rollAngle then
+						rvz = def.rollSpeed
+					else
+						rvz = 0
+					end
 				else
-					Spring.MoveCtrl.SetRotationVelocity(unitID, 0, rvy, 0)
-					Spring.MoveCtrl.SetRotation(unitID, rx, heading, rz)
+					if roll < 0.01 and roll > -0.01 then
+						rvz = 0
+					else
+						rvz = GetWantedRotation(roll, def.rollSpeed)
+					end
 				end
-				--spSetUnitRotation(unitID,pitch,heading,data.roll)
+				if rvz < 0.01 and rvz > -0.01 then
+					rvz = 0
+				end
 				
+				Spring.MoveCtrl.SetRotationVelocity(unitID, rvx, rvy, rvz)
 				
 				local oldSpeed = data.speed
 				speed = data.wantedSpeed --GetNewSpeed(data.speed, data.wantedSpeed, def.acceleration, def.brakerate)
@@ -957,9 +924,10 @@ function gadget:GameFrame(f)
 			
 			data.pitch = pitch
 			data.heading = heading
+			data.roll = roll
 			data.velocity = {vx, vy, vz}
-			Spring.SetUnitVelocity(unitID, vx, vy, vz)
-			Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
+			--Spring.SetUnitVelocity(unitID, vx, vy, vz)
+			--Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
 			
 			Spring.SetUnitRulesParam(unitID, "heading", heading)
 			Spring.SetUnitRulesParam(unitID, "pitch", pitch)

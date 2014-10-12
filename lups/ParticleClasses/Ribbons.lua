@@ -236,9 +236,7 @@ end
 -----------------------------------------------------------------------------------------------------------------
 
 function Ribbon:Update(n)
-  if self.unit then
-    self.isvalid = not spGetUnitIsDead(self.unit)
-  end
+  self.isvalid = (self.unit and spGetUnitIsDead(self.unit) == false) or (self.projectile and Spring.GetProjectileDefID(self.projectile))
 
   if (self.isvalid) then
     local x,y,z
@@ -272,9 +270,7 @@ end
 
 
 function Ribbon:Visible()
-  if (self.unit) then
-    self.isvalid = not spGetUnitIsDead(self.unit)	-- FIXME equivalent for projectiles?
-  end
+  self.isvalid = (self.unit and spGetUnitIsDead(self.unit) == false) or (self.projectile and Spring.GetProjectileDefID(self.projectile))
   local pos = self.oldPos[self.posIdx]
   return (self.blendfactor>0) and (spIsSphereInView(pos[1],pos[2],pos[3], self.radius))
 end

@@ -254,12 +254,8 @@ local custom_cmd_actions = {
 	      
 	--CUSTOM COMMANDS
 	sethaven=1,
-	--build=1,
-	areamex=1,
-	mine=1,
-	build=1,
 	jump=1,
-	find_pad=3,
+	find_carrier=3,
 	embark=3,
 	disembark=3,
 	oneclickwep=3,
@@ -270,6 +266,13 @@ local custom_cmd_actions = {
 	radialmenu=3,
 	placebeacon=1,
 	buildprev=1,
+	
+	hypercannon=1,
+	anchorclaw=1,
+	flierdance=1,
+	strikeburst=1,
+	repairwave=3,
+	fatalarrow=1,
 	
 	-- terraform
 	rampground=1,
@@ -287,11 +290,6 @@ local custom_cmd_actions = {
 	cloak_shield=2,
 	retreat=2,
 	['luaui noretreat']=2,
-	priority=2,
-	miscpriority=2,
-	ap_fly_state=2,
-	ap_autorepairlevel=2,
-	floatstate=2,
 	dontfireatradar=2,
 	antinukezone=2,
 	unitai=2,

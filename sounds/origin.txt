@@ -20,3 +20,9 @@ sparks.wav
 
 THIS (Public Domain):
 Pretty much everything not listed here, including subfolders
+
+Galaxy Angel:
+spirit_full.wav
+flier.wav
+debriefing.wav
+repair.wav

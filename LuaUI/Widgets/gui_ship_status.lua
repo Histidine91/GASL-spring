@@ -26,13 +26,27 @@ local GetGameFrame 		= Spring.GetGameFrame
 local GetModKeyState	= Spring.GetModKeyState
 local SelectUnitArray	= Spring.SelectUnitArray
 
+local glPushMatrix	= gl.PushMatrix
+local glPopMatrix	= gl.PopMatrix
+local glColor		= gl.Color
+local glTranslate	= gl.Translate
+local glRotate		= gl.Rotate
+local glTexture		= gl.Texture
+local glTexRect		= gl.TexRect
+local glBeginEnd	= gl.BeginEnd
+local GL_QUADS		= GL.QUADS
+
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 local buttonColorRed = {1,0,0,1}
 local buttonColorGreen = {0,1,0.2,1}
 local buttonColorYellow = {1,1,0,1}
 local buttonColorBlue = {0,0.2,1,1}
-local buttonAlphaDeselected = 0.7
+local buttonAlphaDeselected = 0.4
+local damageColor1 = {1,0.2,0.2,0.7}
+local damageColor2 = {1,0.2,0.2,0.5}
+local swirlColor1 = {1,1,0.5,0.5}
+local swirlColor2 = {1,1,0.5,0.2}
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -57,26 +71,45 @@ local echo = Spring.Echo
 
 local BUTTON_WIDTH = 64
 local BUTTON_HEIGHT = 52
---local BASE_COLUMNS = 6
---local NUM_FAC_COLUMNS = BASE_COLUMNS - 1	-- unused
+local BUTTON_OVERLAY_X = (BUTTON_WIDTH-4)/2
+local BUTTON_OVERLAY_Y = (BUTTON_HEIGHT-4)/2
+
+--local damageWarningPing	-- display list
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 local UPDATE_FREQUENCY = 0.25
+local ENERGY_WARNING_SIZE = 12
+local DAMAGE_WARNING_PERIOD = 0.5
+local DAMAGE_WARNING_MIN_SIZE_MOD = 0.3
+local DAMAGE_WARNING_SIZE_RATIO = 0.5	-- inner ring vs. outer ring
+local SPIRIT_SWIRL_SIZE_RATIO = 0.2
+local SPIRIT_FLASH_PERIOD = 0.7
+local SPIRIT_SWIRL_PERIOD = 1
+
+local ENERGY_TEXTURE_LOW = "LuaUI/Images/energy_low.png"
+local ENERGY_TEXTURE_CRITICAL = "LuaUI/Images/energy_critical.png"
 
 local angelDefs = {
-  [UnitDefNames.luckystar.id] = {hasSpirit = true},
-  [UnitDefNames.kungfufighter.id] = {hasSpirit = true},
-  [UnitDefNames.happytrigger.id] = {hasSpirit = true},
+  [UnitDefNames.luckystar.id] = {hasSpirit = true, order = 2},
+  [UnitDefNames.kungfufighter.id] = {hasSpirit = true, order = 3},
+  [UnitDefNames.happytrigger.id] = {hasSpirit = true, order = 5},
+  [UnitDefNames.sharpshooter.id] = {hasSpirit = true, order = 7},
+  [UnitDefNames.placeholdersior.id] = {hasSpirit = false, order = 1},
 }
 
 local hasEnergyDefs = {}
+local powerDefs = {}
 local suppressionImmuneDefs = {}
 
 for i=1,#UnitDefs do
-	local energy = UnitDefs[i].customParams.energy
-	hasEnergyDefs[i] = tonumber(energy)
-	suppressionImmuneDefs[i] = UnitDefs[i].customParams.suppressionimmune
+	local ud = UnitDefs[i]
+	local energy = tonumber(ud.customParams.energy)
+	if energy ~= -1 then
+		hasEnergyDefs[i] = energy
+	end
+	suppressionImmuneDefs[i] = ud.customParams.suppressionmod == "0"
+	powerDefs[i] = ud.power
 end
 
 local exceptionList = {}
@@ -95,31 +128,66 @@ options_path = 'Settings/HUD Panels/Ship Status'
 options_order = {}
 options = {}
 
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local lastTexture
+
 -- list and interface vars
 local unitsByID = {}	-- [unitID] = index
-local units = {} -- [index] = {unitID, unitDefID, panel, button, image, [healthbar] = ProgressBar, [energybar] = ProgressBar, [spiritbar] = ProgressBar}
+local units = {} -- [index] = {unitID, unitDefID, panel, button, image, [healthbar] = ProgressBar, [energybar] = ProgressBar, [spiritbar] = ProgressBar, [suppressionbar] = ...}
+local spiritOverlayPhase = 0
+local damagePings = {}	-- [unitID] = phase
+local spiritSwirls = {}	-- [unitID] = phase
 
---local gamestart = GetGameFrame() > 1
+local myTeamID = Spring.GetMyTeamID()
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- FUNCTIONS
+--------------------------------------------------------------------------------
+-- drawing stuff
 
-local teamColors = {}
-local GetTeamColor = Spring.GetTeamColor or function (teamID)
-  local color = teamColors[teamID]
-  if (color) then return unpack(color) end
-  local _,_,_,_,_,_,r,g,b = Spring.GetTeamInfo(teamID)
-  teamColors[teamID] = {r,g,b}
-  return r,g,b
-end
-
--------------------------------------------------------------------------------
--- SCREENSIZE FUNCTIONS
--------------------------------------------------------------------------------
 local vsx, vsy   = widgetHandler:GetViewSizes()
 
 function widget:ViewResize(viewSizeX, viewSizeY)
   vsx = viewSizeX
   vsy = viewSizeY
+end
+
+local function PingOrSwirl(vx, vy, color1, color2, sizeRatio)
+	gl.Color(color1)
+	gl.Vertex(-vx*sizeRatio,vy*sizeRatio,0)
+	gl.Vertex(vx*sizeRatio,vy*sizeRatio,0)
+	gl.Color(color2)
+	gl.Vertex(vx,vy,0)
+	gl.Vertex(-vx,vy,0)
+	
+	gl.Color(color1)
+	gl.Vertex(vx*sizeRatio,vy*sizeRatio,0)
+	gl.Vertex(vx*sizeRatio,-vy*sizeRatio,0)
+	gl.Color(color2)
+	gl.Vertex(vx,-vy,0)
+	gl.Vertex(vx,vy,0)
+	
+	gl.Color(color1)
+	gl.Vertex(vx*sizeRatio,-vy*sizeRatio,0)
+	gl.Vertex(-vx*sizeRatio,-vy*sizeRatio,0)
+	gl.Color(color2)
+	gl.Vertex(-vx,-vy,0)
+	gl.Vertex(vx,-vy,0)
+	
+	gl.Color(color1)
+	gl.Vertex(-vx*sizeRatio,-vy*sizeRatio,0)
+	gl.Vertex(-vx*sizeRatio,vy*sizeRatio,0)
+	gl.Color(color2)
+	gl.Vertex(-vx,vy,0)
+	gl.Vertex(-vx,-vy,0)
+end
+
+local function SpiritGlow()
+	gl.Vertex(-BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
+	gl.Vertex(BUTTON_OVERLAY_X,-BUTTON_OVERLAY_Y,0)
+	gl.Vertex(BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
+	gl.Vertex(-BUTTON_OVERLAY_X,BUTTON_OVERLAY_Y,0)
 end
 
 -------------------------------------------------------------------------------
@@ -168,7 +236,7 @@ end
 -------------------------------------------------------------------------------
 -- core functions
 
-local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persistent)
+local function AddUnitDisplay(unitID, unitDefID, index, powerIndex, hotkey, parent, persistent)
 	local numBars = 0
 	units[index].persistent = persistent
 
@@ -178,6 +246,7 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		height = 64,
 		backgroundColor = {0, 0, 0, 0},
 	}
+	units[index].panel:SetLayer(powerIndex)
 	
 	units[index].button = Button:New{
 		parent = units[index].panel;
@@ -188,9 +257,8 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		caption = '',
 		padding = {1,1,1,1},
 		--keepAspect = true,
-		backgroundColor = buttonColor,
 		OnClick = { function (self, x, y, mouse)
-			if units[index].isDestroyed then
+			if units[index].isDead then
 				return
 			end
 			local alt,_,_,shift = GetModKeyState()
@@ -199,20 +267,35 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 				return
 			end
 			SelectUnitArray({unitID}, shift)
-			if mouse == 1 then
-				local x, y, z = Spring.GetUnitPosition(unitID)
-				Spring.SetCameraTarget(x, y, z)
+			--if mouse == 1 then
+			--	local x, y, z = Spring.GetUnitPosition(unitID)
+			--	Spring.SetCameraTarget(x, y, z)
+			--end
+			if mouse == 2 and Spring.IsUnitSelected(unitID) then
+				local units = Spring.GetSelectedUnits()
+				local units2 = {}
+				for i=1,#units do
+					if units[i] ~= unitID then
+						units2[#units2+1] = units[i]
+					end
+				end
+				SelectUnitArray(units2, false)
 			end
 		end},
 		OnDblClick = { function()
-			if units[index].isDestroyed then
+			if units[index].isDead then
 				return
 			end
-			if WG.SetThirdPersonTrackUnit then
-				WG.SetThirdPersonTrackUnit(unitID)
+			if WG.COFC.SetThirdPersonTrackUnit then
+				WG.COFC.SetThirdPersonTrackUnit(unitID)
 			end
 		end},
-		tooltip = "Left click: Select and go to\nRight click: Select\nDouble-click: Lock camera (controllable units only)\nShift+click: Append to current selection\nAlt+click: Open info window",
+		tooltip = "\255\0\255\0" .. UnitDefs[unitDefID].humanName .. "\008\n"..
+			"Left click: Select (controllable units only)\n"..
+			"Right click: Deselect\n"..
+			"Double-click: Lock camera\n"..
+			"Shift+click: Append to current selection\n"..
+			"Alt+click: Open info window",
 	}
 	if (hotkey ~= nil) then 
 		Label:New {
@@ -230,8 +313,8 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 	
 	units[index].image = Image:New {
 		parent = units[index].button,
-		width="91%";
-		height="91%";
+		width="90%";
+		height="90%";
 		x="5%";
 		y="5%";
 		file = '#'..unitDefID,	-- FIXME
@@ -241,12 +324,12 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 	Label:New{
 		parent = units[index].panel,
 		autosize=false;
-		x = 72,
-		y = numBars*25 .. "%",
-		align="left";
+		x = 68,
+		y = 1+numBars*25 .. "%",
 		caption = 'H',
-		fontSize = 9;
+		fontSize = 10;
 		fontShadow = true;
+		valign = "ascender",
 	}
 	units[index].healthbar = Progressbar:New{
 		parent  = units[index].panel,
@@ -263,12 +346,12 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		Label:New{
 			parent = units[index].panel,
 			autosize=false;
-			x=72,
-			y = numBars*25 .. "%",
-			align="left";
+			x = 68,
+			y = 1+numBars*25 .. "%",
 			caption = 'E',
-			fontSize = 9;
+			fontSize = 10;
 			fontShadow = true;
+			valign = "ascender",
 		}
 		units[index].energybar = Progressbar:New{
 			parent  = units[index].panel,
@@ -280,18 +363,29 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 			caption = "";
 			color   = {1,1,0,1};
 		}
+		--[[
+		units[index].energyLowIndicator = Image:New{
+			--parent = units[index].image,
+			width = 24,
+			height = 24,
+			right = 0,
+			bottom = 0,
+			file = "LuaUI/Images/energy.png",
+			hidden = true
+		}
+		]]
 		numBars = numBars + 1
 	end
 	if angelDefs[unitDefID] and angelDefs[unitDefID].hasSpirit then
 		Label:New{
 			parent = units[index].panel,
 			autosize=false;
-			x=72,
-			y=numBars*25 .. "%",
-			align="left";
+			x = 68,
+			y = 1+numBars*25 .. "%",
 			caption = 'S',
-			fontSize = 9;
+			fontSize = 10;
 			fontShadow = true;
+			valign = "ascender",
 		}
 		units[index].spiritbar = Progressbar:New{
 			parent  = units[index].panel,
@@ -309,12 +403,12 @@ local function AddUnitDisplay(unitID, unitDefID, index, hotkey, parent, persiste
 		Label:New{
 			parent = units[index].panel,
 			autosize=false;
-			x=72,
-			y=numBars*25 .. "%",
-			align="left";
+			x = 68,
+			y = 1+numBars*25 .. "%",
 			caption = '!',
-			fontSize = 9;
+			fontSize = 10;
 			fontShadow = true;
+			valign = "ascender",
 		}
 		units[index].suppressionbar = Progressbar:New{
 			parent  = units[index].panel,
@@ -332,78 +426,109 @@ end
 
 local function UpdateUnitInfo(unitID)
 	local index = unitsByID[unitID]
-	if not units[index].panel or units[index].isDestroyed then
+	local unitData = units[index]
+	if (not unitData.panel) or unitData.isDead then
 		return
 	end
 	
 	local health, maxHealth = GetUnitHealth(unitID)
 	if not health then
+		-- probably dead
+		widget:UnitDestroyed(unitID)
 		return
 	end
 	local spirit = GetUnitRulesParam(unitID, "spirit") or 0
 	local energy = GetUnitRulesParam(unitID, "energy") or 0
 	local suppression = GetUnitRulesParam(unitID, "suppression") or 0
 
-	units[index].healthbar.color = GetHealthColor(health/maxHealth)
-	units[index].healthbar:SetValue(health/maxHealth)
-	--units[index].healthbar:SetCaption(math.floor(health*100/maxHealth) .. "%")
-	if units[index].spiritbar then
-		units[index].spiritbar:SetValue(spirit)
+	unitData.healthbar.color = GetHealthColor(health/maxHealth)
+	unitData.healthbar:SetValue(health/maxHealth)
+	if unitData.spiritbar then
+		unitData.spiritbar:SetValue(spirit)
 	end
-	if units[index].energybar then
-		units[index].energybar:SetValue(energy)
+	if unitData.energybar then
+		unitData.energybar:SetValue(energy)
 	end
-	if units[index].suppressionbar then
-		units[index].suppressionbar:SetValue(suppression)
+	if unitData.suppressionbar then
+		unitData.suppressionbar:SetValue(suppression)
 	end
 	
 	--[[
-	units[index].button.tooltip = "Commander: "..UnitDefs[comms[index].commDefID].humanName ..
-							"\n\255\0\255\255Health:\008 "..GetHealthColor(health/maxHealth, "char")..math.floor(health).."/"..maxHealth.."\008"..
-							"\n\255\0\255\0Left-click: Select and go to"..
-							"\nRight-click: Select"..
-							"\nShift: Append to current selection\008"
+	if energy then
+		if energy <= 0.3 then
+			if unitData.energyLowIndicator.hidden then
+				unitData.image:AddChild(unitData.energyLowIndicator)
+				unitData.energyLowIndicator.hidden = false
+			end
+		elseif (not unitData.energyLowIndicator.hidden) then
+			unitData.image:RemoveChild(unitData.energyLowIndicator)
+			unitData.energyLowIndicator.hidden = true
+		end
+	end
 	]]
 end
 
 
 local function AddUnit(unitID, unitDefID, teamID)
+	if unitsByID[unitID] then
+		return
+	end
+	local angelData = angelDefs[unitDefID]
+	
 	local parent = stack_neutral
 	if not Spring.IsUnitAllied(unitID) then
 		parent = stack_enemy
-	else
-		if angelDefs[unitDefID] then
-			parent = stack_angels
-		end
+	elseif angelData then
+		parent = stack_angels
+	elseif teamID == myTeamID then
+		parent = stack_ally
 	end
 
 	local index = #units + 1
+	local powerIndex = index
+	if angelData then
+	  powerIndex = angelData.order
+	else
+	  for i=1,#units do
+	    local unitData = units[i]
+	    if powerDefs[unitDefID] > powerDefs[units[i].unitDefID] then
+	      powerIndex = i
+	      break
+	    end
+	  end
+	end
+	
 	unitsByID[unitID] = index
-	units[index] = {unitID = unitID, unitDefID = unitDefID}
-	AddUnitDisplay(unitID, unitDefID, index, '', parent, parent == stack_angels)	-- FIXME hotkey
+	local newEntry = {unitID = unitID, unitDefID = unitDefID, parent = parent}
+	table.insert(units, index, newEntry)
+	AddUnitDisplay(unitID, unitDefID, index, powerIndex, '', parent, parent == stack_angels)	-- FIXME hotkey
 	UpdateUnitInfo(unitID)
+	damagePings[unitID] = 0
 end
 
 local function RemoveUnit(unitID)
-	-- TBD blackout angels instead of removing them
 	local index = unitsByID[unitID]
-	if units[index].persistent then
+	local unitData = units[index]
+	if unitData.persistent then
 		-- do stuff
-		units[index].isDestroyed = true
-		units[index].button.color = {0.3, 0.3, 0.3, 1}
-		units[index].image.color = {0.3, 0.3, 0.3, 1}
-		units[index].healthbar:SetValue(0)
-		if units[index].energybar then
-			units[index].energybar:SetValue(0)
+		unitData.isDead = true
+		unitData.button.color = {0.3, 0.3, 0.3, 1}
+		unitData.image.color = {0.3, 0.3, 0.3, 1}
+		unitData.healthbar:SetValue(0)
+		if unitData.energybar then
+			unitData.energybar:SetValue(0)
 		end
-		if units[index].spiritbar then
-			units[index].spiritbar:SetValue(0)
+		if unitData.spiritbar then
+			unitData.spiritbar:SetValue(0)
 		end
-		units[index].button:Invalidate()
-		units[index].image:Invalidate()
+		if unitData.suppressionbar then
+			unitData.suppressionbar:SetValue(0)
+		end
+		unitData.button:Invalidate()
+		unitData.image:Invalidate()
 	else
-		if units[index].panel then
-			units[index].panel:Dispose()
+		if unitData.panel then
+			unitData.panel:Dispose()
 		end
 		table.remove(units, index)
 		for id, i in pairs(unitsByID) do
@@ -413,6 +538,8 @@ local function RemoveUnit(unitID)
 		end
 	end
 	unitsByID[unitID] = nil
+	spiritSwirls[unitID] = nil
+	damagePings[unitID] = nil
 end
 
 local function InitializeUnits()
@@ -443,22 +570,79 @@ local function SetCurrentStack(stackName)
 	end
 	for name,button in pairs(buttons) do
 		if name == stackName then
-			button.backgroundColor[4] = 1
+			--button.backgroundColor[4] = 1
+			button.file = "LuaUI/Images/button_"..button.teamType.."_active.png"
+			button.previousFile = button.file
 		else
-			button.backgroundColor[4] = buttonAlphaDeselected
+			--button.backgroundColor[4] = buttonAlphaDeselected
+			button.file = "LuaUI/Images/button_"..button.teamType..".png"
+			button.previousFile = button.file
 		end
 		button:Invalidate()
 	end
 end
+
+local function TeamButtonUp(self)
+	self.file = self.previousFile
+end
+
+local function TeamButtonDown(self)
+	self.previousFile = self.file
+	self.file = "LuaUI/Images/button_"..self.teamType.."_press.png"
+	self:Invalidate()
+end
+
+local function SpiritFull(unitID)
+	if unitsByID[unitID] then
+		spiritSwirls[unitID] = 1
+	end
+end
+
+local function DrawWarningFlash(x, y, phase)
+	--TODO make display list ?
+	glPushMatrix()
+	glTranslate(x,y,0)
+	local size = DAMAGE_WARNING_MIN_SIZE_MOD+(1-DAMAGE_WARNING_MIN_SIZE_MOD)*phase
+	local vx = BUTTON_OVERLAY_X*size
+	local vy = BUTTON_OVERLAY_Y*size
+	glBeginEnd(GL_QUADS, PingOrSwirl, vx, vy, damageColor1, damageColor2, DAMAGE_WARNING_SIZE_RATIO)
+	glPopMatrix()
+end
+
+local function DrawSpiritGlow(x,y)
+	glPushMatrix()
+	glTranslate(x,y,0)
+	glColor(1,1,0.4,0.7*math.sin(spiritOverlayPhase*math.pi))
+	glBeginEnd(GL_QUADS, SpiritGlow)
+	glPopMatrix()
+end
+
+local function DrawSpiritSwirl(x,y,phase)
+	local size = (phase*5 + 1)
+	local vx = BUTTON_OVERLAY_X*size
+	local vy = BUTTON_OVERLAY_X*size
+	glPushMatrix()
+	glTranslate(x,y,0)
+	glRotate(phase*180,0,0,1)
+	glBeginEnd(GL_QUADS, PingOrSwirl, vx, vy, swirlColor1, swirlColor2, SPIRIT_SWIRL_SIZE_RATIO)
+	glPopMatrix()
+end
+
+local function DrawEnergyTexture(x,y,energy)
+	if energy > 0.5 then
+		return
+	end
+	local texture = (energy > 0.25) and ENERGY_TEXTURE_LOW or ENERGY_TEXTURE_CRITICAL
+	glPushMatrix()
+	glTranslate(x,y,0)
+	glColor(1,1,1,1)
+	glTexture(texture)
+	glTexRect(-ENERGY_WARNING_SIZE, ENERGY_WARNING_SIZE, 0, 0)
+	glPopMatrix()
+end
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 -- engine callins
-
---[[
-function widget:GameStart()
-	gamestart = true
-end
-]]--
 
 function widget:UnitCreated(unitID, unitDefID, unitTeam)
 	AddUnit(unitID, unitDefID, unitTeam)
@@ -482,9 +666,32 @@ function widget:UnitTaken(unitID, unitDefID, unitTeam, newTeam)
 	widget:UnitDestroyed(unitID, unitDefID, unitTeam)
 end
 
+function widget:UnitEnteredLos(unitID, unitTeam)
+	local unitDefID = Spring.GetUnitDefID(unitID)
+	widget:UnitCreated( unitID,  unitDefID,  unitTeam)
+end
+
+function widget:UnitLeftLos(unitID)
+	if unitsByID[unitID] then
+		RemoveUnit(unitID)
+	end
+end
+
 local timer = 0
-local warningColorPhase = false
 function widget:Update(dt)
+	spiritOverlayPhase = (spiritOverlayPhase + dt/SPIRIT_FLASH_PERIOD)%1
+	for unitID, phase in pairs(spiritSwirls) do
+		if phase <= 0 then
+			spiritSwirls[unitID] = nil
+		else
+			spiritSwirls[unitID] = phase - dt/SPIRIT_SWIRL_PERIOD
+		end
+	end
+	for unitID, phase in pairs(damagePings) do
+		local health = units[unitsByID[unitID]].healthbar.value
+		damagePings[unitID] = (phase + (1 - health)*dt/DAMAGE_WARNING_PERIOD)%1
+	end
+	
 	timer = timer + dt
 	if timer < UPDATE_FREQUENCY then
 		return
@@ -493,24 +700,39 @@ function widget:Update(dt)
 	for unitID in pairs(unitsByID) do
 		UpdateUnitInfo(unitID)
 	end
-	warningColorPhase = not warningColorPhase
-	--[[
-	for i=1,#comms do
-		local comm = comms[i]
-		if comm.button and comm.warningTime > 0 then
-			comm.warningTime = comm.warningTime - timer
-			if comm.warningTime > 0 then
-				comms[i].button.backgroundColor = (warningColorPhase and buttonColorWarning) or buttonColor
-			else
-				comms[i].button.backgroundColor = buttonColor
-			end
-			comms[i].button:Invalidate()
-		end
-	end
-	]]--
 	timer = 0
 end
 
+function widget:DrawScreen()
+	for i=1,#units do
+		local unitData = units[i]
+		if unitData.parent == currentStack and (not unitData.isDead) then
+			local x, y = unitData.button:LocalToScreen(BUTTON_WIDTH/2, BUTTON_HEIGHT/2)
+			y = screen0.height - y
+			if currentStack ~= stack_enemy then
+				local health = unitData.healthbar.value
+				if health <= 0.3 then
+					DrawWarningFlash(x, y, damagePings[unitData.unitID])
+				end
+			end
+			if unitData.spiritbar and unitData.spiritbar.value == 100 then
+				DrawSpiritGlow(x, y)
+			end
+			local swirlPhase = spiritSwirls[unitData.unitID]
+			if swirlPhase then
+				DrawSpiritSwirl(x, y, swirlPhase)
+			end
+			--[[
+			local energy = GetUnitRulesParam(unitData.unitID, "energy")
+			if energy then
+				DrawEnergyTexture(x + BUTTON_WIDTH/2 - 4, y - BUTTON_HEIGHT/2 + 4, energy)
+			end
+			]]
+		end
+	end
+	glColor(1,1,1,1)
+	glTexture(false)
+end
 
 function widget:UnitDamaged(unitID, unitDefID, unitTeam)
 end
@@ -543,7 +765,7 @@ function widget:Initialize()
 		x = 0,
 		bottom = 0,
 		width  = 160,
-		height = 320,
+		height = 480,
 		parent = Chili.Screen0,
 		draggable = false,
 		tweakDraggable = true,
@@ -562,7 +784,8 @@ function widget:Initialize()
 	scroll_main = ScrollPanel:New{
 		parent = window_status,
 		x = 0,
-		y = 32,
+		y = 16,
+		height = "100%",
 		width = "100%",
 		bottom = 0,
 		--backgroundColor = {0,0,0,0},
@@ -576,6 +799,7 @@ function widget:Initialize()
 		resizeItems = false,
 		orientation = 'vertical',
 		autosize = true,
+		autoArrangeV = true,
 	}
 	stack_ally = StackPanel:New{
 		--parent = scroll_main,
@@ -586,6 +810,7 @@ function widget:Initialize()
 		resizeItems = false,
 		orientation = 'vertical',
 		autosize = true,
+		autoArrangeV = true,
 	}
 	stack_neutral = StackPanel:New{
 		--parent = scroll_main,
@@ -596,6 +821,7 @@ function widget:Initialize()
 		resizeItems = false,
 		orientation = 'vertical',
 		autosize = true,
+		autoArrangeV = true,
 	}
 	stack_enemy = StackPanel:New{
 		--parent = scroll_main,
@@ -606,46 +832,56 @@ function widget:Initialize()
 		resizeItems = false,
 		orientation = 'vertical',
 		autosize = true,
+		autoArrangeV = true,
 	}
-	button_angels = Button:New{
+	button_angels = Image:New{
 		parent = window_status;
 		x = 0,
 		y = 0,
-		width = "50%",
+		width = "25%",
 		height = 16,
-		caption = '',
+		file = "LuaUI/Images/button_angels.png",
+		OnMouseDown = {TeamButtonDown},
+		OnMouseUp = {TeamButtonUp},
 		OnClick = {function() SetCurrentStack("angels") end},
-		backgroundColor = buttonColorBlue,
+		teamType = "angels",
 	}
-	button_ally = Button:New{
+	button_ally = Image:New{
+		parent = window_status;
+		x = "25%",
+		y = 0,
+		width = "25%",
+		height = 16,
+		caption = '',
+		file = "LuaUI/Images/button_ally.png",
+		OnMouseDown = {TeamButtonDown},
+		OnMouseUp = {TeamButtonUp},
+		OnClick = {function() SetCurrentStack("ally") end},
+		teamType = "ally",
+	}
+	button_neutral = Image:New{
 		parent = window_status;
 		x = "50%",
 		y = 0,
-		width = "50%",
+		width = "25%",
 		height = 16,
-		caption = '',
-		OnClick = {function() SetCurrentStack("ally") end},
-		backgroundColor = buttonColorGreen,
-	}
-	button_neutral = Button:New{
-		parent = window_status;
-		x = 0,
-		y = 16,
-		width = "50%",
-		height = 16,
-		caption = '',
+		file = "LuaUI/Images/button_neutral.png",
+		OnMouseDown = {TeamButtonDown},
+		OnMouseUp = {TeamButtonUp},
 		OnClick = {function() SetCurrentStack("neutral") end},
-		backgroundColor = buttonColorYellow,
+		teamType = "neutral",
 	}
-	button_enemy = Button:New{
+	button_enemy = Image:New{
 		parent = window_status;
-		x = "50%",
-		y = 16,
-		width = "50%",
+		x = "75%",
+		y = 0,
+		width = "25%",
 		height = 16,
-		caption = '',
+		file = "LuaUI/Images/button_enemy.png",
+		OnMouseDown = {TeamButtonDown},
+		OnMouseUp = {TeamButtonUp},
 		OnClick= {function() SetCurrentStack("enemy") end},
-		backgroundColor = buttonColorRed,
+		teamType = "enemy",
 	}
 	stacks = {angels = stack_angels, ally = stack_ally, neutral = stack_neutral, enemy = stack_enemy}
 	buttons = {angels = button_angels, ally = button_ally, neutral = button_neutral, enemy = button_enemy}
@@ -656,7 +892,10 @@ function widget:Initialize()
 	self:ViewResize(viewSizeX, viewSizeY)
 	
 	InitializeUnits()
+	
+	widgetHandler:RegisterGlobal("SpiritFullEvent", SpiritFull)
 end
 
 function widget:Shutdown()
+	widgetHandler:DeregisterGlobal("SpiritFullEvent")
 end

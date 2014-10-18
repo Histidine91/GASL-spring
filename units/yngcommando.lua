@@ -6,7 +6,7 @@ local unitDef = {
 	-- Required Tags
 	power = 50,
 	mass = 40,
-	icontype = "dagger",
+	icontype = "yngcommando",
 	category = "SMALL WEAK TARGET ANY",
 	footprintX = 1,
 	footprintZ = 1,
@@ -28,7 +28,7 @@ local unitDef = {
 	brakeRate = 1.5,
 	acceleration = .09,
 	canMove = true,
-	maxVelocity = 3,
+	maxVelocity = 3.25,
 	turnRate = 1200,
 	collide = false,
 
@@ -61,8 +61,8 @@ local unitDef = {
 		explosionGenerators = {
 			"custom:damage_fire",
 			"custom:death_small",
-			"custom:muzzlekinetic",
-			"custom:muzzlemassdriver",
+			"custom:gunmuzzle",
+			"custom:missile",
 		},
 	},
 	customParams  =  {
@@ -71,17 +71,15 @@ local unitDef = {
 		type = "small",
 		role = "attacker",
 		cost = 200,
-		trailtex = "bitmaps/trails/1m2sw.png",
-		trailr = .5,
-		trailg = 1,
-		trailb = .5,
-		trailalpha = 1,
 		useflightcontrol = 1,
 		combatspeed = 1.6,
 		combatrange = 1200,
-		inertiafactor = 0.96,
-		rollangle = math.rad(30),
+		inertiafactor = 0.98,
+		rollangle = 30,
 		armor = 50,
+		ecm = 10,
+		canresupply = true,
+		suppressionmod = 1.2,
 	},
 }
 

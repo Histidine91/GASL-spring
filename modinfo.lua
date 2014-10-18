@@ -2,7 +2,7 @@ return {
   name='Galaxy Angel: Starcrossed Lovers',
   description='True <3',
   shortname='GASL',
-  version='v0.01',
+  version='v0.03',
   mutator='',
   game='GASL',
   shortGame='GASL',

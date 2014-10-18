@@ -1,9 +1,9 @@
 function widget:GetInfo()
   return {
     name      = "Chili Widget Selector", --needs epic menu to dynamically update widget checkbox colors.
-    desc      = "v1.01 Chili Widget Selector", 
+    desc      = "v1.013 Chili Widget Selector", 
     author    = "CarRepairer",
-    date      = "2012-01-11", --2013-04-25 (add crude filter/search capability)
+    date      = "2012-01-11", --2013-06-11 (add crude filter/search capability)
     license   = "GNU GPL, v2 or later",
     layer     = -100000,
     handler   = true,
@@ -167,9 +167,8 @@ local function checkWidget(widget)
 		wcheck.font:SetColor(hilite_color)
 	end
 end
-WG.cws_checkWidget = function(widget)
-	checkWidget(widget)
-end
+
+WG.cws_checkWidget = function() end --function is declared in widget:Initialized()
 
 -- Kill Widgetlist window
 KillWidgetList = function()
@@ -206,20 +205,24 @@ MakeWidgetList = function()
 		if not data.alwaysStart then 
 			local name = name
 			local name_display = name .. (data.fromZip and ' (mod)' or '')
-			local data = data
+			data.basename = data.basename or ''
+			data.desc = data.desc or '' --become NIL if zipfile/archive corrupted
+			data.author = data.author or ''
 			local _, _, category = string.find(data.basename, "([^_]*)")
-			
+
 			local lowercase_name = name:lower()
 			local lowercase_category = category:lower()
 			local lowercase_display = name_display:lower()
 			local lowercase_desc = data.desc:lower()
 			local lowercase_author = data.author:lower()
+			
 			if filterUserInsertedTerm == "" or 
-				lowercase_name:find(filterUserInsertedTerm) or
-				lowercase_display:find(filterUserInsertedTerm) or
-				lowercase_desc:find(filterUserInsertedTerm) or
-				lowercase_author:find(filterUserInsertedTerm) or
-				lowercase_category:find(filterUserInsertedTerm) then
+			lowercase_name:find(filterUserInsertedTerm) or
+			lowercase_display:find(filterUserInsertedTerm) or
+			lowercase_desc:find(filterUserInsertedTerm) or
+			lowercase_author:find(filterUserInsertedTerm) or
+			lowercase_category:find(filterUserInsertedTerm) 
+			then
 			
 				if not groupDescs[category] then
 					category = 'ungrouped'
@@ -297,7 +300,7 @@ MakeWidgetList = function()
 		clientHeight = window_h,
 		parent = screen0,
 		backgroundColor = color.sub_bg,
-		caption = 'Widget List (F11)\nPress Enter to do Search',
+		caption = 'Widget List (F11)',
 		minWidth = 300,
 		minHeight = 400,
 		
@@ -322,30 +325,44 @@ MakeWidgetList = function()
 				},
 			},
 			
-			--Close button
-			Button:New{ 
-				caption = 'Close', 
-				OnMouseUp = { KillWidgetList }, 
-				backgroundColor=color.sub_close_bg, 
-				textColor=color.sub_close_fg, 
-				
-				x=1,
-				bottom=1,
-				width='40%',
-				height=C_HEIGHT,
-				
-			},
+			
 			--Categorization checkbox
 			Checkbox:New{ 
 				caption = 'Categorize', 
 				tooltip = 'List widgets by category',
-				OnMouseUp = { function() widget_categorize = not widget_categorize end, KillWidgetList, MakeWidgetList }, 
+				OnClick = { function() widget_categorize = not widget_categorize end, KillWidgetList, MakeWidgetList }, 
 				textColor=color.sub_fg, 
 				checked = widget_categorize,
-				x = '50%',
+				
 				width = '30%',
 				height= C_HEIGHT,
 				bottom=1,
+			},
+			
+			--Search button
+			Button:New{ 
+				caption = 'Search', 
+				OnClick = { function() Spring.SendCommands("chat","PasteText /search:") end }, 
+				backgroundColor=color.sub_close_bg, 
+				textColor=color.sub_close_fg, 
+				
+				x = '33%',
+				bottom=1,
+				width='30%',
+				height=B_HEIGHT,
+			},
+			
+			--Close button
+			Button:New{ 
+				caption = 'Close', 
+				OnClick = { KillWidgetList }, 
+				backgroundColor=color.sub_close_bg, 
+				textColor=color.sub_close_fg, 
+				
+				x = '66%',
+				bottom=1,
+				width='30%',
+				height=B_HEIGHT,
 			},
 
 		},
@@ -387,6 +404,9 @@ function widget:Initialize()
 		"unbindkeyset f11"
 	})
 	
+	WG.cws_checkWidget = function(widget)
+		checkWidget(widget)
+	end
 end
 
 function widget:ViewResize(vsx, vsy)
@@ -411,10 +431,4 @@ function widget:TextCommand(command)
 		return true
 	end
 	return false
-end
-
-function widget:KeyRelease(key)
-	if window_widgetlist and key ==13 then --Note: "13" equal to "Enter". Could this be different in different keyboard?
-		Spring.SendCommands("PasteText /search:" )
-	end
 end

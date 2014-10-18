@@ -29,26 +29,35 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-if (gadgetHandler:IsSyncedCode()) then
+if not (gadgetHandler:IsSyncedCode()) then
+	return false
+end
+--------------------------------------------------------------------------------
 --SYNCED
+--------------------------------------------------------------------------------
+include("LuaRules/Configs/customcmds.h.lua")
 
 local cmds = {
 	[CMD.MOVE] = true,
 	[CMD.FIGHT] = true,
-	[CMD.PATROL] = true
+	[CMD.PATROL] = true,
+	[CMD_TURN] = true,
+	[CMD_BURN_DRIVE] = true,
 }
 
 local replaceList = {}
+local isInGameFrame = false
 
 function gadget:AllowCommand(u, ud, team, cmd, param, opt, tag, synced)
-	if cmd == CMD_ATTACK or cmd == CMD_MANUALFIRE then
+	--[[if cmd == CMD_ATTACK or cmd == CMD_MANUALFIRE then
 		if #param > 1 then return false end	-- disable attack orders on ground
-	end
+	end]]
 	if cmds[cmd] then
+		--Spring.Echo(cmd == CMD_BURN_DRIVE, synced)
 		local overwrite = not opt.shift
 		local y = param[2]
 		if y then
-			if synced then
+			if isInGameFrame then
 				return true
 			else
 				--y = select(5, spGetUnitPosition(u, true))
@@ -71,6 +80,7 @@ function gadget:AllowCommand(u, ud, team, cmd, param, opt, tag, synced)
 end
 
 function gadget:GameFrame(f)
+	isInGameFrame = true
 	for i,t in pairs(replaceList) do
 		if not t.overwrite then
 			spGiveOrderToUnit(t.u, CMD_INSERT, {-1, t.cmd, 0, t.x, t.y, t.z }, {"alt"})
@@ -80,12 +90,5 @@ function gadget:GameFrame(f)
 		--spGiveOrderToUnit(t.u, CMD_REMOVE, {t.tag}, {})
 		replaceList[i]=nil
 	end
-end
-
-else
-
---UNSYNCED
-
-return false
-
+	isInGameFrame = false
 end

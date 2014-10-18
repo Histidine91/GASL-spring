@@ -16,7 +16,7 @@ local unitDef = {
 	objectName = "luckystar.s3o",
 	SoundCategory = "FIGHTER",
 	collisionVolumeType = "Box",
-	collisionVolumeScales = "20 12 30",
+	collisionVolumeScales = "22 15 30",
 	collisionVolumeTest = true,
 
 	-- Movement
@@ -28,7 +28,7 @@ local unitDef = {
 	brakeRate = 1.5,
 	acceleration = .09,
 	canMove = true,
-	maxVelocity = 2.8,
+	maxVelocity = 3,
 	turnRate = 900,
 	collide = false,
 
@@ -60,16 +60,17 @@ local unitDef = {
 		{
 			def = "MISSILE",
 			onlyTargetCategory = "TARGET",
-			badTargetCategory = "ARMORED",
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 120,
 		},
 		{
 			def = "PHALANX",
 			onlyTargetCategory = "TARGET",
-			badTargetCategory = "ARMORED",
 		},
-		
+		{
+			def = "HYPERCANNON",
+			onlyTargetCategory = "NONE"
+		},
 	},
 	
 	weaponDefs = {
@@ -86,7 +87,8 @@ local unitDef = {
 				damagetype = "energy",
 				description = "A standard high-power laser weapon, effective against all targets.",
 				critchance = 0.05,
-				energypershot = 50,
+				energypershot = 100,
+				category = {laser = true, energy = true},
 			},
 			
 			craterMult		= 0,
@@ -112,12 +114,11 @@ local unitDef = {
 			soundStart 	= "weapon/laser/small_laser_fire2",
 			thickness	= 3,
 			tolerance	= 1000,
-			turret		= false,
+			turret		= true,
 			weaponType	= "BeamLaser",
 		},
 		
-		MISSILE = 
-		{
+		MISSILE = {
 			name 		= "Standard Missile",
 			areaofeffect	= 64,
 			avoidfriendly 	= false,
@@ -133,7 +134,10 @@ local unitDef = {
 				minimumrange = 700,
 				suppression_noFlank = 1,
 				critchance = 0.075,
-				energypershot = 180,
+				energypershot = 360,
+				jammable = true,
+				--eccm = 20,
+				category = {seeker = true, missile = true},
 			},
 			
 			craterMult		= 0,
@@ -150,7 +154,7 @@ local unitDef = {
 			impulseFactor	= 0,
 			impulseBoost	= 0,
 			interceptedByShieldType = 4,
-			model		= "missile_small.s3o",
+			model		= "wep_m_hailstorm.s3o",
 			myGravity	= 0,
 			noSelfDamage	= true,
 			range		= 1800,
@@ -161,7 +165,7 @@ local unitDef = {
 			startVelocity	= 100,
 			tolerance	= 3000,
 			tracks		= true,
-			turret		= false,
+			turret		= true,
 			turnrate	= 12800,
 			weaponAcceleration = 25,
 			weaponType 	= "MissileLauncher",
@@ -169,8 +173,7 @@ local unitDef = {
 			wobble		= 22000,
 		},
 		
-		PHALANX = 
-		{
+		PHALANX = {
 			name 		= "Phalanx Seeker",
 			areaofeffect	= 8,
 			avoidfriendly 	= false,
@@ -182,11 +185,13 @@ local unitDef = {
 				damagetype = "energy",
 				description = "A general-purpose homing energy weapon.",
 				minimumrange = 500,
-				seekerttl = 60,
+				--seekerttl = 60,
 				seekeraccuracy = 25,
 				suppression_noFlank = 1,
 				critchance = 0.05,
-				energypershot = 80,
+				energypershot = 160,
+				jammable = true,
+				category = {phalanx = true, seeker = true, energy = true},
 			},
 			
 			craterMult		= 0,
@@ -196,10 +201,10 @@ local unitDef = {
 				default = 100,
 			},
 			
-			dance 		= 10,
+			--dance 		= 10,
 			explosiongenerator = "custom:laser",
 			fixedLauncher	= true,
-			flightTime	= 7,
+			flightTime	= 6,
 			impactOnly	= true,
 			impulseFactor	= 0,
 			impulseBoost	= 0,
@@ -212,7 +217,7 @@ local unitDef = {
 			reloadTime	= 16,
 			smoketrail 	= false,
 			--soundHit	= "weapons/mlighthit",
-			soundStart	= "weapon/laser/medlaser_fire",
+			soundStart	= "weapon/energy2",
 			--sprayangle 	= 25,
 			startVelocity	= 300,
 			--texture1	= "light_pink",
@@ -229,15 +234,16 @@ local unitDef = {
 		VULCAN_DUAL = {
 			name			= "Dual Vulcan Cannon",
 			areaOfEffect		= 8,
-			--burst                   = 3,
-			--burstRate               = 0.1,
+			burst                   = 3,
+			burstRate               = 0.1,
 			
 			customParams	= {
 				ap = 50,
 				damagetype = "kinetic",
 				description = "Twin rapid-fire autocannons that chew up soft targets. Accuracy and armor penetration are subpar.",
 				critchance = 0.075,
-				energypershot = 2,
+				energypershot = 12,
+				category = {ballistic = true, vulcan = true},
 			},
 			
 			craterMult		= 0,
@@ -258,17 +264,69 @@ local unitDef = {
 			noSelfDamage		= true,
 			projectiles		= 2,
 			range			= 1200,
-			reloadtime		= .1,
+			reloadtime		= 0.3,
 			rgbColor		= "1 0.5 0",
-			soundStart		= "weapon/cannon/klightfire",
+			soundStart		= "weapon/cannon/vulcan",
 			soundHit		= "weapon/cannon/klighthit",
+			soundTrigger		= true,
 			sprayangle		= 300,
 			thickness		= .5,
 			tolerance		= 3000,
-			turret			= false,
+			turret			= true,
 			weaponVelocity		= 800,
 			weaponType		= "LaserCannon",
-		}, 
+		},
+		
+		HYPERCANNON = {
+			name		= "Hyper Cannon",
+			accuracy	= 0,
+			areaOfEffect	= 96,
+			beamDecay	= 0.85,
+			beamTTL		= 6,
+			beamTime	= 0.03,
+			collideEnemy	= false,
+			collideFriendly = false,
+			collideNeutral	= false,
+			
+			customParams	= {
+				ap = 0,
+				damagetype = "energy",
+				description = "An immensely powerful beam that wipes anything in its path.",
+				--critchance = 0.05,
+				special = true,
+				statsdamage = 200*30*5,
+				statsrange = 3000,
+				nofriendlyfire = true,
+			},
+			
+			craterMult		= 0,
+			craterBoost		= 0,
+			
+			damage = {
+				default = 0.0001,
+			},
+			
+			--explosiongenerator = "custom:graser_pink",
+			impactOnly 	= true,
+			impulsefactor	= 0,
+			impulseBoost	= 0,
+			intensity	= 1,
+			interceptedByShieldType = 2,
+			--largeBeamLaser	= true,
+			laserFlareSize	= 8,
+			minIntensity	= 1,
+			noExplode	= true,
+			noSelfDamage	= true,
+			range		= 3000,
+			reloadtime	= 10,
+			rgbColor 	= "1 0.2 0.8",
+			soundHit	= nil,
+			soundStart 	= nil,
+			thickness	= 40,
+			tolerance	= 1000,
+			turret		= true,
+			weaponType	= "BeamLaser",
+		},		
 	},
 
 	explodeAs = "RetroDeathSmall",
@@ -279,9 +337,10 @@ local unitDef = {
 	sfxTypes = {
 		explosionGenerators = {
 			"custom:damage_fire",
-			"custom:death_small",
-			"custom:muzzlekinetic",
-			"custom:muzzlemassdriver",
+			"custom:feather",
+			"custom:teleport",			
+			"custom:missile",
+			"custom:gunmuzzle",
 		},
 	},
 	customParams  =  {
@@ -290,21 +349,18 @@ local unitDef = {
 		type = "small",
 		role = "attacker",
 		cost = 2000,
-		trailtex = "bitmaps/trails/1m2sw.png",
-		trailr = .5,
-		trailg = 1,
-		trailb = .5,
-		trailalpha = 1,
 		useflightcontrol = 1,
 		combatspeed = 1.4,
 		combatrange = 1600,
-		inertiafactor = 0.97,
-		rollangle = math.rad(30),
+		inertiafactor = 0.985,
+		rollangle = 30,
 		armor = 100,
 		morale = 50,
 		ecm = 25,
 		energy = 10000,
 		thrusterenergyuse = 1,
+		canresupply = true,
+		angel = 1,
 	},
 }
 

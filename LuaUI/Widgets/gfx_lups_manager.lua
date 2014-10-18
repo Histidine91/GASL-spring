@@ -94,13 +94,6 @@ for i,f in pairs(effectUnitDefs) do
   AddFX(i,f)
 end
 
-local currentTime = os.date('*t')
-if (currentTime.month==12) then
-  for i,f in pairs(effectUnitDefsXmas) do
-    AddFX(i,f)
-  end
-end
-
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- for i,f in pairs(effectUnitDefs) do

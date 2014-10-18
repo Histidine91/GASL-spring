@@ -6,7 +6,7 @@ local unitDef = {
 	-- Required Tags
 	power = 400,
 	mass = 240,
-	icontype = "luckystar",
+	icontype = "happytrigger",
 	category = "SMALL STRONG TARGET ANY",
 	footprintX = 2,
 	footprintZ = 2,
@@ -16,7 +16,7 @@ local unitDef = {
 	objectName = "happytrigger.s3o",
 	SoundCategory = "FIGHTER",
 	collisionVolumeType = "Box",
-	collisionVolumeScales = "20 12 36",
+	collisionVolumeScales = "22 15 36",
 	collisionVolumeTest = true,
 
 	-- Movement
@@ -28,7 +28,7 @@ local unitDef = {
 	brakeRate = 1,
 	acceleration = .06,
 	canMove = true,
-	maxVelocity = 2.2,
+	maxVelocity = 2.4,
 	turnRate = 600,
 	collide = false,
 
@@ -55,26 +55,43 @@ local unitDef = {
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 10,
 		},
-		--nil,	-- hyper cannon goes here?
 		{
 			def = "MISSILE",
 			onlyTargetCategory = "TARGET",
-			badTargetCategory = "ARMORED",
 			weaponMainDir = "0 0 1",
 			maxAngleDif = 120,
 		},
 		{
 			def = "PHALANX",
 			onlyTargetCategory = "TARGET",
-			badTargetCategory = "ARMORED",
 		},
-		
+		{
+			def = "RAILGUN_SB",
+			onlyTargetCategory = "TARGET",
+			weaponMainDir = "0 0 1",
+			maxAngleDif = 10,
+		},
+		{
+			def = "LASER_SB",
+			onlyTargetCategory = "TARGET",
+			weaponMainDir = "0 0 1",
+			maxAngleDif = 10,
+		},
+		{
+			def = "MISSILE_SB",
+			onlyTargetCategory = "TARGET",
+			weaponMainDir = "0 0 1",
+			maxAngleDif = 120,
+		},
+		{
+			def = "PHALANX_SB",
+			onlyTargetCategory = "TARGET",
+		},
 	},
 	
 	weaponDefs = {
 		RAILGUN = {
 			name                    = [[Assault Railgun]],
-			accuracy                = 250,
 			areaOfEffect            = 32,
 			--burst                   = 2,
 			--burstRate               = 0.2,
@@ -88,7 +105,8 @@ local unitDef = {
 				description = "Twin high-caliber railguns fire medium-velocity shells with a creamy high-explosive filling. Effective against larger ships.",
 				minimumrange = 400,
 				critchance = 0.1,
-				energypershot = 90,
+				energypershot = 180,
+				category = {ballistic = true, railgun = true},
 			},
 			
 			damage                  = {
@@ -103,16 +121,17 @@ local unitDef = {
 			interceptedByShieldType = 1,
 			noSelfDamage            = true,
 			projectiles             = 2,
-			range                   = 1400,
-			reloadtime              = 6,
+			range                   = 1500,
+			reloadTime              = 6,
 			soundHit                = [[weapon/cannon/kheavyfire]],
 			soundStart              = [[weapon/cannon/medplasma_fire]],
+			sprayangle		= 250,
 			thickness		= 6,
 			texture1		= "plasma",
 			texture2		= "null",
 			turret                  = true,
 			weaponType              = [[LaserCannon]],
-			weaponVelocity          = 450,	
+			weaponVelocity          = 1200,	
 		},
 		
 		LASER = {
@@ -128,7 +147,8 @@ local unitDef = {
 				damagetype = "energy",
 				description = "A standard high-power laser weapon, effective against all targets.",
 				critchance = 0.05,
-				energypershot = 50,
+				energypershot = 100,
+				category = {laser = true, energy = true},
 			},
 			
 			craterMult		= 0,
@@ -148,18 +168,17 @@ local unitDef = {
 			minIntensity	= 1,
 			noSelfDamage	= true,
 			range		= 1750,
-			reloadtime	= 4,
+			reloadTime	= 4,
 			rgbColor 	= "0.5 1 0.5",
 			soundHit	= nil,
 			soundStart 	= "weapon/laser/small_laser_fire2",
 			thickness	= 3,
 			tolerance	= 1000,
-			turret		= false,
+			turret		= true,
 			weaponType	= "BeamLaser",
 		},
 		
-		MISSILE = 
-		{
+		MISSILE = {
 			name 		= "Standard Missile",
 			areaofeffect	= 64,
 			avoidfriendly 	= false,
@@ -175,7 +194,10 @@ local unitDef = {
 				minimumrange = 700,
 				suppression_noFlank = 1,
 				critchance = 0.075,
-				energypershot = 360,
+				energypershot = 720,
+				jammable = true,
+				--eccm = 20,
+				category = {seeker = true, missile = true},
 			},
 			
 			craterMult		= 0,
@@ -192,7 +214,7 @@ local unitDef = {
 			impulseFactor	= 0,
 			impulseBoost	= 0,
 			interceptedByShieldType = 4,
-			model		= "missile_small.s3o",
+			model		= "wep_m_hailstorm.s3o",
 			myGravity	= 0,
 			noSelfDamage	= true,
 			projectiles     = 2,
@@ -204,7 +226,7 @@ local unitDef = {
 			startVelocity	= 100,
 			tolerance	= 3000,
 			tracks		= true,
-			turret		= false,
+			turret		= true,
 			turnrate	= 12800,
 			weaponAcceleration = 25,
 			weaponType 	= "MissileLauncher",
@@ -212,23 +234,26 @@ local unitDef = {
 			wobble		= 22000,
 		},
 		
-		PHALANX = 
-		{
+		PHALANX = {
 			name 		= "Phalanx Seeker",
 			areaofeffect	= 8,
 			avoidfriendly 	= false,
 			burnblow	= true,
+			burst		= 3,
+			burstRate	= 0.2,
 			
 			customParams	= {
 				ap = 25,
 				damagetype = "energy",
 				description = "A general-purpose homing energy weapon.",
 				minimumrange = 500,
-				seekerttl = 60,
+				--seekerttl = 60,
+				jammable = true,
 				seekeraccuracy = 25,
 				suppression_noFlank = 1,
 				critchance = 0.05,
-				energypershot = 160,
+				energypershot = 320,
+				category = {phalanx = true, seeker = true, energy = true},
 			},
 			
 			craterMult		= 0,
@@ -238,10 +263,10 @@ local unitDef = {
 				default = 100,
 			},
 			
-			dance 		= 10,
+			--dance 		= 10,
 			explosiongenerator = "custom:laser",
 			fixedLauncher	= true,
-			flightTime	= 7,
+			flightTime	= 6,
 			impactOnly	= true,
 			impulseFactor	= 0,
 			impulseBoost	= 0,
@@ -249,12 +274,12 @@ local unitDef = {
 			model		= "",
 			myGravity	= 0,
 			noSelfDamage	= true,
-			projectiles	= 16,
+			projectiles	= 4,
 			range		= 1450,
-			reloadTime	= 20,
+			reloadTime	= 18,
 			smoketrail 	= false,
 			--soundHit	= "weapons/mlighthit",
-			soundStart	= "weapon/laser/medlaser_fire",
+			soundStart	= "weapon/energy2",
 			--sprayangle 	= 25,
 			startVelocity	= 300,
 			tolerance	= 3000,
@@ -275,8 +300,10 @@ local unitDef = {
 	sfxTypes = {
 		explosionGenerators = {
 			"custom:damage_fire",
-			"custom:death_small",
+			"custom:missile",
 			"custom:cannon_muzzle",
+			"custom:feather",
+			"custom:teleport",
 		},
 	},
 	customParams  =  {
@@ -287,17 +314,46 @@ local unitDef = {
 		cost = 2000,
 		useflightcontrol = 1,
 		combatspeed = 1,
-		combatrange = 1350,
-		inertiafactor = 0.98,
-		rollangle = math.rad(30),
+		combatrange = 1450,
+		inertiafactor = 0.99,
+		rollangle = 30,
 		armor = 140,
 		morale = 50,
 		ecm = 20,
 		energy = 15000,
 		thrusterenergyuse = 1.4,
 		suppressionmod = 0.8,
+		canresupply = true,
+		angel = 4,
 	},
 }
+
+Spring.Utilities = Spring.Utilities or {}
+VFS.Include("LuaRules/Utilities/tablefunctions.lua")
+
+local specialWeapons = {
+	RAILGUN_SB = {
+		source = "RAILGUN",
+		properties = {name = "Assault Railgun SB", projectiles = 1, reloadTime = 0.5, range = 1750, customParams = {special = true, statsprojectiles = 10}}
+	},
+	LASER_SB = {
+		source = "LASER",
+		properties = {name = "Beam Laser SB", reloadTime = 1, range = 2000, customParams = {special = true, statsprojectiles = 5}}
+	},
+	MISSILE_SB = {
+		source = "MISSILE",
+		properties = {name = "Standard Missile SB", burst = 15, burstRate = 0.36, reloadTime = 10, customParams = {special = true, retarget = 1600, retargettime = 30}}
+	},
+	PHALANX_SB = {
+		source = "PHALANX",
+		properties = {name = "Phalanx Seeker SB", burst = 18, burstRate = 0.3, range = 1650, reloadTime = 10, flightTime = 10, customParams = {special = true, seekerttl = 45, retarget = 1400, retargettime = 30}}
+	},
+}
+local weaponDefs = unitDef.weaponDefs
+for weaponName, data in pairs(specialWeapons) do
+	local newWeapon = Spring.Utilities.CopyTable(weaponDefs[data.source], true)
+	weaponDefs[weaponName] = Spring.Utilities.MergeTable(data.properties, newWeapon, true)
+end
 
 unitDef.unitname = unitName
 return lowerkeys({ [unitName] = unitDef })

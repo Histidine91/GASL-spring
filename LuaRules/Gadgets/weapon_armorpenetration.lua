@@ -34,9 +34,12 @@ end
 for i=1,#WeaponDefs do
 	local customParams = WeaponDefs[i].customParams or {}
 	weapons[i] = {}
+	local damage = WeaponDefs[i].damages[0]
+	weapons[i].damage = damage
 	weapons[i].damageType = customParams.damagetype or "energy"
-	weapons[i].critChance = tonumber(customParams.critChance) or 0
+	weapons[i].critChance = tonumber(customParams.critchance) or 0
 	weapons[i].ap = tonumber(customParams.ap) or (weapons[i].damageType == "kinetic" and DEFAULT_PENETRATION or 0)
+	weapons[i].reportCrits = (damage > 100)
 end
 
 function gadget:UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID,
@@ -49,7 +52,8 @@ function gadget:UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, w
 	-- critical hit
 	local critical = false
 	if wep.critChance > 0 then
-		if math.random() < critChance then
+		if math.random() <= wep.critChance then
+			--Spring.Echo("boom headshot", unitID, attackerID)
 			critical = true
 			damage = damage*2
 			armor = 0
@@ -63,19 +67,21 @@ function gadget:UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, w
 	elseif wep.damageType == "energy" then
 		if (wep.ap > 0) and (not critical) then
 			-- energy AP doesn't reduce effective armor below 100
-			local bonusArmor = armor - 100
-			if bonusArmor < wep.ap then
-				armor = armor - bonusArmor
-			else
+			if armor > 100 then
 				armor = armor - wep.ap
+				if armor < 100 then
+					armor = 100
+				end
 			end
 			damage = (damage*2)/(1+armor/100)
 		end
 	end
 	
-	if critical then
-		GG.EventWrapper.AddEvent("criticalHit", damage, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
+	if critical and wep.reportCrits then
+		GG.EventWrapper.AddEvent("criticalHit", damage, attackerID, attackerDefID, attackerTeam, unitID, unitDefID, unitTeam)
+		GG.EventWrapper.AddEvent("criticalHit_received", damage, unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
 	end
+	
 	return damage
 end
 

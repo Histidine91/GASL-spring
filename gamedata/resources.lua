@@ -44,6 +44,7 @@ local resources = {
 			laserfalloff='laserfalloff.tga',
 			randdots='randdots.tga',
 			smoketrail='trails/missile.tga',
+			smoketrailthinner= "pd/smoketrailthinner.tga",
 			wake='wake.tga',
 			flare='flare.tga',
 			explo='null.tga',
@@ -77,15 +78,13 @@ local resources = {
 			electnovaexplo = 'projectiletextures/electnovaexplo.png',
 			lightningball = 'projectiletextures/lightningball.tga',
 			
-			light_white = 'light_white.png',
-			light_pink = 'light_pink.png',
+			feather = 'cc/feather.png',
+			flowerflash = "pd/flowerflash.tga",
+			bluering= "cc/bluering.tga",
 			
-			phalanxtrail_pink = 'phalanxtrail_pink.png',
-			
-			null = 'null.tga',
-			
+			kfoam= "other/foam.tga",
 
-      
+			null = 'null.tga',
 		}
 	}
 }

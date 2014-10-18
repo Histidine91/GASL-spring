@@ -14,19 +14,16 @@ function gadget:GetInfo()
 end
 
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
 --SYNCED
+--------------------------------------------------------------------------------
 if not gadgetHandler:IsSyncedCode() then
-	return
+   return
 end
 
 local UPDATE_PERIOD = 15
 
---[[
 local BASE_MORALE = 50
 local MORALE_ACCURACY_MULT = -0.25	-- 25% tighter spread at max morale
-]]--
 local SUPPRESSION_MULT = 0.5 	-- 50% wider spread at max suppression
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -59,22 +56,33 @@ for i=1,#UnitDefs do
    ecmDefs[i] = (ud.customParams.ecm or 0)/100
 end
 
-local function GetAccMult(unitID, unitDefID, targetID, targetDefID)
-   local ecmMod = targetDefID and ecmDefs[targetDefID] or 0
-   --[[
-   local moraleMod = 0
-   local morale = GG.GetMorale(unitDefID)
-   if morale then
-      moraleMod = (morale - BASE_MORALE)/50 * MORALE_ACCURACY_MULT
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local function GetAccMult(unitID, unitDefID, targetID, targetDefID, params)
+   params = params or {useSuppression = true, useECM = true, useMoraleDefender = true}
+   
+   local ecmMod = 0
+   if params.useECM then
+      ecmMod = targetDefID and ecmDefs[targetDefID] or 0
    end
-   ]]--
+   
+   local moraleDefenderMod = 0
+   if params.useMoraleDefender then
+      local morale = GG.GetMorale(targetDefID)
+      if morale then
+	 moraleDefenderMod = (morale - BASE_MORALE)/BASE_MORALE * MORALE_ACCURACY_MULT
+      end
+   end
+   
    local suppressionMod = 0
-   local suppression = GG.GetUnitSuppression(unitID)
-   if suppression then
-      suppressionMod = suppression * SUPPRESSION_MULT
+   if params.useSuppression then
+      local suppression = GG.GetUnitSuppression(unitID)
+      if suppression then
+	 suppressionMod = suppression * SUPPRESSION_MULT
+      end
    end
       
-   local accMult = 1 + ecmMod + suppressionMod--+ moraleMod
+   local accMult = 1 + ecmMod + suppressionMod + moraleDefenderMod
    return accMult
 end
 GG.GetAccMult = GetAccMult
@@ -83,11 +91,15 @@ local function UpdateWeaponAccuracy(unitID, unitDefID, i)
    local defData = accDefs[unitDefID]
    local unitData = units[unitID]
    local targetID, targetDefID
+   
+   if not unitData then
+      return
+   end
       
    if unitData.env then
       targetID = GG.UnitScript.CallAsUnit(unitID, unitData.env.GetWeaponTarget, i)
       if targetID then
-	 local targetDefID = spGetUnitDefID(targetID)
+	 targetDefID = spGetUnitDefID(targetID)
       end
    end
      
@@ -107,7 +119,8 @@ end
 --GG.UpdateUnitAccuracy = UpdateUnitAccuracy
 GG.UpdateWeaponAccuracy = UpdateWeaponAccuracy
 
-
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 function gadget:UnitDestroyed(unitID, unitDefID, unitTeam)
    units[unitID] = nil
 end

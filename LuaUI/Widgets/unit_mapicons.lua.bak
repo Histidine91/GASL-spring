@@ -1,0 +1,85 @@
+function widget:GetInfo()
+   return {
+      name      = "Unit Map Icons",
+      desc      = "Replacement for engine map icon system",
+      author    = "KingRaptor (L.J. Lim)",
+      date      = "2013.08.20",
+      license   = "GNU GPL, v2 or later",
+      layer     = 2,
+      enabled   = true,
+   }
+end
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local spGetUnitTeam		= Spring.GetUnitTeam
+local spGetUnitDefID		= Spring.GetUnitDefID
+local spGetUnitCommands		= Spring.GetUnitCommands
+local spGetUnitViewPosition	= Spring.GetUnitViewPosition
+local spGetCameraState		= Spring.GetCameraState
+local spGetVisibleUnits 	= Spring.GetVisibleUnits
+local spWorldToScreenCoords	= Spring.WorldToScreenCoords
+local spIsUnitAllied		= Spring.IsUnitAllied
+
+local glTexture = gl.Texture
+local glTexRect = gl.TexRect
+local glPushMatrix = gl.PushMatrix
+local glPopMatrix = gl.PopMatrix
+
+local BASE_SIZE = 16
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local iconTypes = include("Configs/icontypes.lua")
+local iconsByUnitDef = {}
+local teamColors = {}
+
+local function DrawUnit(unitID, icon, xsize, ysize)
+   gl.Texture(icon)
+   gl.TexRect(-xsize/2, -ysize/2, xsize/2, ysize/2)
+end
+
+function widget:Initialize()
+   for _,teamID in pairs(Spring.GetTeamList()) do
+      teamColors[teamID] = {Spring.GetTeamColor(teamID)}
+   end
+   for i=1,#UnitDefs do
+      iconsByUnitDef[i] = UnitDefs[i].name	--iconType
+   end
+end
+
+function widget:DrawScreen(vsx,vsy)
+   local all_units = spGetVisibleUnits(nil, nil, true)
+   local nonIcon_units = spGetVisibleUnits(nil, nil, false)
+   local toDraw = {}
+   
+   for i=1,#all_units do
+      toDraw[all_units[i]] = true
+   end
+   for i=1,#nonIcon_units do
+      toDraw[all_units[i]] = nil	-- so only icon-mode units are in the table
+   end
+   
+   for unitID in pairs(toDraw) do
+      local ux,uy,uz = spGetUnitViewPosition(unitID)
+      local sx,sy,sz = spWorldToScreenCoords(ux, uy, uz)
+      local unitDefID = spGetUnitDefID(unitID)
+      local teamID = spGetUnitTeam(unitID)
+      local iconType = iconsByUnitDef[unitDefID]
+      local iconData = iconTypes[iconType] or iconTypes.default
+      local icon = iconData.bitmap
+      local size = iconData.size*BASE_SIZE
+      
+      if icon then
+	 glPushMatrix()
+	 gl.Translate(sx, sy, sz)
+	 gl.Color(teamColors[teamID])
+	 glTexture(icon)
+	 glTexRect(-size/2, -size/2, size/2, size/2)
+	 glPopMatrix()
+      end
+   end
+end
+
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------

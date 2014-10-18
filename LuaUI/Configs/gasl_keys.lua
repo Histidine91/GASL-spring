@@ -2,7 +2,7 @@ return {
 	-- yyyymmdd
 	-- if newer than user's, overwrite ALL zir keys
 	-- else just add any that are missing from local config
-	["date"] = 20130630,
+	["date"] = 20140609,
 
 	-- all default keybinds
 	["keybinds"] = {
@@ -79,8 +79,8 @@ return {
 		{	"reclaim",	"e",},
 		{	"fight",	"f",},
 		{	"forcestart",	"Alt+f",},
-		--{	"guard",	"g",},
-		{	"areaguard",	"g",},
+		{	"guard",	"g",},
+		--{	"areaguard",	"g",},
 		{	"sharedialog",	"h",},
 		{	"gameinfo",	"i",},
 		{	"cloak",	"k",},
@@ -92,6 +92,7 @@ return {
 		{	"groupclear",	"Shift+q",},
 		{	"repair",	"r",},
 		{	"stop",	"s",},
+		{	"find_carrier",	"Ctrl+s",},
 		{	"unloadunits",	"u",},
 		{	"pastetext",	"Ctrl+v",},
 		{	"wait",	"w",},
@@ -144,6 +145,8 @@ return {
 		{	"resurrect",	"t",},
 		{	"controlunit",	"alt+v",},
 		{	"jump",	"j",},
+		{	"specialweapon", "d"},
+		{	"burndrive", "ctrl+c"},
 		{	"select AllMap++_ClearSelection_SelectAll+",	"ctrl+a",},
 		{	"select AllMap+_Builder_Not_Building_Not_Transport_Idle+_ClearSelection_SelectAll+",	"ctrl+b",},
 		{	"select PrevSelection+_Not_RelativeHealth_30+_ClearSelection_SelectAll+",	"ctrl+e",},
@@ -162,5 +165,6 @@ return {
 		{	"epic_chili_integral_menu_tab_special",	"v",},
 		{	"epic_chili_gesture_menu_markingmenu",	"b",},
 		{	"exitwindow",	"s+escape",},
+		{	"crudesubmenu",	"f10"},
 	},
 }

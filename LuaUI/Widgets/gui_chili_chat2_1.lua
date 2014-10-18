@@ -13,7 +13,7 @@
 function widget:GetInfo()
   return {
     name      = "Chili Chat 2.1",
-    desc      = "v0.909 Alternate Chili Chat Console.",
+    desc      = "v0.916 Chili Chat Console.",
     author    = "CarRepairer, Licho, Shaun",
     date      = "2012-06-12",
     license   = "GNU GPL, v2 or later",
@@ -113,7 +113,8 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-local HIGHLIGHT_SURROUND_SEQUENCE = ' #### '
+local HIGHLIGHT_SURROUND_SEQUENCE_1 = ' >>> '
+local HIGHLIGHT_SURROUND_SEQUENCE_2 = ' <<<'
 local DEDUPE_SUFFIX = 'x '
 
 --------------------------------------------------------------------------------
@@ -133,8 +134,11 @@ local stack_console
 local window_console
 local scrollpanel1
 local inputspace
+local color2incolor
 WG.enteringText = false
 WG.chat = WG.chat or {}
+
+local echo = Spring.Echo
 
 -- redefined in Initialize()
 local function showConsole() end
@@ -152,23 +156,47 @@ local incolors = {} -- incolors indexed by playername + special #a/#e/#o/#s/#h c
 local messages = {} -- message buffer
 local highlightPattern -- currently based on player name -- TODO add configurable list of highlight patterns
 
-local visible = true
+local visible = false
 local firstEnter = true --used to activate ally-chat at game start. To run once
 local noAlly = false	--used to skip the ally-chat above. eg: if 1vs1 skip ally-chat
 
 local wasSimpleColor = nil -- variable: indicate if simple color was toggled on or off. Used to trigger refresh.
 
+local time_opened = nil
+
+local GetTimer = Spring.GetTimer 
+local DiffTimers = Spring.DiffTimers
+
 ----
 
 options_path = "Settings/HUD Panels/Chat/Console"
 options_order = {
-	'mousewheel', 'clickable_points',
-	'hideSpec', 'hideAlly', 'hidePoint', 'hideLabel', 'defaultAllyChat',
-	'text_height', 'highlighted_text_height', 'max_lines',
+	'lblError',
+	'error_opengl_source',	
+	
+	'lblGeneral',
+	'mousewheel', 
+	'defaultAllyChat',
+	'text_height', 'max_lines',
 	'color_background', 'color_chat', 'color_ally', 'color_other', 'color_spec',
-	'dedupe_messages', 'dedupe_points','color_dup',
+	
+	
+	'lblFilter',
+	'hideSpec', 'hideAlly', 'hidePoint', 'hideLabel',
+	
+	'lblPointButtons',
+	'clickable_points','pointButtonOpacity',
+	
+	'lblAutohide',
+	'autohide', 'autohide_time',
+	
+	
+	'lblHilite',
 	'highlight_all_private', 'highlight_filter_allies', 'highlight_filter_enemies', 'highlight_filter_specs', 'highlight_filter_other',
-	'highlight_surround', 'highlight_sound', 'color_highlight'
+	'highlight_surround', 'highlight_sound', 'color_highlight','highlighted_text_height', 
+	
+	'lblDedupe',
+	'dedupe_messages', 'dedupe_points','color_dup',
 }
 
 --------------------------------------------------------------------------------
@@ -182,6 +210,23 @@ end
 --------------------------------------------------------------------------------
 
 options = {
+	
+	lblError = {name='Error Filter', type='label'},
+	lblFilter = {name='Filtering', type='label', advanced = true},
+	lblPointButtons = {name='Point Buttons', type='label', advanced = true},
+	lblAutohide = {name='Auto Hiding', type='label'},
+	lblHilite = {name='Highlighting', type='label'},
+	lblDedupe = {name='De-Duplication', type='label'},
+	lblGeneral = {name='General Settings', type='label'},
+	
+	error_opengl_source = {
+		name = "Filter out \'Error: OpenGL: source\' error",
+		type = 'bool',
+		value = true,
+		desc = "This filter out \'Error: OpenGL: source\' error message from ingame chat, which happen specifically in Spring 91 with Intel Mesa driver."
+		.."\nTips: the spam will be written in infolog.txt, if the file get unmanageably large try set it to Read-Only to prevent write.",
+	},
+	
 	text_height = {
 		name = 'Text Size',
 		type = 'number',
@@ -201,6 +246,13 @@ options = {
 		type = 'bool',
 		value = true,
 		OnChange = onOptionsChanged,
+		advanced = true,
+	},
+	pointButtonOpacity = {
+		name = "Point button opacity",
+		type = 'number',
+		value = 0.25,
+		min = 0, max = 1, step = 0.05,
 		advanced = true,
 	},
 	
@@ -375,6 +427,20 @@ options = {
 		type = 'bool',
 		value = true,
 	},	
+	autohide = {
+		name = "Autohide chat",
+		desc = "Hides the chat when not in use",
+		type = 'bool',
+		value = false,
+		OnChange = onOptionsChanged,
+	},
+	autohide_time = {
+		name = "Autohide time",
+		type = 'number',
+		value = 4,
+		min = 1, max = 10, step = 1, 
+		OnChange = onOptionsChanged,
+	},
 	
 }
 --------------------------------------------------------------------------------
@@ -450,34 +516,6 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
--- TODO get rid of bogus color2incolor - http://springrts.com/phpbb/viewtopic.php?f=23&t=28208
--- move to LuaUI/Chili/headers/util.lua or to LuaUI/modfonts.lua?
--- also competing with bubbles::GetColorChar()
-local function color2textColor(r, g, b, a)
-
-	local function colorComponent(x)
-		local c = string.char(x * 255)
-		-- use lookup table to weed out other unwanted output values?
-		if c == '\0' then
-			c = '\1'
-		end
-		return c
-	end
-
-	if not r then
-		return '' -- '\255\255\255\255'
-	end
-	
-	if type(r) == 'table' then
-		r, g, b, a = unpack(r)
-	end
-
-	return '\255' .. colorComponent(r) .. colorComponent(g) .. colorComponent(b)
-end
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
 local function detectHighlight(msg)
 	-- must handle case where we are spec and message comes from player
 
@@ -532,15 +570,18 @@ local function displayMessage(msg, remake)
 	end
 	
 	-- TODO betterify this / make configurable
-	local highlight_sequence = (msg.highlight and options.highlight_surround.value and (incolor_highlight .. HIGHLIGHT_SURROUND_SEQUENCE) or '')
-	local text = (msg.dup > 1 and (incolor_dup .. msg.dup .. DEDUPE_SUFFIX) or '') .. highlight_sequence .. msg.formatted .. highlight_sequence
+	local highlight_sequence1 = (msg.highlight and options.highlight_surround.value and (incolor_highlight .. HIGHLIGHT_SURROUND_SEQUENCE_1) or '')
+	local highlight_sequence2 = (msg.highlight and options.highlight_surround.value and (incolor_highlight .. HIGHLIGHT_SURROUND_SEQUENCE_2) or '')
+	local text = (msg.dup > 1 and (incolor_dup .. msg.dup .. DEDUPE_SUFFIX) or '') .. highlight_sequence1 .. msg.formatted .. highlight_sequence2
 
 	if (msg.dup > 1 and not remake) then
 		local last = stack_console.children[#(stack_console.children)]
 		if last then
-			last:SetText(text)
-			-- UpdateClientArea() is not enough - last message keeps disappearing until new message is added
-			last:Invalidate()
+			if last.SetText then
+				last:SetText(text)
+				-- UpdateClientArea() is not enough - last message keeps disappearing until new message is added
+				last:Invalidate()
+			end
 		end
 	else
 		local textbox = WG.Chili.TextBox:New{
@@ -564,61 +605,68 @@ local function displayMessage(msg, remake)
 			}
 		}
 		
-		if msg.point and options.clickable_points.value then
-			textbox.OnMouseDown = {function(self, x, y, mouse)
-				local click_on_text = x <= textbox.font:GetTextWidth(self.text); -- use self.text instead of text to include dedupe message prefix
-				if (mouse == 1 and click_on_text) then
-					Spring.SetCameraTarget(msg.point.x, msg.point.y, msg.point.z, 1)
+		if options.clickable_points.value then
+			local button = textbox
+			if msg.point then --message is a marker, make obvious looking button
+				textbox:SetPos( nil, 3, stack_console.width - 6 )
+				textbox:Update()
+				local tbheight = textbox.height -- not perfect
+				tbheight = math.max( tbheight, 15 ) --hack
+				--echo('tbheight', tbheight)
+				button = WG.Chili.Button:New{
+					width = '100%',
+					height = tbheight + 8,
+					padding = { 3,3,3,3 },
+					backgroundColor = {1,1,1,options.pointButtonOpacity.value},
+					caption = '',
+					children = { textbox, },
+					OnClick = {function(self, x, y, mouse)
+						local alt,ctrl, meta,shift = Spring.GetModKeyState()
+						if (shift or ctrl or meta or alt) or ( mouse ~= 1 ) then return false end --skip modifier key since they indirectly meant player are using click to issue command (do not steal click)
+						Spring.SetCameraTarget(msg.point.x, msg.point.y, msg.point.z, 1)
+					end}
+				}
+				
+			elseif WG.alliedCursorsPos and msg.player and msg.player.id then --message is regular chat, make hidden button
+				local cur = WG.alliedCursorsPos[msg.player.id]
+				if cur then
+					textbox.OnClick = {function(self, x, y, mouse)
+							local alt,ctrl, meta,shift = Spring.GetModKeyState()
+							if ( shift or ctrl or meta or alt ) then return false end --skip all modifier key
+							local click_on_text = x <= textbox.font:GetTextWidth(self.text); -- use self.text instead of text to include dedupe message prefix
+							if (mouse == 1 and click_on_text) then
+								Spring.SetCameraTarget(cur[1], 0,cur[2], 1) --go to where player is pointing at. NOTE: "cur" is table referenced to "WG.alliedCursorsPos" so its always updated with latest value
+							end
+					end}
+					function textbox:HitTest(x, y)  -- copied this hack from chili bubbles
+						return self
+					end
 				end
-				--[[ testing - CarRep
-				local _,_, meta,_ = Spring.GetModKeyState()
-				if not meta then return false end
-				WG.crude.OpenPath(options_path)
-				WG.crude.ShowMenu() --make epic Chili menu appear.
-				--]]
-			
-			end}
-			function textbox:HitTest(x, y)  -- copied this hack from chili bubbles
-				return self
 			end
-			--[[ testing - CarRep
+			stack_console:AddChild(button, false)
 		else
-			textbox.OnMouseDown = {function(self, x, y, mouse)
-				local _,_, meta,_ = Spring.GetModKeyState()
-				if not meta then return false end
-				WG.crude.OpenPath(options_path)
-				WG.crude.ShowMenu() --make epic Chili menu appear.
-			
-			end}
-			function textbox:HitTest(x, y)  -- copied this hack from chili bubbles
-				return self
-			end
-			--]]
+			stack_console:AddChild(textbox, false)	
 		end
 
-		stack_console:AddChild(textbox, false)
 		stack_console:UpdateClientArea()
+		
 	end 
+
+	showConsole()
 end 
 
 
 local function setupColors()
-	--local textColorizer = WG.Chili.color2incolor
-	local textColorizer = color2textColor
-
-	incolor_dup			= textColorizer(options.color_dup.value)
-	incolor_highlight	= textColorizer(options.color_highlight.value)
+	incolor_dup			= color2incolor(options.color_dup.value)
+	incolor_highlight	= color2incolor(options.color_highlight.value)
 	incolors['#h']		= incolor_highlight
-	incolors['#a'] 		= textColorizer(options.color_ally.value)
-	incolors['#e'] 		= textColorizer(options.color_chat.value)
-	incolors['#o'] 		= textColorizer(options.color_other.value)
-	incolors['#s'] 		= textColorizer(options.color_spec.value)
+	incolors['#a'] 		= color2incolor(options.color_ally.value)
+	incolors['#e'] 		= color2incolor(options.color_chat.value)
+	incolors['#o'] 		= color2incolor(options.color_other.value)
+	incolors['#s'] 		= color2incolor(options.color_spec.value)
 end
 
 local function setupPlayers()
-	--local textColorizer = WG.Chili.color2incolor
-	local textColorizer = color2textColor
-	
 --	local myallyteamid = Spring.GetMyAllyTeamID()
 
 	local playerroster = Spring.GetPlayerList()
@@ -627,7 +675,7 @@ local function setupPlayers()
 		local name, _, spec, teamId, allyTeamId = Spring.GetPlayerInfo(id)
 --		players[name] = { id = id, spec = spec, allyTeamId = allyTeamId }
 -- Spring.Echo('################## ' .. id .. " name " .. name .. " teamId " .. teamId .. " ally " .. allyTeamId)
-		incolors[name] = spec and incolors['#s'] or textColorizer(Spring.GetTeamColor(teamId))
+		incolors[name] = spec and incolors['#s'] or color2incolor(Spring.GetTeamColor(teamId))
 	end
 end
 
@@ -645,11 +693,20 @@ end
 
 function RemakeConsole()
 	setup()
-	stack_console:ClearChildren()
+	-- stack_console:ClearChildren() --disconnect from all children
+	for i=1, #stack_console.children do
+		stack_console.children[1]:Dispose() --dispose/disconnect all children (safer)
+	end
 	for i = 1, #messages do -- FIXME : messages collection changing while iterating (if max_lines option has been shrinked)
 		local msg = messages[i]
 		displayMessage(msg, true)
 	end	
+	-- set initial state for the chat, hide the dock for autohide
+	if (options.autohide.value) then
+		hideConsole()
+	else
+		showConsole()
+	end 
 end
 
 
@@ -657,27 +714,20 @@ end
 
 function widget:KeyPress(key, modifier, isRepeat)
 	if (key == KEYSYMS.RETURN) then
-		if not WG.enteringText then 
-			if noAlly then
-				firstEnter = false --skip the default-ally-chat initialization if there's no ally. eg: 1vs1
-			end
-			if firstEnter then
-				if (not (modifier.Shift or modifier.Ctrl)) and options.defaultAllyChat.value then
-					Spring.SendCommands("chatally")
-				end
-				firstEnter = false
-			end
-			WG.enteringText = true
-			if window_console.hidden and not visible then 
-				screen0:AddChild(window_console)
-				visible = true
-			end 
+
+		if noAlly then
+			firstEnter = false --skip the default-ally-chat initialization if there's no ally. eg: 1vs1
 		end
+		if firstEnter then
+			if (not (modifier.Shift or modifier.Ctrl)) and options.defaultAllyChat.value then
+				Spring.SendCommands("chatally")
+			end
+			firstEnter = false
+		end
+		WG.enteringText = true
+		showConsole()
 	else
-		if WG.enteringText then
-			WG.enteringText = false
-            return hideConsole()
-		end
+		WG.enteringText = false		
 	end 
 end
 
@@ -712,8 +762,13 @@ end
 
 -- new callin! will remain in widget
 function widget:AddConsoleMessage(msg)
+	if options.error_opengl_source.value and msg.msgtype == 'other' and (msg.argument):find('Error: OpenGL: source') then return end
+	if msg.msgtype == 'other' and (msg.argument):find('added point') then return end
+	
 	if ((msg.msgtype == "point" or msg.msgtype == "label") and options.dedupe_points.value or options.dedupe_messages.value)
 	and #messages > 0 and messages[#messages].text == msg.text then
+		-- update MapPoint position with most recent, as it is probably more relevant
+		messages[#messages].point = msg.point
 		messages[#messages].dup = messages[#messages].dup + 1
 		displayMessage(messages[#messages])
 		return
@@ -737,7 +792,8 @@ function widget:AddConsoleMessage(msg)
 	
 	-- TODO differentiate between children and messages (because some messages may be hidden, thus no associated children/TextBox)
 	while #messages > options.max_lines.value do
-		stack_console:RemoveChild(stack_console.children[1])
+		-- stack_console:RemoveChild(stack_console.children[1]) --disconnect children
+		stack_console.children[1]:Dispose() --dispose/disconnect children (safer)
 		table.remove(messages, 1)
 		--stack_console:UpdateLayout()
 	end
@@ -756,6 +812,11 @@ local timer = 0
 
 -- FIXME wtf is this obsessive function?
 function widget:Update(s)
+
+	if options.autohide.value and time_opened and (DiffTimers(GetTimer(), time_opened) > options.autohide_time.value) then
+		hideConsole()	
+	end
+
 	timer = timer + s
 	if timer > 2 then
 		timer = 0
@@ -801,21 +862,21 @@ function widget:Initialize()
 	end
 
 	screen0 = WG.Chili.Screen0
-
+	color2incolor = WG.Chili.color2incolor
+	
 	hideConsole = function()
-		if window_console.hidden and visible then
+		if visible then
 			screen0:RemoveChild(window_console)
 			visible = false
-			return true
+			time_opened = nil
 		end
-		return false
 	end
 
-	-- only used by Crude
 	showConsole = function()
 		if not visible then
 			screen0:AddChild(window_console)
 			visible = true
+			time_opened = GetTimer()
 		end
 	end
 	WG.chat.hideConsole = hideConsole
@@ -887,9 +948,11 @@ function widget:Initialize()
         selfImplementedMinimizable = 
             function (show)
                 if show then
-                    showConsole()
+					options.autohide.value = false
+					showConsole()
                 else
-                    hideConsole()
+					options.autohide.value = true
+					hideConsole()
                 end
             end,
 		minWidth = MIN_WIDTH,
@@ -899,7 +962,7 @@ function widget:Initialize()
 			scrollpanel1,
 			inputspace,
 		},
-		OnMouseDown = {
+		OnClick = {
 			function(self) --//click on scroll bar shortcut to "Settings/HUD Panels/Chat/Console".
 				local _,_, meta,_ = Spring.GetModKeyState()
 				if not meta then return false end
@@ -917,10 +980,7 @@ function widget:Initialize()
 	end
 	
 	Spring.SendCommands({"console 0"})
-	
-	screen0:AddChild(window_console)
-        visible = true
-	
+ 	
 	self:LocalColorRegister()
 end
 

@@ -9,8 +9,8 @@ function widget:GetInfo()
     date      = "2011-03-16", --2013-June-30
     license   = "GNU GPL, v2 or later",
     layer     = 1002,
-	handler   = true,
-    enabled   = false,
+    handler   = true,
+    enabled   = true,
   }
 end
 
@@ -350,12 +350,12 @@ options = {
 		OnChange = function(self)
 			local selUnits = Spring.GetSelectedUnits()
 			if selUnits and selUnits[1] and thirdPerson_trackunit ~= selUnits[1] then --check if 3rd Person into same unit or if there's any unit at all
-				Spring.SendCommands("track")
+				--Spring.SendCommands("track")
 				--Spring.SendCommands("viewfps")
 				thirdPerson_trackunit = selUnits[1]
 				TrackUnit(thirdPerson_trackunit)
 			else
-				Spring.SendCommands("trackoff")
+				--Spring.SendCommands("trackoff")
 				thirdPerson_trackunit = nil
 				--Spring.SendCommands("viewfree")
 			end
@@ -413,6 +413,7 @@ local spGetUnitPosition		= Spring.GetUnitPosition
 local spGetUnitViewPosition	= Spring.GetUnitViewPosition
 local spGetUnitDirection	= Spring.GetUnitDirection
 local spGetUnitVelocity		= Spring.GetUnitVelocity
+local spGetUnitRadius		= Spring.GetUnitRadius
 local spIsAboveMiniMap		= Spring.IsAboveMiniMap
 local spSendCommands		= Spring.SendCommands
 local spSetCameraState		= Spring.SetCameraState
@@ -446,7 +447,7 @@ local helpText = {}
 local ls_x, ls_y, ls_z --lockspot position
 local ls_dist, ls_have, ls_onmap --lockspot flag
 local tilting
-local overview_mode, last_rx, last_ls_dist --overview_mode's variable
+local overview_mode, last_rx, last_ls_dist = false, nil, nil --overview_mode's variable
 local follow_timer = 0
 local epicmenuHkeyComp = {} --for saving & reapply hotkey system handled by epicmenu.lua
 
@@ -469,8 +470,8 @@ local HALFPI		= PI/2
 local HALFPIMINUS	= HALFPI-0.01
 local RADperDEGREE = PI/180
 
-local CAM_TRACK_PERIOD = 0.01
-local OVERVIEW_DISTICON = 150
+local CAM_TRACK_PERIOD = 0.001
+local OVERVIEW_DISTICON = 100
 
 local fpsmode = false
 local mx, my = 0,0
@@ -519,7 +520,7 @@ do
 end
 
 local trackCam = {dist = 200, heading = PI, pitch = 0}
-local trackCamOverview = {dist = 1500, heading = PI, pitch = PI*0.7}
+local trackCamOverview = {dist = 1500, heading = PI, pitch = PI*0.35}
 
 local origIconDistance = Spring.GetConfigInt("UnitIconDist", 150)
 
@@ -730,7 +731,10 @@ local function VirtTraceRay(x,y, cs, useWater)
 	return false, gx, gy, gz
 end
 
-local function SetLockSpot2(cs, x, y, useWater) --set an anchor on the ground for camera rotation 
+local function SetLockSpot2(cs, x, y, useWater) --set an anchor on the ground for camera rotation
+	if not useWater then
+	  useWater = true
+	end
 	if ls_have then --if lockspot is locked
 		return
 	end
@@ -759,7 +763,6 @@ local function UpdateCam(cs)
 	local cs = cs
 	if not (cs.rx and cs.ry and ls_dist) then
 		--return cs
-		Spring.Echo("wtf")
 		return false
 	end
 	
@@ -785,7 +788,7 @@ local function Zoom(zoomin, shift, forceCenter)
 	((zoomin and options.zoomintocursor.value) or ((not zoomin) and options.zoomoutfromcursor.value)) --zoom to cursor or zoom-out from cursor
 	then
 		
-		local onmap, gx,gy,gz = VirtTraceRay(mx, my, cs)
+		local onmap, gx,gy,gz = VirtTraceRay(mx, my, cs, true)
 		
 		if gx then
 			dx = gx - cs.px
@@ -887,19 +890,19 @@ options.resetcam.OnChange = ResetCam
 
 -- TRACK UNIT
 local baseDelta = 1
-TrackUnit = function(unitID)
+TrackUnit = function(unitID, instant)
 	--spSendCommands("viewta")
 	local paused = select(3, spGetGameSpeed())
 	local cam = {}
 	local oldcam = spGetCameraState()
-	local tx, ty, tz = spGetUnitViewPosition(unitID, true)
+	--local _, _, _, tx, ty, tz = spGetUnitPosition(unitID, true)
+	local tx, ty, tz = spGetUnitViewPosition(unitID)
 	--local vx, vy, vz = spGetUnitDirection(unitID)
 	--local rotX, rotY, rotZ = GetRotationFromVector(vx, vy, vz)
-	--local oldcam = cam
 	local velocity = {spGetUnitVelocity(unitID)}
-	--x = x + p.velocity[1]*Game.gameSpeed
-	--y = y + p.velocity[2]*Game.gameSpeed
-	--z = z + p.velocity[3]*Game.gameSpeed
+	--tx = tx + velocity[1]*Game.gameSpeed*2/3
+	--ty = ty + velocity[2]*Game.gameSpeed*2/3
+	--tz = tz + velocity[3]*Game.gameSpeed*2/3
 	
 	local tcam = overview_mode and trackCamOverview or trackCam
 	
@@ -914,6 +917,9 @@ TrackUnit = function(unitID)
 	local dist = tcam.dist
 	local pitch = tcam.pitch -- + (overview_mode and 0 or rotX)
 	local yaw = tcam.heading -- + (overview_mode and 0 or rotY)
+	
+	local radius = spGetUnitRadius(unitID) * 1.2 + 50
+	if dist < radius then dist = radius end
 	
 	if overview_mode then
 		--yaw = 0
@@ -941,11 +947,21 @@ TrackUnit = function(unitID)
 	cam.rx = 0-pitch
 	cam.ry = yaw
 	cam.rz = thirdPerson_roll
+	cam.vx = velocity[1]
+	cam.vy = velocity[2]
+	cam.vz = velocity[3]
 	
 	local delta = (((cam.px - oldcam.px)^2 + (cam.py - oldcam.py)^2 + (cam.pz - oldcam.pz)^2)^0.5)
-	--Spring.Echo(cam.px, cam.py, cam.pz, cam.rx, cam.ry, cam.rz)
-	if delta <= 0 then delta = 0 end --CAM_TRACK_PERIOD end
-	spSetCameraState(cam, 0.2)
+	delta = delta / 1000
+	--if delta <= 0.15 then delta = 0 end --CAM_TRACK_PERIOD end
+	
+	--for i,v in pairs(cam) do
+	--  if oldcam[i] == v then
+	--    cam[i] = nil
+	--  end
+	--end
+	
+	spSetCameraState(cam, instant and 0 or delta)
 	--Spring.SetCameraTarget(cam.px, cam.py, cam.pz, 0.5)
 end
 
@@ -984,7 +1000,7 @@ OverviewAction = function()
 		else
 			local cs = spGetCameraState()
 			mx, my = spGetMouseState()
-			local onmap, gx, gy, gz = VirtTraceRay(mx,my,cs) --create a lockstop point.
+			local onmap, gx, gy, gz = VirtTraceRay(mx,my,cs,true) --create a lockstop point.
 			if gx then --Note:  Now VirtTraceRay can extrapolate coordinate in null space (no need to check for onmap)
 				local cs = spGetCameraState()			
 				cs.rx = last_rx
@@ -1199,7 +1215,6 @@ local function PeriodicWarning()
 	end
 end
 --==End camera control function^^ (functions that actually do camera control)
-
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local updateTimer = 0
@@ -1207,11 +1222,10 @@ local wantReturnCam = false
 function widget:Update(dt)
 	local framePassed = math.ceil(dt/0.0333) --estimate how many gameframe would've passes based on difference in time??
 	updateTimer = updateTimer + dt
+	if thirdPerson_trackunit then
+		TrackUnit(thirdPerson_trackunit)
+	end
 	if updateTimer >= CAM_TRACK_PERIOD then
-		if thirdPerson_trackunit then
-			TrackUnit(thirdPerson_trackunit)
-		end
-		
 		local command = spGetActiveCommand()
 		if command ~= 0 and not overview_mode then
 			wantReturnCam = true
@@ -1223,8 +1237,8 @@ function widget:Update(dt)
 		updateTimer = 0
 	end
 	if hideCursor then
-        spSetMouseCursor('%none%')
-    end
+		spSetMouseCursor('%none%')
+	end
 	
 	--//HANDLE TIMER FOR VARIOUS SECTION
 	--timer to block tracking when using mouse
@@ -1516,6 +1530,8 @@ function widget:MousePress(x, y, button) --called once when pressed, not repeate
 	local a,c,m,s = spGetModKeyState()
 	
 	if thirdPerson_trackunit then
+		msx = cx
+		msy = cy
 		rotate = true
 		return true
 	end
@@ -1562,13 +1578,13 @@ function widget:MousePress(x, y, button) --called once when pressed, not repeate
 		rotate_transit = nil
 		if options.targetmouse.value then --if rotate world at mouse cursor: 
 			
-			local onmap, gx, gy, gz = VirtTraceRay(x,y, cs)
+			local onmap, gx, gy, gz = VirtTraceRay(x,y, cs,true)
 			if gx then  --Note: we don't block offmap position since VirtTraceRay() now work for offmap position.
 				SetLockSpot2(cs,x,y) --lockspot at cursor position
 				spSetCameraTarget(gx,gy,gz, 1) 
 				
 				--//update "ls_dist" with value from mid-screen's LockSpot because rotation is centered on mid-screen and not at cursor//--
-				_,gx,gy,gz = VirtTraceRay(cx,cy,cs) --get ground position traced from mid of screen
+				_,gx,gy,gz = VirtTraceRay(cx,cy,cs,true) --get ground position traced from mid of screen
 				local dx,dy,dz = gx-cs.px, gy-cs.py, gz-cs.pz
 				ls_dist = sqrt(dx*dx + dy*dy + dz*dz) --distance to ground 
 				
@@ -1843,13 +1859,22 @@ function widget:Initialize()
 	if WG.SetWidgetOption then
 		WG.SetWidgetOption("Settings/Camera","Settings/Camera","Camera Type","COFC") --tell epicmenu.lua that we select COFC as our default camera (since we enabled it!)
 	end
-	OverviewAction()
+	--OverviewAction()
 	
-	WG.GetThirdPersonTrackUnit = function() return thirdPerson_trackunit end
-	WG.SetThirdPersonTrackUnit = function(unitID)
-	  thirdPerson_trackunit = unitID
-	  TrackUnit(unitID)
-	end
+	WG.COFC = {
+	  GetThirdPersonTrackUnit = function() return thirdPerson_trackunit end,
+	  SetThirdPersonTrackUnit = function(unitID, instant)
+	    thirdPerson_trackunit = unitID
+	    TrackUnit(unitID, instant)
+	  end,
+	  SetThirdPersonTrackParams = function(params)
+	    local tcam = overview_mode and trackCamOverview or trackCam
+	    tcam.dist = params.dist or tcam.dist
+	    tcam.heading = params.heading or tcam.heading
+	    tcam.pitch = params.pitch or tcam.pitch
+	  end,
+	  IsOverviewMode = function() return overview_mode end,
+	}
 end
 
 function widget:Shutdown()
@@ -1868,8 +1893,7 @@ function widget:Shutdown()
 		WG.crude.SetHotkey("mousestate",epicmenuHkeyComp[4])
 	end
 	
-	WG.GetThirdPersonTrackUnit = nil
-	WG.SetThirdPersonTrackUnit = nil
+	WG.COFC = nil
 end
 
 function widget:TextCommand(command)
@@ -1940,6 +1964,7 @@ local groupNumber = {
 	[KEYSYMS.N_7] = 7,
 	[KEYSYMS.N_8] = 8,
 	[KEYSYMS.N_9] = 9,
+	[KEYSYMS.N_0] = 0,
 }
 
 function GroupRecallFix(key, modifier, isRepeat)
@@ -1949,78 +1974,22 @@ function GroupRecallFix(key, modifier, isRepeat)
 			group = groupNumber[key]	
 		end
 		if (group ~= nil) then
-			local selectedUnit = spGetSelectedUnits()
+			local selectedUnits = spGetSelectedUnits()
 			local groupCount = spGetGroupList() --get list of group with number of units in them
-			if groupCount[group] ~= #selectedUnit then
+			if groupCount[group] ~= #selectedUnits then
 				return false
 			end
-			for i=1,#selectedUnit do
-				local unitGroup = spGetUnitGroup(selectedUnit[i])
+			for i=1,#selectedUnits do
+				local unitGroup = spGetUnitGroup(selectedUnits[i])
 				if unitGroup~=group then
 					return false
 				end
 			end
-			if previousKey == key and (spDiffTimers(spGetTimer(),previousTime) > 2) then
-				currentIteration = 0 --reset cycle if delay between 2 similar tap took too long.
-			end
-			previousKey = key
-			previousTime = spGetTimer()
-			
-			if options.enableCycleView.value and WG.recvIndicator then 
-				local slctUnitUnordered = {}
-				for i=1 , #selectedUnit do
-					local unitID = selectedUnit[i]
-					local x,y,z = spGetUnitPosition(unitID)
-					slctUnitUnordered[unitID] = {x,y,z}
-				end
-				selectedUnit = nil
-				local cluster, lonely = WG.recvIndicator.OPTICS_cluster(slctUnitUnordered, 600,2, Spring.GetMyTeamID(),300) --//find clusters with atleast 2 unit per cluster and with at least within 300-elmo from each other with 600-elmo detection range
-				if previousGroup == group then
-					currentIteration = currentIteration +1
-					if currentIteration > (#cluster + #lonely) then
-						currentIteration = 1
-					end
-				else
-					currentIteration = 1
-				end
-				if currentIteration <= #cluster then
-					local sumX, sumY,sumZ, unitCount,meanX, meanY, meanZ = 0,0 ,0 ,0 ,0,0,0
-					for unitIndex=1, #cluster[currentIteration] do
-						local unitID = cluster[currentIteration][unitIndex]
-						local x,y,z= slctUnitUnordered[unitID][1],slctUnitUnordered[unitID][2],slctUnitUnordered[unitID][3] --// get stored unit position
-						sumX= sumX+x
-						sumY = sumY+y
-						sumZ = sumZ+z
-						unitCount=unitCount+1
-					end
-					meanX = sumX/unitCount --//calculate center of cluster
-					meanY = sumY/unitCount
-					meanZ = sumZ/unitCount
-					Spring.SetCameraTarget(meanX, meanY, meanZ,0.5)
-				else
-					local unitID = lonely[currentIteration-#cluster]
-					local x,y,z= slctUnitUnordered[unitID][1],slctUnitUnordered[unitID][2],slctUnitUnordered[unitID][3] --// get stored unit position
-					Spring.SetCameraTarget(x,y,z,0.5)
-				end
-				cluster=nil
-				slctUnitUnordered = nil
-			else --conventional method:
-				local sumX, sumY,sumZ, unitCount,meanX, meanY, meanZ = 0,0 ,0 ,0 ,0,0,0
-				for i=1, #selectedUnit do
-					local unitID = selectedUnit[i]
-					local x,y,z= spGetUnitPosition(unitID)
-					sumX= sumX+x
-					sumY = sumY+y
-					sumZ = sumZ+z
-					unitCount=unitCount+1
-				end
-				meanX = sumX/unitCount --//calculate center
-				meanY = sumY/unitCount
-				meanZ = sumZ/unitCount
-				Spring.SetCameraTarget(meanX, meanY, meanZ,0.5) --is overriden by Spring.SetCameraTarget() at cache.lua.
-			end
-			previousGroup= group
+			local unitID = selectedUnits[math.random(1,#selectedUnits)]
+			thirdPerson_trackunit = unitID
+			TrackUnit(unitID, false)
 			return true
 		end
+		return false
 	end
 end

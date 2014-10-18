@@ -1,9 +1,9 @@
 function widget:GetInfo()
   return {
     name      = "EPIC Menu",
-    desc      = "v1.321 Extremely Powerful Ingame Chili Menu.",
+    desc      = "v1.431 Extremely Powerful Ingame Chili Menu.",
     author    = "CarRepairer",
-    date      = "2009-06-02", --2013-06-30
+    date      = "2009-06-02", --2014-05-3
     license   = "GNU GPL, v2 or later",
     layer     = -100001,
     handler   = true,
@@ -37,6 +37,7 @@ local max = math.max
 local echo = Spring.Echo
 
 --------------------------------------------------------------------------------
+local isMission = Game.modDesc:find("Mission Mutator")
 
 -- Config file data
 local keybind_file, defaultkeybinds, defaultkeybind_date, confdata
@@ -46,7 +47,6 @@ do
 	confdata = VFS.Include(file, nil, VFS.RAW_FIRST)
 	--assign keybind file:
 	keybind_file = LUAUI_DIRNAME .. 'Configs/' .. Game.modShortName:lower() .. '_keys.lua' --example: zk_keys.lua
-	local isMission = Game.modDesc:find("Mission Mutator")
 	if isMission then
 		--FIXME: find modname instead of using hardcoded mission_keybinds_file name
 		keybind_file = (confdata.mission_keybinds_file and LUAUI_DIRNAME .. 'Configs/' .. confdata.mission_keybinds_file) or keybind_file --example: singleplayer_keys.lua
@@ -64,10 +64,13 @@ local epic_options = confdata.eopt
 local color = confdata.color
 local title_text = confdata.title
 local title_image = confdata.title_image
+local subMenuIcons = confdata.subMenuIcons  
 local useUiKeys = false
+
 --file_return = nil
 
 local custom_cmd_actions = select(9, include("Configs/integral_menu_commands.lua"))
+
 
 --------------------------------------------------------------------------------
 
@@ -78,6 +81,7 @@ local Label
 local Colorbars
 local Checkbox
 local Window
+local Panel
 local ScrollPanel
 local StackPanel
 local LayoutPanel
@@ -93,6 +97,7 @@ local screen0
 -- Global chili controls
 local window_crude 
 local window_exit
+local window_exit_confirm
 local window_flags
 local window_help
 local window_getkey
@@ -105,6 +110,7 @@ local explodeSearchTerm = {text="", terms={}} -- store exploded "filterUserInser
 --------------------------------------------------------------------------------
 -- Misc
 local B_HEIGHT = 26
+local B_WIDTH_TOMAINMENU = 80 --100 --160
 local C_HEIGHT = 16
 
 local scrH, scrW = 0,0
@@ -176,6 +182,27 @@ local transkey = {
 	kp7				= 'numpad7',
 	kp8				= 'numpad8',
 	kp9				= 'numpad9',
+	
+
+    -- for french keyboard
+	--groupping
+		ampersand               = '&',
+		world_73                = '0x0e9',
+		quotedbl                = '"',
+		leftparen               = '(',
+		minus                   = '-',
+		world_72                = '0x0e8',
+		underscore              = '_',
+		world_71                = '0x0e7',
+		world_64                = '0x0e0',
+	
+	--other
+		leftparen               = ')', 
+		world_89				= '0x0f9',
+		dollar					= '$',
+		asterisk                = '*',
+
+
 }
 
 local wantToReapplyBinding = false
@@ -198,6 +225,7 @@ local settings = {
 	widgets = {},
 	show_crudemenu = true,
 	music_volume = 0.5,
+	showAdvanced = false,
 }
 
 
@@ -549,19 +577,51 @@ local function WidgetEnabled(wname)
 	local order = widgetHandler.orderList[wname]
 	return order and (order > 0)
 end
-			
+
+local function AmIPlayingAlone() --I am playing and playing alone with no other player existing
+	if Spring.GetSpectatingState() then
+		return false
+	end
+	local playerlist = Spring.GetPlayerList() or {}
+	local myPlayerID = Spring.GetMyPlayerID()
+ 	for i=1, #playerlist do
+		local playerID = playerlist[i]
+		if myPlayerID ~= playerID then
+			local _,active,spectator = Spring.GetPlayerInfo(playerID)
+			if active and not spectator then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+local function PlayingButNoTeammate() --I am playing and playing alone with no teammate
+	if Spring.GetSpectatingState() then
+		return false
+	end
+	local myAllyTeamID = Spring.GetMyAllyTeamID() -- get my alliance ID
+	local teams = Spring.GetTeamList(myAllyTeamID) -- get list of teams in my alliance
+	if #teams == 1 then -- if I'm alone and playing (no ally)
+		return true
+	end
+	return false
+end
 
 -- Kill submenu window
-local function KillSubWindow()
+local function KillSubWindow(makingNew)
 	if window_sub_cur then
-		if window_sub_cur then
-			settings.sub_pos_x = window_sub_cur.x
-			settings.sub_pos_y = window_sub_cur.y
-		end
+		settings.sub_pos_x = window_sub_cur.x
+		settings.sub_pos_y = window_sub_cur.y
 		window_sub_cur:Dispose()
 		window_sub_cur = nil
 		curPath = ''
-		
+		if not makingNew and AmIPlayingAlone() then
+			local paused = select(3, Spring.GetGameSpeed())
+			if paused then
+				spSendCommands("pause")
+			end
+		end
 	end
 end
 
@@ -573,6 +633,16 @@ local function checkWidget(widget)
 end
 
 
+local function SetLangFontConf()
+	if VFS.FileExists("Luaui/Configs/nonlatin/"..WG.lang..".lua", VFS.ZIP) then
+		WG.langFontConf = include("Configs/nonlatin/"..WG.lang..".lua")
+		WG.langFont = WG.langFontConf.font
+	else
+		WG.langFont = nil
+		WG.langFontConf = nil
+	end
+end
+
 local function SetCountry(self) 
 	echo('Setting country: "' .. self.country .. '" ') 
 	
@@ -580,6 +650,8 @@ local function SetCountry(self)
 	settings.country = self.country
 	
 	WG.lang = self.countryLang 
+	SetLangFontConf()
+	
 	settings.lang = self.countryLang
 	
 	if img_flag then
@@ -613,6 +685,7 @@ local function MakeFlags()
 		pl='pl',
 		pt='pt',
 		pr='es',
+		ru='ru',
 	}
 
 	local flagChildren = {}
@@ -626,7 +699,7 @@ local function MakeFlags()
 		width='50%',
 		textColor = color.sub_button_fg,
 		backgroundColor = color.sub_button_bg, 
-		OnMouseUp = { SetCountry }  
+		OnClick = { SetCountry }  
 	}
 	
 
@@ -643,7 +716,7 @@ local function MakeFlags()
 			backgroundColor = color.sub_button_bg,
 			country = country,
 			countryLang = countryLang,
-			OnMouseUp = { SetCountry } 
+			OnClick = { SetCountry } 
 		}
 	end
 	local window_height = 300
@@ -675,7 +748,7 @@ local function MakeFlags()
 			--close button
 			Button:New{ caption = 'Close',  x=10, y=0-B_HEIGHT, bottom=5, right=5,
 				name = 'makeFlagCloseButton';
-				OnMouseUp = { function(self) window_flags:Dispose(); window_flags = nil; end },  
+				OnClick = { function(self) window_flags:Dispose(); window_flags = nil; end },  
 				width=window_width-20, backgroundColor = color.sub_close_bg, textColor = color.sub_close_fg,
 				},
 		}
@@ -706,7 +779,7 @@ local function MakeHelp(caption, text)
 				}
 			},
 			--Close button
-			Button:New{ caption = 'Close', OnMouseUp = { function(self) self.parent:Dispose() end }, x=10, bottom=1, right=50, height=B_HEIGHT,
+			Button:New{ caption = 'Close', OnClick = { function(self) self.parent:Dispose() end }, x=10, bottom=1, right=50, height=B_HEIGHT,
 			name = 'makeHelpCloseButton';
 			backgroundColor = color.sub_close_bg, textColor = color.sub_close_fg, },
 		}
@@ -855,7 +928,7 @@ local function CreateOptionAction(path, option)
 			option.OnChange({checked=newval})
 			
 			if path == curPath then
-				MakeSubWindow(path)
+				MakeSubWindow(path, false)
 			end
 		end
 	end
@@ -942,27 +1015,39 @@ local function AddOption(path, option, wname ) --Note: this is used when loading
 	if not wname then
 		wname = path
 	end
-
+	
 	local path2 = path
 	if not option then
 		if not pathoptions[path] then
 			pathoptions[path] = {}
 		end
+		
+		-- must be before path var is changed
+		local icon = subMenuIcons[path]
+		--[[
+		if subMenuIcons[path] then 
+			icon = subMenuIcons[path] 
+		end
+		--]]
 		local pathexploded = explode('/',path)
 		local pathend = pathexploded[#pathexploded]
 		pathexploded[#pathexploded] = nil
-		path = table.concat(pathexploded, '/')
-		
+		path = table.concat(pathexploded, '/')--Example = if path2 is "Game", then current path became ""
+
 		option = {
 			type='button',
 			name=pathend .. '...',
+			icon = icon,
 			OnChange = function(self)
-				MakeSubWindow(path2)  --this made this button open another menu
+				MakeSubWindow(path2, false)  --this made this button open another menu
 			end,
 			desc=path2,
 		}
+		
+		if path == '' and path2 == '' then --prevent adding '...' button on '' (Main Menu)
+			return
+		end
 	end
-	
 	if not pathoptions[path] then
 		AddOption( path )
 	end
@@ -1078,7 +1163,7 @@ local function AddOption(path, option, wname ) --Note: this is used when loading
 				settings.config[fullkey] = option.value
 				
 				if (path == curPath) or key.isSearchWindow then --search window always show options in wrong path, but we will refresh the window it anyway using "isSearchWindow" flag
-					MakeSubWindow(curPath) --remake window to update the buttons' visuals when pressed
+					MakeSubWindow(curPath, false) --remake window to update the buttons' visuals when pressed
 				end
 			end			
 	end
@@ -1205,7 +1290,7 @@ local function IntegrateWidget(w, addoptions, index)
 	end
 	
 	local wname = w.whInfo.name
-	local defaultpath = w.options_path or ('Settings/Misc/' .. wname)
+	local defaultpath =  w.options_path or ('Settings/Misc/' .. wname)
 	
 	
 	--[[
@@ -1315,7 +1400,9 @@ local function IntegrateWidget(w, addoptions, index)
 		
 	end
 	
-	MakeSubWindow(curPath)
+	if window_sub_cur then 
+		MakeSubWindow(curPath, false)
+	end
 	
 	
 	--ReApplyKeybinds() --reapply keybinds when widget load/removed (incase widget alter keybinds)
@@ -1401,7 +1488,7 @@ local function GetHotkeyData(path, option)
 end
 
 --Make a stack with control and its hotkey button
-local function MakeHotkeyedControl(control, path, option)
+local function MakeHotkeyedControl(control, path, option, icon)
 
 	local hotkeystring = GetHotkeyData(path, option)
 	local kbfunc = function() 
@@ -1414,36 +1501,44 @@ local function MakeHotkeyedControl(control, path, option)
 	local hklength = math.max( hotkeystring:len() * 10, 20)
 	local control2 = control
 	control.x = 0
+	if icon then
+		control.x = 20
+	end
 	control.right = hklength+2 --room for hotkey button on right side?
 	control:DetectRelativeBounds()
 	
 	local hkbutton = Button:New{
 		name = option.wname .. ' hotKeyButton';
 		minHeight = 30,
-		--right=0, --Note: uncommenting this entry cause hotkey-button's position to overlap with control-button's position. It happen after Chili merge/update (???)
+		right=0,
 		width = hklength,
-		--x=-30,
 		caption = hotkeystring, 
-		OnMouseUp = { kbfunc },
+		OnClick = { kbfunc },
 		backgroundColor = color.sub_button_bg,
 		textColor = color.sub_button_fg, 
 		tooltip = 'Hotkey: ' .. hotkeystring,
 	}
 	
-	return StackPanel:New{
+	local children = {}
+	if icon then
+		local iconImage = Image:New{ file= icon, width = 16,height = 16, }
+		children = { iconImage, }
+	end
+	children[#children+1] = control
+	children[#children+1] = hkbutton
+	
+	return Panel:New{
 		width = "100%",
 		orientation='horizontal',
 		resizeItems = false,
 		centerItems = false,
 		autosize = true,
+		backgroundColor = {0, 0, 0, 0},
 		itemMargin = {0,0,0,0},
 		margin = {0,0,0,0},
-		itemPadding = {2,0,-hklength-2,0}, --{left,top,right,bottom}. Note: removing -hklength-2 padding causes wide empty space to appear between control-buttons and hotkey-buttons. This happen after Chili update/merge (???)
+		itemPadding = {0,0,0,0}, 
 		padding = {0,0,0,0},
-		children={
-			control2,
-			hkbutton
-		},
+		children=children,
 	}
 end
 
@@ -1483,8 +1578,10 @@ end
 --]]
 
 -- Make submenu window based on index from flat window list
---local function MakeSubWindow(key)
-MakeSubWindow = function(path)
+MakeSubWindow = function(path, pause)
+	if pause == nil then
+		pause = true
+	end
 	
 	if not pathoptions[path] then 
 		return 
@@ -1505,6 +1602,8 @@ MakeSubWindow = function(path)
 	local tree_children = {}
 	local hotkeybuttons = {}
 	
+	local root = path == ''
+	
 	for _,elem in ipairs(pathoptions[path]) do
 		local option = elem[2]
 
@@ -1519,7 +1618,8 @@ MakeSubWindow = function(path)
 		end
 		
 		
-		if option.advanced and not settings.config['epic_Settings_Show_Advanced_Settings'] then
+		--if option.advanced and not settings.config['epic_Settings_Show_Advanced_Settings'] then
+		if option.advanced and not settings.showAdvanced then
 			--do nothing
 		elseif option.type == 'button' then
 			local hide = false
@@ -1533,17 +1633,25 @@ MakeSubWindow = function(path)
 			end
 			
 			if not hide then
+				local disabled = option.DisableFunc and option.DisableFunc()
+				local icon = option.icon
 				local button = Button:New{
 					name = option.wname .. " " .. option.name;
 					x=0,
-					--right = 30,
-					minHeight = 30,
+					minHeight = root and 36 or 30,
 					caption = option.name, 
 					OnClick = {option.OnChange},
-					backgroundColor = color.sub_button_bg,
-					textColor = color.sub_button_fg, 
-					tooltip = option.desc
+					backgroundColor = disabled and color.disabled_bg or {1, 1, 1, 1},
+					textColor = disabled and color.disabled_fg or color.sub_button_fg, 
+					tooltip = option.desc,
+					
+					padding={2,2,2,2},
 				}
+				
+				if icon then
+					local width = root and 24 or 16
+					Image:New{ file= icon, width = width, height = width, parent = button, x=4,y=4,  }
+				end
 				tree_children[#tree_children+1] = MakeHotkeyedControl(button, path, option)
 			end
 			
@@ -1557,7 +1665,7 @@ MakeSubWindow = function(path)
 					width = "100%",
 					minHeight = 30,
 					caption = option.name, 
-					OnMouseUp = { function() MakeHelp(option.name, option.value) end },
+					OnClick = { function() MakeHelp(option.name, option.value) end },
 					backgroundColor = color.sub_button_bg,
 					textColor = color.sub_button_fg, 
 					tooltip=option.desc
@@ -1570,7 +1678,7 @@ MakeSubWindow = function(path)
 				caption = option.name, 
 				checked = option.value or false, 
 				
-				OnMouseUp = { option.OnChange, }, 
+				OnClick = { option.OnChange, }, 
 				textColor = color.sub_fg, 
 				tooltip   = option.desc,
 			}
@@ -1578,7 +1686,22 @@ MakeSubWindow = function(path)
 			
 		elseif option.type == 'number' then	
 			settings_height = settings_height + B_HEIGHT
-			tree_children[#tree_children+1] = Label:New{ caption = option.name, textColor = color.sub_fg, }
+			local icon = option.icon
+			if icon then
+				tree_children[#tree_children+1] = Panel:New{
+					backgroundColor = {0,0,0,0},
+					padding = {0,0,0,0},
+					margin = {0,0,0,0},
+					--itemMargin = {2,2,2,2},
+					autosize = true,
+					children = {
+						Image:New{ file= icon, width = 16,height = 16, x=4,y=0,  },
+						Label:New{ caption = option.name, textColor = color.sub_fg, x=20,y=0,  },
+					}
+				}
+			else
+				tree_children[#tree_children+1] = Label:New{ caption = option.name, textColor = color.sub_fg, }
+			end
 			if option.valuelist then
 				option.value = GetIndex(option.valuelist, option.value)
 			end
@@ -1591,7 +1714,7 @@ MakeSubWindow = function(path)
 					min=option.min or 0, 
 					max=option.max or 100, 
 					step=option.step or 1, 
-					OnMouseUp = { option.OnChange }, 
+					OnMouseup = { option.OnChange }, --using onchange triggers repeatedly during slide
 					tooltip=option.desc,
 					--useValueTooltip=true,
 				}
@@ -1606,7 +1729,7 @@ MakeSubWindow = function(path)
 						name = option.wname .. " " .. item.name;
 						width = "100%",
 						caption = item.name, 
-						OnMouseUp = { function(self) option.OnChange(item.key) end },
+						OnClick = { function(self) option.OnChange(item.key) end },
 						backgroundColor = color.sub_button_bg,
 						textColor = color.sub_button_fg, 
 						tooltip=item.desc,
@@ -1627,16 +1750,19 @@ MakeSubWindow = function(path)
 				item.desc = option.items[i].desc --is needed for checkbox tooltip
 				item.OnChange = function() option.OnChange(item.key) end --encapsulate OnChange() with a fixed input (item.key). Is needed for Hotkey
 				settings_height = settings_height + B_HEIGHT
-				tree_children[#tree_children+1] = MakeHotkeyedControl(
-					Checkbox:New{
-						x=0,
-						right = 35,
-						caption = item.name, 
-						checked = (option.value == item.key), 
-						OnMouseUp = {function(self) option.OnChange(item.key) end},
-						textColor = color.sub_fg,
-						tooltip=item.desc,
-					}, path, item)
+				
+				local cb = Checkbox:New{
+					--x=0,
+					right = 35,
+					caption = item.name, 
+					checked = (option.value == item.key), 
+					OnClick = {function(self) option.OnChange(item.key) end},
+					textColor = color.sub_fg,
+					tooltip=item.desc,
+				}
+				local icon = option.items[i].icon
+				tree_children[#tree_children+1] = MakeHotkeyedControl( cb, path, item, icon)
+					
 			end			
 		elseif option.type == 'colors' then
 			settings_height = settings_height + B_HEIGHT*2.5
@@ -1647,7 +1773,7 @@ MakeSubWindow = function(path)
 					height = B_HEIGHT*2,
 					tooltip=option.desc,
 					color = option.value or {1,1,1,1},
-					OnMouseUp = { option.OnChange, },
+					OnClick = { option.OnChange, },
 				}
 				
 		end
@@ -1687,28 +1813,85 @@ MakeSubWindow = function(path)
 	
 	window_height = window_height + B_HEIGHT
 	
+	local buttonBar = Grid:New{
+		x=0;bottom=0;
+		right=10,height=B_HEIGHT,
+		columns = 4,
+		padding = {0, 0, 0, 0},
+		itemMargin = {0, 0, 0, 0}, --{1, 1, 1, 1},
+		autosize = true,
+		resizeItems = true,
+		centerItems = false,
+	}
+	
+	window_children[#window_children+1] = Checkbox:New{ 
+		--x=0,
+		width=180;
+		right = 5,
+		bottom=B_HEIGHT;
+		
+		caption = 'Show Advanced Settings', 
+		checked = settings.showAdvanced, 
+		OnChange = { function(self)
+			settings.showAdvanced = not self.checked
+			RemakeEpicMenu()
+		end }, 
+		textColor = color.sub_fg, 
+		tooltip   = 'For experienced users only.',
+	}
+	
+	window_children[#window_children+1] = buttonBar
+	
 	--back button
 	if parent_path then
-		window_children[#window_children+1] = Button:New{ name= 'backButton', caption = 'Back', OnMouseUp = { KillSubWindow, function() MakeSubWindow(parent_path) end,  }, 
-			backgroundColor = color.sub_back_bg,textColor = color.sub_back_fg, x=0, bottom=1, width='33%', height=B_HEIGHT, }
+		Button:New{ name= 'backButton', caption = '', OnClick = { KillSubWindow, function() MakeSubWindow(parent_path, false) end,  }, 
+			backgroundColor = color.sub_back_bg,textColor = color.sub_back_fg, height=B_HEIGHT,
+			padding= {2,2,2,2},
+			parent = buttonBar;
+			children = {
+				Image:New{ file= LUAUI_DIRNAME  .. 'images/epicmenu/arrow_left.png', width = 16,height = 16, parent = button, x=4,y=2,  },
+				Label:New{ caption = 'Back',x=24,y=4, }
+			}
+		}
 	end
 	
+	--search button
+	Button:New{ name= 'searchButton', caption = '',
+		OnClick = { function() spSendCommands("chat","PasteText /search:" ) end }, 
+		textColor = color.sub_close_fg, backgroundColor = color.sub_close_bg, height=B_HEIGHT,
+		padding= {2,2,2,2},parent = buttonBar;
+		children = {
+			Image:New{ file= LUAUI_DIRNAME  .. 'images/epicmenu/find.png', width = 16,height = 16, parent = button, x=4,y=2,  },
+			Label:New{ caption = 'Search',x=24,y=4, }
+		}
+	}
 	
 	--reset button
-	window_children[#window_children+1] = Button:New{ name= 'resetButton', caption = 'Reset', OnMouseUp = { function() ResetWinSettings(path); RemakeEpicMenu(); end }, 
-		textColor = color.sub_close_fg, backgroundColor = color.sub_close_bg, width='33%', x='33%', right='33%', bottom=1, height=B_HEIGHT, }
-	
+	Button:New{ name= 'resetButton', caption = '',
+		OnClick = { function() ResetWinSettings(path); RemakeEpicMenu(); end }, 
+		textColor = color.sub_close_fg, backgroundColor = color.sub_close_bg, height=B_HEIGHT,
+		padding= {2,2,2,2}, parent = buttonBar;
+		children = {
+			Image:New{ file= LUAUI_DIRNAME  .. 'images/epicmenu/undo.png', width = 16,height = 16, parent = button, x=4,y=2,  },
+			Label:New{ caption = 'Reset',x=24,y=4, }
+		}
+	}
 	
 	--close button
-	window_children[#window_children+1] = Button:New{ name= 'menuCloseButton', caption = 'Close', OnMouseUp = { KillSubWindow }, 
-		textColor = color.sub_close_fg, backgroundColor = color.sub_close_bg, width='33%', x='66%', right=1, bottom=1, height=B_HEIGHT, }
+	Button:New{ name= 'menuCloseButton', caption = '',
+		OnClick = { function() KillSubWindow() end }, 
+		textColor = color.sub_close_fg, backgroundColor = color.sub_close_bg, height=B_HEIGHT,
+		padding= {2,2,2,2}, parent = buttonBar;
+		children = {
+			Image:New{ file= LUAUI_DIRNAME  .. 'images/epicmenu/close.png', width = 16,height = 16, parent = button, x=4,y=2,  },
+			Label:New{ caption = 'Close',x=24,y=4, }
+		}
+	}
 	
-	
-	
-	KillSubWindow()
+	KillSubWindow(true)
 	curPath = path -- must be done after KillSubWindow
 	window_sub_cur = Window:New{  
-		caption= (path~='') and (path .. "\n(Press Enter to do Search)"), --display this text if path is not ""
+		caption= (not root) and (path) or "MAIN MENU",
 		x = settings.sub_pos_x,  
 		y = settings.sub_pos_y, 
 		clientWidth = window_width,
@@ -1721,15 +1904,19 @@ MakeSubWindow = function(path)
 		children = window_children,
 	}
 	AdjustWindow(window_sub_cur)
+	if pause and AmIPlayingAlone() then
+		local paused = select(3, Spring.GetGameSpeed())
+		if not paused then
+			spSendCommands("pause")
+		end
+	end
 end
 
 -- Make submenu window based on index from flat window list (This is exclusive for search result)
---local function MakeSubWindow(key)
 MakeSubWindowSearch = function(path)
-	
 	local settings_height = #(pathoptions[path]) * B_HEIGHT
 	local settings_width = 270
-	local maximumResult = 17 --maximum result to display. Any more it will just say "too many"
+	local maximumResult = 18 --maximum result to display. Any more it will just say "too many"
 	
 	local filtered_pathOptions = {}
 	
@@ -1744,7 +1931,8 @@ MakeSubWindowSearch = function(path)
 			local lowercase_desc = option.desc and option.desc:lower() or ''
 			local found_name = SearchInText(lowercase_name,filterUserInsertedTerm) or SearchInText(lowercase_text,filterUserInsertedTerm) or SearchInText(lowercase_desc,filterUserInsertedTerm) or virtualCategoryHit
 					
-			if option.advanced and not settings.config['epic_Settings_Show_Advanced_Settings'] then
+			--if option.advanced and not settings.config['epic_Settings_Show_Advanced_Settings'] then
+			if option.advanced and not settings.showAdvanced then
 				--do nothing
 			elseif option.type == 'button' then
 				local hide = false
@@ -1863,7 +2051,8 @@ MakeSubWindowSearch = function(path)
 		end
 		
 		
-		if option.advanced and not settings.config['epic_Settings_Show_Advanced_Settings'] then
+		--if option.advanced and not settings.config['epic_Settings_Show_Advanced_Settings'] then
+		if option.advanced and not settings.showAdvanced then
 			--do nothing
 		elseif option.type == 'button' then
 			local hide = false
@@ -1884,7 +2073,7 @@ MakeSubWindowSearch = function(path)
 					--right = 30,
 					minHeight = 30,
 					caption = option.name, 
-					OnMouseUp = isNavButton and {function() filterUserInsertedTerm = ''; end,option.OnChange} or {option.OnChange}, --clear search term if navButton is pressed but do standard stuff for regular button
+					OnClick = isNavButton and {function() filterUserInsertedTerm = ''; end,option.OnChange} or {option.OnChange}, --clear search term if navButton is pressed but do standard stuff for regular button
 					backgroundColor = color.sub_button_bg,
 					textColor = color.sub_button_fg, 
 					tooltip = option.desc
@@ -1902,7 +2091,7 @@ MakeSubWindowSearch = function(path)
 					width = "100%",
 					minHeight = 30,
 					caption = option.name, 
-					OnMouseUp = { function() MakeHelp(option.name, option.value) end },
+					OnClick = { function() MakeHelp(option.name, option.value) end },
 					backgroundColor = color.sub_button_bg,
 					textColor = color.sub_button_fg, 
 					tooltip=option.desc
@@ -1915,7 +2104,7 @@ MakeSubWindowSearch = function(path)
 				caption = option.name, 
 				checked = option.value or false, 
 				
-				OnMouseUp = { option.OnChange, }, 
+				OnClick = { option.OnChange, }, 
 				textColor = color.sub_fg, 
 				tooltip   = option.desc,
 			}
@@ -1936,7 +2125,7 @@ MakeSubWindowSearch = function(path)
 					min=option.min or 0, 
 					max=option.max or 100, 
 					step=option.step or 1, 
-					OnMouseUp = { option.OnChange }, 
+					OnMouseup = { option.OnChange }, --using onchange triggers repeatedly during slide
 					tooltip=option.desc,
 					--useValueTooltip=true,
 				}
@@ -1951,7 +2140,7 @@ MakeSubWindowSearch = function(path)
 						name = option.wname .. " " .. item.name;
 						width = "100%",
 						caption = item.name, 
-						OnMouseUp = { function(self) option.OnChange(item.key) end },
+						OnClick = { function(self) option.OnChange(item.key) end },
 						backgroundColor = color.sub_button_bg,
 						textColor = color.sub_button_fg, 
 						tooltip=item.desc,
@@ -1979,7 +2168,7 @@ MakeSubWindowSearch = function(path)
 						right = 35,
 						caption = item.name, 
 						checked = (option.value == item.key), 
-						OnMouseUp = {function(self) option.OnChange(item.key) end},
+						OnClick = {function(self) option.OnChange(item.key) end},
 						textColor = color.sub_fg,
 						tooltip=item.desc,
 					}, currentPath, item)
@@ -1993,7 +2182,7 @@ MakeSubWindowSearch = function(path)
 					height = B_HEIGHT*2,
 					tooltip=option.desc,
 					color = option.value or {1,1,1,1},
-					OnMouseUp = { option.OnChange, },
+					OnClick = { option.OnChange, },
 				}
 				
 		end
@@ -2034,19 +2223,18 @@ MakeSubWindowSearch = function(path)
 	window_height = window_height + B_HEIGHT
 
 	--back button
-	window_children[#window_children+1] = Button:New{ name= 'backButton', caption = 'Back', OnMouseUp = { KillSubWindow, function() filterUserInsertedTerm = ''; MakeSubWindow(path) end,  }, 
+	window_children[#window_children+1] = Button:New{ name= 'backButton', caption = 'Back', OnClick = { KillSubWindow, function() filterUserInsertedTerm = ''; MakeSubWindow(path, false) end,  }, 
 		backgroundColor = color.sub_back_bg,textColor = color.sub_back_fg, x=0, bottom=1, width='33%', height=B_HEIGHT, }
 
 	--close button
-	window_children[#window_children+1] = Button:New{ name= 'menuCloseButton', caption = 'Close', OnMouseUp = { KillSubWindow, function() filterUserInsertedTerm = '' end }, 
+	window_children[#window_children+1] = Button:New{ name= 'menuCloseButton', caption = 'Close', OnClick = { function() KillSubWindow(); filterUserInsertedTerm = '' end }, 
 		textColor = color.sub_close_fg, backgroundColor = color.sub_close_bg, width='33%', x='66%', right=1, bottom=1, height=B_HEIGHT, }
 	
 	
-	
-	KillSubWindow()
+	KillSubWindow(true)
 	curPath = path -- must be done after KillSubWindow
 	window_sub_cur = Window:New{  
-		caption= "Searching in: \"" .. path .. "...\"\n(Press Enter to do Search)",
+		caption= "Searching in: \"" .. path .. "...\"",
 		x = settings.sub_pos_x,  
 		y = settings.sub_pos_y, 
 		clientWidth = window_width,
@@ -2062,7 +2250,7 @@ MakeSubWindowSearch = function(path)
 end
 
 -- Show or hide menubar
-local function ShowHideCrudeMenu()
+local function ShowHideCrudeMenu(dontChangePause)
 	--WG.crude.visible = settings.show_crudemenu -- HACK set it to wg to signal to player list 
 	if settings.show_crudemenu then
 		if window_crude then
@@ -2072,6 +2260,12 @@ local function ShowHideCrudeMenu()
 		end
 		if window_sub_cur then
 			screen0:AddChild(window_sub_cur)
+			if (not dontChangePause) and AmIPlayingAlone() then
+				local paused = select(3, Spring.GetGameSpeed())
+				if (not paused) and (not window_exit_confirm) then
+					spSendCommands("pause")
+				end
+			end
 		end
 	else
 		if window_crude then
@@ -2080,6 +2274,12 @@ local function ShowHideCrudeMenu()
 		end
 		if window_sub_cur then
 			screen0:RemoveChild(window_sub_cur)
+			if (not dontChangePause) and AmIPlayingAlone() then
+				local paused = select(3, Spring.GetGameSpeed())
+				if paused and (not window_exit_confirm) then
+					spSendCommands("pause")
+				end
+			end
 		end
 	end
 	if window_sub_cur then
@@ -2087,27 +2287,101 @@ local function ShowHideCrudeMenu()
 	end
 end
 
+
+local function DisposeExitConfirmWindow()
+	if window_exit_confirm then
+		window_exit_confirm:Dispose()
+		window_exit_confirm = nil
+	end
+end
+
+local function LeaveExitConfirmWindow()
+	settings.show_crudemenu = not settings.show_crudemenu
+	DisposeExitConfirmWindow()
+	ShowHideCrudeMenu(true)
+end
+
+local function MakeExitConfirmWindow(text, action)
+	local screen_width,screen_height = Spring.GetWindowGeometry()
+	local menu_width = 320
+	local menu_height = 64
+
+	LeaveExitConfirmWindow()
+	
+	window_exit_confirm = Window:New{
+		name='exitwindow_confirm',
+		parent = screen0,
+		x = screen_width/2 - menu_width/2,  
+		y = screen_height/2 - menu_height/2,  
+		dockable = false,
+		clientWidth = menu_width,
+		clientHeight = menu_height,
+		draggable = false,
+		tweakDraggable = false,
+		resizable = false,
+		tweakResizable = false,
+		minimizable = false,
+	}
+	Label:New{
+		parent = window_exit_confirm,
+		caption = text,
+		width = "100%",
+                --x = "50%",
+                y = 4,
+		align="center",
+		textColor = color.main_fg
+	}
+	Button:New{
+		name = 'confirmExitYesButton';
+		parent = window_exit_confirm,
+                caption = "Yes",
+                OnClick = { function()
+				action()
+				DisposeExitConfirmWindow()
+			end
+		},
+		height=32,
+		x = 4,
+		right = "55%",
+		bottom = 4,
+	}
+	Button:New{
+		name = 'confirmExitNoButton';
+		parent = window_exit_confirm,
+                caption = "No",
+                OnClick = { function()
+				LeaveExitConfirmWindow()
+			end
+		},
+		height=32,
+		x = "55%",
+		right = 4,
+		bottom = 4,
+	}
+end
+
 local function MakeMenuBar()
 	local btn_padding = {4,3,2,2}
 	local btn_margin = {0,0,0,0}
-    local exit_menu_width = 210
-    local exit_menu_height = 280
-    local exit_menu_btn_width = 7*exit_menu_width/8
-    local exit_menu_btn_height = max(exit_menu_height/8, 30)
-    local exit_menu_cancel_width = exit_menu_btn_width/2
-    local exit_menu_cancel_height = 2*exit_menu_btn_height/3
+	local exit_menu_width = 210
+	local exit_menu_height = 280
+	local exit_menu_btn_width = 7*exit_menu_width/8
+	local exit_menu_btn_height = max(exit_menu_height/8, 30)
+	local exit_menu_cancel_width = exit_menu_btn_width/2
+	local exit_menu_cancel_height = 2*exit_menu_btn_height/3
 
-	local crude_width = 460
+	local crude_width = 400
 	local crude_height = B_HEIGHT+10
 	
 
-	lbl_fps = Label:New{ name='lbl_fps', caption = 'FPS:', textColor = color.sub_header, margin={4,4,4,4}, }
+	lbl_fps = Label:New{ name='lbl_fps', caption = 'FPS:', textColor = color.sub_header, margin={0,5,0,0}, }
 	lbl_gtime = Label:New{ name='lbl_gtime', caption = 'Time:', width = 55, height=5, textColor = color.sub_header,  }
 	lbl_clock = Label:New{ name='lbl_clock', caption = 'Clock:', width = 45, height=5, textColor = color.main_fg, } -- autosize=false, }
 	img_flag = Image:New{ tooltip='Choose Your Location', file=":cn:".. LUAUI_DIRNAME .. "Images/flags/".. settings.country ..'.png', width = 16,height = 11, OnClick = { MakeFlags }, margin={4,4,4,6}  }
 	
 	local screen_width,screen_height = Spring.GetWindowGeometry()
 	
+	--[[
 	window_exit = Window:New{
 		name='exitwindow',
 		x = screen_width/2 - exit_menu_width/2,  
@@ -2120,7 +2394,7 @@ local function MakeMenuBar()
 		resizable = false,
 		minimizable = false,
 		backgroundColor = color.main_bg,
-		color = {nil,nil,nil,0.5},
+		color = {0,0,0,0.5},
 		margin = {0,0,0,0},
 		padding = {0,0,0,0},
 		
@@ -2136,62 +2410,63 @@ local function MakeMenuBar()
 			
 			Button:New{
 				name = 'voteResignButton';
-                caption = "Vote Resign",
-                OnMouseUp = { function()
+				caption = "Vote Resign",
+				OnClick = { function()
 						spSendCommands("say !voteresign") --after this gui_chili_vote.lua will handle vote GUI
 						screen0:RemoveChild(window_exit)
 						exitWindowVisible = false
 					end, },
-				tooltip = "Ask teammate to resign",
+				tooltip = "Ask teammates to resign",
 				height=exit_menu_btn_height, 
 				width=exit_menu_btn_width,
-                x = exit_menu_width/2 - exit_menu_btn_width/2, 
-                y = 20*exit_menu_height/64 - exit_menu_btn_height/2, 
+				x = exit_menu_width/2 - exit_menu_btn_width/2, 
+				y = 20*exit_menu_height/64 - exit_menu_btn_height/2, 
 			},
 			
 			Button:New{
 				name= 'resignButton',
-                caption = "Resign and Spectate",
-                OnMouseUp = { function()
+				caption = "Resign",
+				OnClick = { function()
 						spSendCommands{"spectator"}
 						screen0:RemoveChild(window_exit)
 						exitWindowVisible = false
 					end, },
-				tooltip = "Abandon team and be spectator",
+				tooltip = "Abandon team and become spectator",
 				height=exit_menu_btn_height, 
 				width=exit_menu_btn_width,
-                x = exit_menu_width/2 - exit_menu_btn_width/2, 
-                y = 30*exit_menu_height/64 - exit_menu_btn_height/2, 
+				x = exit_menu_width/2 - exit_menu_btn_width/2, 
+				y = 30*exit_menu_height/64 - exit_menu_btn_height/2, 
 			},
 			
 			
 			Button:New{
 				name= 'exitGameButton',
-				caption = "Exit game", OnMouseUp = { function() spSendCommands{"quit","quitforce"} end, },
+				caption = "Exit game", OnClick = { function() spSendCommands{"quit","quitforce"} end, },
 				tooltip = "Leave game completely.",
 				height=exit_menu_btn_height, 
 				width=exit_menu_btn_width,
-                x = exit_menu_width/2 - exit_menu_btn_width/2,  
-                y = 40*exit_menu_height/64 - exit_menu_btn_height/2,
+				x = exit_menu_width/2 - exit_menu_btn_width/2,  
+				y = 40*exit_menu_height/64 - exit_menu_btn_height/2,
 			},
 			
 			Button:New{
 				name= 'cancelExitGameButton',
 				caption = "Cancel", 
-				OnMouseUp = { function() 
+				OnClick = { function() 
 						screen0:RemoveChild(window_exit) 
 						exitWindowVisible = false
 					end, }, 
 			
 				height=exit_menu_cancel_height, 
 				width=exit_menu_cancel_width,
-                x = 4*exit_menu_width/8, -- exit_menu_cancel_width,
-                y = 58*exit_menu_height/64 - exit_menu_cancel_height/2,
+				x = 4*exit_menu_width/8, -- exit_menu_cancel_width,
+				y = 58*exit_menu_height/64 - exit_menu_cancel_height/2,
 			},
 		},
 	}
 	
 	screen0:RemoveChild(window_exit)
+	]]--
 		
 	window_crude = Window:New{
 		name='epicmenubar',
@@ -2205,9 +2480,10 @@ local function MakeMenuBar()
 		resizable = false,
 		minimizable = false,
 		backgroundColor = color.main_bg,
-		color = {nil,nil,nil,0.5},
+		color = color.main_bg,
 		margin = {0,0,0,0},
 		padding = {0,0,0,0},
+		parent = screen0,
 		
 		children = {
 			StackPanel:New{
@@ -2226,10 +2502,11 @@ local function MakeMenuBar()
 					--GAME LOGO GOES HERE
 					Image:New{ tooltip = title_text, file = title_image, height=B_HEIGHT, width=B_HEIGHT, },
 					
+					--[[
 					-- odd-number button width keeps image centered
 					Button:New{
 						name= 'gameSettingButton',
-						caption = "", OnMouseUp = { function() MakeSubWindow('Game') end, }, textColor=color.game_fg, height=B_HEIGHT+4, width=B_HEIGHT+5,
+						caption = "", OnClick = { function() MakeSubWindow('Game') end, }, textColor=color.game_fg, height=B_HEIGHT+4, width=B_HEIGHT+5,
 						padding = btn_padding, margin = btn_margin,	tooltip = 'Game Actions and Settings...',
 						children = {
 							Image:New{file=LUAUI_DIRNAME .. 'Images/epicmenu/game.png', height=B_HEIGHT-2,width=B_HEIGHT-2},
@@ -2237,21 +2514,39 @@ local function MakeMenuBar()
 					},
 					Button:New{
 						name= 'settingButton',
-						caption = "", OnMouseUp = { function() MakeSubWindow('Settings') end, }, textColor=color.menu_fg, height=B_HEIGHT+4, width=B_HEIGHT+5,
+						caption = "", OnClick = { function() MakeSubWindow('Settings') end, }, textColor=color.menu_fg, height=B_HEIGHT+4, width=B_HEIGHT+5,
 						padding = btn_padding, margin = btn_margin,	tooltip = 'General Settings...', 
 						children = {
 							Image:New{ tooltip = 'Settings', file=LUAUI_DIRNAME .. 'Images/epicmenu/settings.png', height=B_HEIGHT-2,width=B_HEIGHT-2, },
 						},
 					},
+					--]]
+					
 					Button:New{
 						name= 'tweakGuiButton',
-						caption = "", OnMouseUp = { function() spSendCommands{"luaui tweakgui"} end, }, textColor=color.menu_fg, height=B_HEIGHT+4, width=B_HEIGHT+5, 
+						caption = "", OnClick = { function() spSendCommands{"luaui tweakgui"} end, }, textColor=color.menu_fg, height=B_HEIGHT+4, width=B_HEIGHT+5, 
 						padding = btn_padding, margin = btn_margin, tooltip = "Move and resize parts of the user interface (\255\0\255\0Ctrl+F11\008) (Hit ESC to exit)",
 						children = {
 							Image:New{ file=LUAUI_DIRNAME .. 'Images/epicmenu/move.png', height=B_HEIGHT-2,width=B_HEIGHT-2, },
 						},
 					},
-					
+					--MAIN MENU BUTTON
+					Button:New{
+						name= 'subMenuButton',
+						OnClick = { function() ActionSubmenu(nil,'') end, },
+						textColor=color.game_fg,
+						height=B_HEIGHT+12,
+						width=B_WIDTH_TOMAINMENU + 1,
+						caption = "Menu (\255\0\255\0"..WG.crude.GetHotkey("crudesubmenu").."\008)",
+						padding = btn_padding,
+						margin = btn_margin,
+						tooltip = '',
+						children = {
+							--Image:New{file = title_image, height=B_HEIGHT-2,width=B_HEIGHT-2, x=2, y = 4},
+							--Label:New{ caption = "Menu (\255\0\255\0"..WG.crude.GetHotkey("crudesubmenu").."\008)", valign = "center"}
+						},
+					},
+					--VOLUME SLIDERS
 					Grid:New{
 						height = '100%',
 						width = 100,
@@ -2306,14 +2601,15 @@ local function MakeMenuBar()
 					
 					},
 
-					
+					--[[
+					--FPS, FLAG, GAME CLOCK, and REAL-LIFE CLOCK
 					Grid:New{
 						orientation = 'horizontal',
 						columns = 2,
 						rows = 2,
 						width = 150,
 						height = '100%',
-						--height = 40,
+						-- height = 40,
 						resizeItems = true,
 						autoArrangeV = true,
 						autoArrangeH = true,
@@ -2358,42 +2654,168 @@ local function MakeMenuBar()
 							
 						},
 					},
-					
+					--]]
+					--FPS & FLAG
+					Grid:New{
+						orientation = 'horizontal',
+						columns = 1,
+						rows = 2,
+						width = 60,
+						height = '100%',
+						--height = 40,
+						resizeItems = true,
+						autoArrangeV = true,
+						autoArrangeH = true,
+						padding = {0,0,0,0},
+						itemPadding = {0,0,0,0},
+						itemMargin = {0,0,0,0},
+						
+						children = {
+							lbl_fps,
+							img_flag,
+						},
+					},
+					--GAME CLOCK AND REAL-LIFE CLOCK
+					Grid:New{
+						orientation = 'horizontal',
+						columns = 1,
+						rows = 2,
+						width = 80,
+						height = '100%',
+						--height = 40,
+						resizeItems = true,
+						autoArrangeV = true,
+						autoArrangeH = true,
+						padding = {0,0,0,0},
+						itemPadding = {0,0,0,0},
+						itemMargin = {0,0,0,0},
+						
+						children = {
+							StackPanel:New{
+								orientation = 'horizontal',
+								width = 70,
+								height = '100%',
+								resizeItems = false,
+								autoArrangeV = false,
+								autoArrangeH = false,
+								padding = {0,0,0,0},
+								itemMargin = {2,0,0,0},
+								children = {
+									Image:New{ file= LUAUI_DIRNAME .. 'Images/epicmenu/game.png', width = 20,height = 20,  },
+									lbl_gtime,
+								},
+							},
+							StackPanel:New{
+								orientation = 'horizontal',
+								width = 80,
+								height = '100%',
+								resizeItems = false,
+								autoArrangeV = false,
+								autoArrangeH = false,
+								padding = {0,0,0,0},
+								itemMargin = {2,0,0,0},
+								children = {
+									Image:New{ file= LUAUI_DIRNAME .. 'Images/clock.png', width = 20,height = 20,  },
+									lbl_clock,
+								},
+							},
+							
+						},
+					},					
+					--[[
 					Button:New{
 						name= 'helpButton',
-						caption = "", OnMouseUp = { function() MakeSubWindow('Help') end, }, textColor=color.menu_fg, height=B_HEIGHT+4, width=B_HEIGHT+5,
+						caption = "", OnClick = { function() MakeSubWindow('Help') end, }, textColor=color.menu_fg, height=B_HEIGHT+4, width=B_HEIGHT+5,
 						padding = btn_padding, margin = btn_margin, tooltip = 'Help...', 
 						children = {
 							Image:New{ file=LUAUI_DIRNAME .. 'Images/epicmenu/questionmark.png', height=B_HEIGHT-2,width=B_HEIGHT-2,  },
 						},
 					},
 					Button:New{
-						name= 'quitButton',
-						caption = "", OnMouseUp = { function() 
-								if not exitWindowVisible then
-									screen0:AddChild(window_exit) 
-									exitWindowVisible = true
-								end
-							end, }, 
+						name= 'hideButton',
+						caption = "", OnClick = { ActionMenu }, 
 						textColor=color.menu_fg, height=B_HEIGHT+4, width=B_HEIGHT+5,
-						padding = btn_padding, margin = btn_margin, tooltip = 'Exit or Resign...',
+						padding = btn_padding, margin = btn_margin, tooltip = 'Hide menu',
 						children = {
 							Image:New{file=LUAUI_DIRNAME .. 'Images/epicmenu/quit.png', height=B_HEIGHT-2,width=B_HEIGHT-2,  }, 
 						},
-					},	
+					},
+					]]--
 				}
 			}
 		}
 	}
-	ShowHideCrudeMenu()
+	settings.show_crudemenu = true
+	--ShowHideCrudeMenu()
+end
+
+local function MakeQuitButtons()
+	AddOption('',{
+		type='label',
+		name='Quit game',
+		value = 'Quit game',
+		key='Quit game',
+	})
+	AddOption('',{
+		type='button',
+		name='Vote Resign',
+		desc = "Ask teammates to resign",
+		OnChange = function()
+				if not (Spring.GetSpectatingState() or PlayingButNoTeammate() or isMission) then
+					spSendCommands("say !voteresign")
+					ActionMenu()
+				end
+			end,
+		key='Vote Resign',
+		DisableFunc = function() 
+			return (Spring.GetSpectatingState() or PlayingButNoTeammate() or isMission) 
+		end, --function that trigger grey colour on buttons (not actually disable their functions)
+	})
+	AddOption('',{
+		type='button',
+		name='Resign',
+		desc = "Abandon team and become spectator",
+		OnChange = function()
+				if not (isMission or Spring.GetSpectatingState()) then
+					MakeExitConfirmWindow("Are you sure you want to resign?", function() 
+						local paused = select(3, Spring.GetGameSpeed())
+						if (paused) and AmIPlayingAlone() then
+							spSendCommands("pause")
+						end
+						spSendCommands{"spectator"} 
+					end)
+				end
+			end,
+		key='Resign',
+		DisableFunc = function() 
+			return (Spring.GetSpectatingState() or isMission) 
+		end, --function that trigger grey colour on buttons (not actually disable their functions)
+	})
+	AddOption('',{
+		type='button',
+		name='Exit to Desktop',
+		desc = "Exit game completely",
+		OnChange = function() 
+			MakeExitConfirmWindow("Are you sure you want to quit the game?", function()
+				local paused = select(3, Spring.GetGameSpeed())
+				if (paused) and AmIPlayingAlone() then
+					spSendCommands("pause")
+				end
+				spSendCommands{"quit","quitforce"} 
+			end)
+		end,
+		key='Exit to Desktop',
+	})
 end
 
 --Remakes crudemenu and remembers last submenu open
 RemakeEpicMenu = function()
 	local lastPath = curPath
-	KillSubWindow()
-	if lastPath ~= '' then	
-		MakeSubWindow(lastPath)
+	local subwindowOpen = window_sub_cur ~= nil
+	
+	KillSubWindow(subwindowOpen)
+	if subwindowOpen then
+		MakeSubWindow(lastPath, true)
 	end
 end
 
@@ -2406,7 +2828,6 @@ function widget:ViewResize(vsx, vsy)
 end
 
 function widget:Initialize()
-	
 	if (not WG.Chili) then
 		widgetHandler:RemoveWidget(widget)
 		return
@@ -2425,6 +2846,7 @@ function widget:Initialize()
 	Colorbars = Chili.Colorbars
 	Checkbox = Chili.Checkbox
 	Window = Chili.Window
+	Panel = Chili.Panel
 	ScrollPanel = Chili.ScrollPanel
 	StackPanel = Chili.StackPanel
 	LayoutPanel = Chili.LayoutPanel
@@ -2469,20 +2891,21 @@ function widget:Initialize()
 	
 	WG.country = settings.country	
 	WG.lang = settings.lang
+	SetLangFontConf()
 	
 		-- add custom widget settings to crudemenu
 	AddAllCustSettings()
-	
 
 	--this is done to establish order the correct button order
+	local imgPath = LUAUI_DIRNAME  .. 'images/'
+	AddOption('Game')
 	AddOption('Settings/Reset Settings')
 	AddOption('Settings/Audio')
 	AddOption('Settings/Camera')
-	AddOption('Settings/Graphics')	
+	AddOption('Settings/Graphics')
 	AddOption('Settings/HUD Panels')
 	AddOption('Settings/Interface')
 	AddOption('Settings/Misc')
-	
 
 	-- Add pre-configured button/options found in epicmenu config file
 	local options_temp = CopyTable(epic_options, true)
@@ -2490,6 +2913,8 @@ function widget:Initialize()
 		local option = options_temp[i]
 		AddOption(option.path, option)
 	end
+	
+	MakeQuitButtons()
 	
 	-- Clears all saved settings of custom widgets stored in crudemenu's config
 	WG.crude.ResetSettings = function()
@@ -2571,6 +2996,7 @@ function widget:Initialize()
 	
 	-- Add custom actions for the following keybinds
 	AddAction("crudemenu", ActionMenu, nil, "t")
+	AddAction("crudesubmenu", ActionSubmenu, nil, "t")
 	AddAction("exitwindow", ActionExitWindow, nil, "t")
 	
 	MakeMenuBar()
@@ -2636,11 +3062,11 @@ function widget:Initialize()
 	
 	--intialize remote menu trigger
 	WG.crude.OpenPath = function(path) --Note: declared here so that it work in local copy
-		MakeSubWindow(path)
+		MakeSubWindow(path)	-- FIXME should pause the game
 	end
 	
 	--intialize remote menu trigger 2
-	WG.crude.ShowMenu = function()  --Note: declared here so that it work in local copy
+	WG.crude.ShowMenu = function()  --// allow other widget to toggle-up Epic-Menu. This'll enable access to game settings' Menu via click on other GUI elements.
 		if not settings.show_crudemenu then 
 			settings.show_crudemenu = true
 			ShowHideCrudeMenu()
@@ -2684,6 +3110,7 @@ function widget:Shutdown()
   end
 
   RemoveAction("crudemenu")
+  RemoveAction("crudesubmenu")
  
   -- restore key binds
   --[[
@@ -2775,7 +3202,7 @@ function widget:KeyPress(key, modifier, isRepeat)
 		ReApplyKeybinds()
 		
 		if kb_path == curPath then
-			MakeSubWindow(kb_path)
+			MakeSubWindow(kb_path, false)
 		end
 		
 		return true
@@ -2784,28 +3211,34 @@ function widget:KeyPress(key, modifier, isRepeat)
 end
 
 function ActionExitWindow()
+	--[[
 	if exitWindowVisible then
 		screen0:RemoveChild(window_exit) 
 		exitWindowVisible = false
 	else
 		screen0:AddChild(window_exit) 
 		exitWindowVisible = true
-	end						
+	end
+	]]
+	WG.crude.ShowMenu()
+	MakeSubWindow(submenu or '')
+end
+
+function ActionSubmenu(_, submenu)
+	if window_sub_cur then
+		KillSubWindow()
+	else
+		WG.crude.ShowMenu()
+		MakeSubWindow(submenu or '')
+	end
 end
 
 function ActionMenu()
 	settings.show_crudemenu = not settings.show_crudemenu
+	DisposeExitConfirmWindow()
 	ShowHideCrudeMenu()
 end
 
-function WG.crude.ShowMenu() --// allow other widget to toggle-up Epic-Menu. This'll enable access to game settings' Menu via click on other GUI elements.
-	if not settings.show_crudemenu then 
-		settings.show_crudemenu = true
-		ShowHideCrudeMenu()
-	end
-end
-
---// [[ see comments in epicmenu conf (about "radioButton" camera option). UPDATE: propose re-enable "radioButton" camera option
 do --Set our prefered camera mode when first screen frame is drawn. The engine always go to default TA at first screen frame, so we need to re-apply our camera settings.
 	if Spring.GetGameFrame() == 0 then  --we check if this code is run at midgame (due to /reload). In that case we don't need to re-apply settings (the camera mode is already set at gui_epicmenu.lua\AddOption()).
 		local screenFrame = 0
@@ -2825,51 +3258,21 @@ end
 -------------------------------------------------------
 -- detect when user press ENTER to insert search term for searching option in epicmenu
 function widget:TextCommand(command)
-	if window_sub_cur and command:sub(1,7) == "search:" and curPath~="" then --Note: skip searching from Root/"" (because MakeSubWindowSearch() can't handle "" path for the moment)
+	if window_sub_cur and command:sub(1,7) == "search:" then
 		filterUserInsertedTerm = command:sub(8)
 		filterUserInsertedTerm = filterUserInsertedTerm:lower() --Reference: http://lua-users.org/wiki/StringLibraryTutorial
 		Spring.Echo("EPIC Menu: searching \"" .. filterUserInsertedTerm.."\"")
-		MakeSubWindow(curPath) --remake the menu window. If search term is not "" the MakeSubWindowSearch(curPath) will be called instead
+		MakeSubWindow(curPath,true) --remake the menu window. If search term is not "" the MakeSubWindowSearch(curPath) will be called instead
 		WG.crude.ShowMenu()
 		return true
 	end
 	return false
 end
 
-function widget:KeyRelease(key)
-	if window_sub_cur and key ==13 then --Note: "13" equal to "Enter". Could this be different in different keyboard?
-		Spring.SendCommands("PasteText /search:" )
-	end
-end
-
 function SearchInText(randomTexts,searchText) --this allow search term to be unordered (eg: "sel view" == "view sel")
-	if explodeSearchTerm.text ~= searchText then
-		local explodedTerms = {}
-		local termLenght = searchText:len()
-		local spaceLocation,textLocation = searchText:find("%s%l") -- spacing + letter. eg: " x"
-		if spaceLocation then
-			explodedTerms[1] = searchText:sub(1,spaceLocation-1)
-			local theRestOfTerm = searchText:sub(textLocation,termLenght)
-			termLenght = termLenght-spaceLocation --text get shorter, so lenght get shorter
-			while termLenght > 1 do
-				local index = #explodedTerms
-				spaceLocation,textLocation = theRestOfTerm:find("%s%l")
-				if not spaceLocation then
-					explodedTerms[index+1] = theRestOfTerm:gsub("%s",'') --remove any spacing
-					break
-				end
-				explodedTerms[index+1] = theRestOfTerm:sub(1,spaceLocation-1)
-				theRestOfTerm = theRestOfTerm:sub(textLocation,termLenght)
-				termLenght = termLenght-spaceLocation
-			end
-			explodeSearchTerm.terms = explodedTerms
-			explodeSearchTerm.text = searchText
-		else
-			explodedTerms[1] = searchText:gsub("%s",'') --remove any spacing
-			explodeSearchTerm.terms = explodedTerms
-			explodeSearchTerm.text = searchText
-		end
-	end
+	local explodedTerms = explode(' ',searchText)
+	explodeSearchTerm.terms = explodedTerms
+	explodeSearchTerm.text = searchText
 	local found = true --this return true if all term match (eg: found("sel") && found("view"))
 	local explodedTerms = explodeSearchTerm.terms
 	for i=1, #explodedTerms do 

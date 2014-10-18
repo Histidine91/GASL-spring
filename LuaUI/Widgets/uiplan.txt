@@ -1,3 +1,5 @@
+== UNIT INFO ==
+-- partly obsolete
 whole thing is a stackpanel, in a scrollpanel, in a window
 nest stackpanels in stackpanels in stackpanels?
 
@@ -22,5 +24,9 @@ Pilot info
                 Pilot affiliation
     Suppression     Morale  Spirit
     
-    
-    
+
+== SHIP STATUS ==
+Overlays:
+    Low energy: Lightning icon on button
+    Damage red: file2 overlay on ship image, OR manual GL effect
+    Spirit maxed: Manual GL effect + overlay (file2 or new Image)

@@ -19,7 +19,7 @@ end
 
 --SYNCED
 local modopts = Spring.GetModOptions() or {}
-local heightChange = -(modopts.changewaterlevel or 50)
+local heightChange = -(modopts.changewaterlevel or 0)
 Spring.Echo("Height change is "..heightChange)
 
 local x = Game.mapSizeX

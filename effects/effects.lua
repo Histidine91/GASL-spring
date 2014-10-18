@@ -828,11 +828,49 @@ local graserBlueFX = {
   },  
 }
 
+local graserPinkFX = {
+  charge = {
+    properties = {
+      colormap           = [[.4 .1 .3 .1   .5 .1 .4 .1   0 0 0 0]],
+      particlesizespread = 8,
+    },
+  },
+  circle = {
+    properties = {
+      colormap           = [[.4 .1 .3 .1   .5 .1 .4 .1   0 0 0 0]],
+    },
+  },
+  spike1 = {
+    properties = {
+      color              = [[1,0.2,0.8]],
+      length             = [[8.5 d1.5]],
+      width              = 2,
+    },
+  },
+  spike2 = {
+    properties = {
+      color              = [[1,0.2,0.8]],
+      length             = [[4 d1]],
+      width              = 1.75,
+    },
+  },
+  spike3 = {
+    properties = {
+      color              = [[1,0.2,0.8]],
+      length             = [[4 d.5]],
+      width              = 1.75,
+    },
+  },
+}
+
 MergeTable(graserFX, fx.charge_antimatter, true)
 fx.charge_graser = graserFX
 
 MergeTable(graserBlueFX, fx.charge_antimatter, true)
 fx.charge_graser_blue = graserBlueFX
+
+MergeTable(graserPinkFX, fx.charge_antimatter, true)
+fx.charge_graser_pink = graserPinkFX
 
 return fx
 

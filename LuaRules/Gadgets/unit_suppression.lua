@@ -39,17 +39,15 @@ local SUPPRESSION_LEVELS = {
 	{0.25, "minor"}
 }
 
-local suppressionModByUnitDefID = {}
-local unflankable = {}
+local suppressionMod = {}
+local flankingMod = {}
 local weapons = {}
 local units = {}	-- [unitID] = {suppression = (0 to 1), frame = gameframe, target = unitID}
 local gameframe = 0
 
 for i=1,#UnitDefs do
-	suppressionModByUnitDefID[i] = tonumber(UnitDefs[i].customParams.suppressionmod) or 1
-	if UnitDefs[i].customParams.unflankable then
-		unflankable[i] = true
-	end
+	suppressionMod[i] = tonumber(UnitDefs[i].customParams.suppressionmod) or 1
+	flankingMod[i] = tonumber(UnitDefs[i].customParams.suppressionflankingmod or 1)
 end
 
 for i=1,#WeaponDefs do
@@ -72,13 +70,22 @@ local function GetAttackerVector(unitID, attackerID)
 	return dotUp, dotFront
 end
 
+function GG.SetUnitSuppression(unitID, value)
+	if not units[unitID] then
+		return
+	end
+	units[unitID].suppression = value
+	spSetUnitRulesParam(unitID, "suppression", value, {inlos = true})
+end
+
 function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponID,
-                            attackerID, attackerDefID, attackerTeam)
+                            attackerID, attackerDefID, attackerTeam, projectileID)
 	if not (weaponID and units[unitID]) then
 		return
 	end
 	
-	local suppressionDelta = weapons[weaponID].suppression * suppressionModByUnitDefID[unitDefID]
+	local weaponData = weapons[weaponID]
+	local suppressionDelta = weaponData.suppression * suppressionMod[unitDefID] --* damage/weaponData.damage 
 	local suppressionDeltaBase = suppressionDelta
 	local target = units[unitID].target
 	if target == attackerID then
@@ -87,9 +94,12 @@ function gadget:UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weap
 		suppressionDelta = suppressionDelta * NO_TARGET_MOD
 	end
 	-- flanking effects
-	if attackerID and not (unflankable[unitDefID] or weapons[weaponID].noFlank) then
+	if attackerID and not (weaponData.noFlank) then
 		local dotUp, dotFront = GetAttackerVector(unitID, attackerID)
-		suppressionDelta = suppressionDelta - suppressionDeltaBase*dotFront*FLANKING_MOD
+		suppressionDelta = suppressionDelta - suppressionDeltaBase*dotFront*FLANKING_MOD*flankingMod[unitDefID]
+	end
+	if suppressionDelta < 0 then
+		suppressionDelta = 0
 	end
 	
 	local oldSuppression = units[unitID].suppression

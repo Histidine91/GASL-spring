@@ -14,7 +14,7 @@ function widget:GetInfo()
 end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
--- TODO: merge duplicate weapons
+include("Configs/unitinfo.lua")
 
 local MIN_HEIGHT = 80
 local MIN_WIDTH = 200
@@ -26,6 +26,38 @@ local DAMAGETYPE_IMAGES = {
 	energy = "LuaUI/Images/damage_energy.png",
 }
 
+local colorRed = "\255\255\64\64"
+local colorGreen = "\255\64\255\64"
+
+local function tobool(val)
+	local t = type(val)
+	if (t == 'nil') then
+		return false
+	elseif (t == 'boolean') then
+		return val
+	elseif (t == 'number') then
+		return (val ~= 0)
+	elseif (t == 'string') then
+		return ((val ~= '0') and (val ~= 'false'))
+	end
+	return false
+end
+
+local function WriteColoredString(value, before, after)
+	before = before or ""
+	after = after or ""
+	value = tonumber(value)
+	if value > 0 then
+		return colorGreen .. before .. value .. after .. "\008"
+	elseif value < 0 then
+		return colorRed .. before .. value .. after .. "\008"
+	else
+		return before .. value .. after
+	end
+end
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Chili classes
 local Chili
 local Button
@@ -44,11 +76,6 @@ local screen0
 
 local vsx, vsy
 
-local pilotData = {	-- FIXME
-	[UnitDefNames.luckystar.id] = {name = "Milfeulle Sakuraba", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/milfeulle_normal.png"},
-	[UnitDefNames.kungfufighter.id] = {name = "Ranpha Franboise", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/ranpha_normal.png"},
-	[UnitDefNames.happytrigger.id] = {name = "Forte Stollen", affiliation = "Angel Wing", portrait = "LuaUI/Images/portraits/forte_normal.png"},
-}
 local shipData = {}
 local weaponData = {}
 
@@ -66,8 +93,10 @@ for i=1,#UnitDefs do
 		combatRange = tonumber(customParams.combatrange) or 1000,
 		maneuverability = math.floor((1 - (customParams.inertiafactor or 0.98)) * 1000),
 		ecm = customParams.ecm or 0,
+		jammerStrength = ("%.0f"):format(customParams.missilejamstrength or 0),
 		morale = tonumber(customParams.morale),
 		energy = tonumber(customParams.energy),
+		suppressionMod = tonumber(customParams.suppressionmod) or 1,
 		
 		weapons = {}
 	}
@@ -82,15 +111,16 @@ for i=1,#WeaponDefs do
 	weaponData[i] = {
 		name = wd.description,
 		desc = customParams.description,
-		damage = wd.damages[0],
-		burstSize = wd.salvoSize or 1,
-		projectiles = wd.projectiles or 1,
+		hidden = tobool(customParams.hidden) or wd.name == "noweapon",
+		damage = wd.customParams.statsdamage or wd.damages[0],
+		projectiles = tonumber(wd.customParams.statsprojectiles) or ((wd.projectiles or 1) * (wd.salvoSize or 1)),
 		reloadTime = wd.reload or 1,
-		range = wd.range,
+		accuracy = (wd.accuracy or 0) + (wd.sprayangle or 0),
+		range = tonumber(customParams.statsrange) or wd.range,
 		damageType = customParams.damagetype or "kinetic",
-		ap = customParams.ap,
+		ap = tonumber(customParams.ap),
 		critChance = customParams.critchance,
-		special = customParams.special,
+		special = tobool(customParams.special),
 	}
 end
 --------------------------------------------------------------------------------
@@ -132,8 +162,7 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 		x = 0,
 		y = 0,
 		align="left";
-		fontSize = 14;
-		fontShadow = true;
+		font = {size = 14, shadow = true, color = data.special and {0,1,1,1} or nil},
 	}
 	local damageType = Image:New{
 		parent = panel,
@@ -143,56 +172,67 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 		width = 48,
 		height = 48,
 	}
+	local grid = Grid:New{
+		parent = panel,
+		rows = 2,
+		columns = 3,
+		x = 0,
+		y = 12,
+		right = 60,
+		bottom = 0,
+	}
 	local dmgString = "Damage: "..data.damage
-	local projectiles = data.burstSize * data.projectiles
+	local projectiles = data.projectiles
 	if projectiles > 1 then
 		dmgString = dmgString .. " x "..projectiles
 	end
 	local damage = Label:New{
-		parent = panel;
+		parent = grid;
 		caption = dmgString,
-		x = 0,
-		y = 18,
+		--x = 0,
+		--y = 18,
 		align="left";
 		fontSize = 12;
 		fontShadow = true;
 	}
-	local value_reloadTime = ("%.2f"):format(data.reloadTime)
-	local reloadTime = Label:New{
-		parent = panel;
-		caption = "Reload: " .. value_reloadTime .. " s",
-		x = 144,
-		y = 18,
-		align="left";
-		fontSize = 12;
-		fontShadow = true;
-	}
-	local value_dps = ("%.1f"):format(data.damage*projectiles/data.reloadTime)
-	local dps = Label:New{
-		parent = panel;
-		caption = "DPS: " .. value_dps,
-		x = 288,
-		y = 18,
-		align="left";
-		fontSize = 12;
-		fontShadow = true;
-	}
+	if not data.special then
+		local value_reloadTime = ("%.2f"):format(data.reloadTime)
+		local reloadTime = Label:New{
+			parent = grid;
+			caption = "Reload: " .. value_reloadTime .. " s",
+			--x = 144,
+			--y = 18,
+			align="left";
+			fontSize = 12;
+			fontShadow = true;
+		}
+		local value_dps = ("%.1f"):format(data.damage*projectiles/data.reloadTime)
+		local dps = Label:New{
+			parent = grid;
+			caption = "DPS: " .. value_dps,
+			--x = 288,
+			--y = 18,
+			align="left";
+			fontSize = 12;
+			fontShadow = true;
+		}
+	end
 	local range = Label:New{
-		parent = panel;
+		parent = grid;
 		caption = "Range: " .. data.range,
-		x = 0,
-		y = 36,
+		--x = 0,
+		--y = 36,
 		align="left";
 		fontSize = 12;
 		fontShadow = true;
 	}
 	local ap
-	if data.ap then
+	if data.ap and (data.ap ~= 0) then
 		ap = Label:New{
-			parent = panel;
+			parent = grid;
 			caption = "Armor piercing: " .. data.ap,
-			x = 144,
-			y = 36,
+			--x = 144,
+			--y = 36,
 			align="left";
 			fontSize = 12;
 			fontShadow = true;
@@ -201,10 +241,10 @@ local function CreateWeaponPanel(weaponID, count, index, parent)
 	local critChance
 	if data.critChance then
 		critChance = Label:New{
-			parent = panel;
+			parent = grid;
 			caption = "Crit chance: " .. ("%.1f"):format(data.critChance*100) .. "%",
-			x = ap and 288 or 144,
-			y = 36,
+			--x = ap and 288 or 144,
+			--y = 36,
 			align= "left";
 			fontSize = 12;
 			fontShadow = true;
@@ -217,7 +257,9 @@ local function CreateWeaponPanels(data, parent)
 	local weaponIDs = {}
 	for i=1,#data.weapons do
 		local weaponID = data.weapons[i]
-		weaponIDs[weaponID] = (weaponIDs[weaponID] or 0) + 1
+		if (not weaponData[weaponID].hidden) then
+			weaponIDs[weaponID] = (weaponIDs[weaponID] or 0) + 1
+		end
 	end
 	-- make sure duplicates are only sorted once
 	local index = 1
@@ -232,7 +274,7 @@ local function CreateWeaponPanels(data, parent)
 	end
 end
 
-local function FillPilotBiodata(unitID, unitDefID, pilotData, container)
+local function FillPilotBiodata(unitID, unitDefID, shipData, pilotData, container)
 	--[[
 	local nameHeader = Label:New{
 		parent = container;
@@ -271,7 +313,54 @@ local function FillPilotBiodata(unitID, unitDefID, pilotData, container)
 		fontSize = 13;
 		fontShadow = true;
 		--x = 64,
-		y = 24,
+		y = 20,
+	}
+	
+	local bonusStack = StackPanel:New{
+		parent = container;
+		width = "100%",
+		x = 0,	--"40%",
+		y = 40,
+		bottom = 0,
+		padding = {0, 0, 0, 0},
+		itemMargin = {0, 0, 0, 0}
+	}
+	
+	local BASE_MORALE = 50
+	local MORALE_ACCURACY_BOOST = 0.25
+	local MORALE_DAMAGE_BOOST = 0.5
+	local morale = shipData.morale
+	local moraleMod = ((morale or 50) - BASE_MORALE)/BASE_MORALE
+	local accMod = moraleMod * MORALE_ACCURACY_BOOST
+	local damageMod = moraleMod * MORALE_ACCURACY_BOOST
+	
+	if morale then
+		local moraleAcc = InfoLabel:New{
+			parent = bonusStack;
+			caption = "Accuracy mod.: " .. WriteColoredString(("%.0f"):format(accMod*100), nil, "%"),
+			align="left";
+			fontSize = 12;
+			fontShadow = true;
+			tooltip = "Accuracy modifier from morale",
+		}
+		
+		local moraleDamage = InfoLabel:New{
+			parent = bonusStack;
+			caption = "Damage mod.: " .. WriteColoredString(("%.0f"):format(damageMod*100), nil, "%"),
+			align="left";
+			fontSize = 12;
+			fontShadow = true;
+			tooltip = "Bonus to damage dealt and reduction in damage taken from morale",
+		}
+	end
+	
+	local supprResist = InfoLabel:New{
+		parent = bonusStack;
+		caption = "Suppression resist.: " ..  WriteColoredString(("%.0f"):format((1 - shipData.suppressionMod)*100), nil, "%"),
+		align="left";
+		fontSize = 12;
+		fontShadow = true;
+		tooltip = "Modifier to suppression taken; morale-adjusted",
 	}
 end
 
@@ -281,9 +370,9 @@ local function CreateStatsWindow(unitID, unitDefID)
 
 	local window_main = Window:New{
 		parent = screen0,
-		--name   = 'unitinfo_window';
+		name   = 'unitinfo_window';
 		width = 600;
-		height = 580;
+		height = 600;
 		x = vsx/2 - 300; 
 		y = vsy/2 - 300;
 		draggable = true,
@@ -306,7 +395,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 	local button_close = Button:New{
 		parent = window_main,
 		caption = 'Close', 
-		OnMouseUp = { function(self) window_main:Dispose() end }, 
+		OnClick = { function(self) window_main:Dispose() end }, 
 		right = 8,
 		height = 24,
 		bottom = 4,
@@ -390,6 +479,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		y = 0,
 		width = "100%",
 		height = "33%",
+		tooltip = "HP represents the ship's structural integrity. When a ship's HP drops to zero, it is destroyed or forced to withdraw.",
 	}
 	local label_hp = Label:New{
 		parent = panel_hp;
@@ -398,7 +488,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		align="left";
 		fontSize = 12;
 		fontShadow = true;
-		tooltip = "HP represents the ship's structural integrity. When a ship's HP drops to zero, it is destroyed or forced to withdraw.",
+		
 	}
 	local hp, maxHP = Spring.GetUnitHealth(unitID)
 	local progress_hp = Progressbar:New{
@@ -431,7 +521,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		}
 	end
 	local maxEnergy = data.energy
-	if maxEnergy then
+	if maxEnergy and maxEnergy ~= -1 then
 		local energy = Spring.GetUnitRulesParam(unitID, "energy")
 		local panel_energy = Panel:New{
 			parent = panel_ship_stats;
@@ -525,6 +615,15 @@ local function CreateStatsWindow(unitID, unitDefID)
 		fontShadow = true;
 		tooltip = "Every point of ECM increases the spread of incoming weapons fire (except missiles) by 1%.",
 	}
+	local label_jammer = InfoLabel:New{
+		parent = grid_ship_stats2;
+		caption = "Jammer strength:\t"..data.jammerStrength,
+		width="100%";
+		align="left";
+		fontSize = 13;
+		fontShadow = true;
+		tooltip = "Every point of jammer strength gives a 1% chance to cause incoming missiles to lose lock.",
+	}
 	
 	local scroll_weapons = ScrollPanel:New{
 		parent = scroll_main,
@@ -540,13 +639,15 @@ local function CreateStatsWindow(unitID, unitDefID)
 		parent = scroll_main,
 		y = 420,
 		width = '100%',
-		height = 125,
+		height = 145,
+		backgroundColor = {0, 0, 0, 0},
 	}
 	local panel_pilot_stats = Panel:New{
 		parent = panel_pilot,
-		x = "50%",
+		x = "50%",	--118
+		--bottom = 0,
 		y = 0,
-		height = "100%",
+		height = "100%",	--"40%",
 		right = 0,
 		backgroundColor = {0,0,0,0},
 	}
@@ -556,6 +657,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 		width = 111,
 		height= 125,
 		file = pilot and pilot.portrait or nil,
+		file2 = "LuaUI/Images/portraits/frame.png",
 		keepAspect = true,
 	}
 	local panel_pilot_biodata = Panel:New{
@@ -573,11 +675,12 @@ local function CreateStatsWindow(unitID, unitDefID)
 		centerItems = false
 		]]
 	}
-	FillPilotBiodata(unitID, unitDefID, pilot, panel_pilot_biodata)
+	FillPilotBiodata(unitID, unitDefID, data, pilot, panel_pilot_biodata)
 	
 	local panel_morale = Panel:New{
 		parent = panel_pilot_stats;
-		y = 0,
+		x = 0,
+		--bottom = 0,
 		width = "100%",
 		height = '33%',
 		tooltip = "Angels with high morale get bonuses to accuracy, damage, and defense.",
@@ -605,7 +708,8 @@ local function CreateStatsWindow(unitID, unitDefID)
 	}
 	local panel_spirit = Panel:New{
 		parent = panel_pilot_stats;
-		y = '33%',
+		--x = "33%",
+		y = "33%",
 		width = "100%",
 		height = '33%',
 		tooltip = "When the Angel's spirit is at maximum, she can use her special attack.",
@@ -633,6 +737,7 @@ local function CreateStatsWindow(unitID, unitDefID)
 	}
 	local panel_suppression = Panel:New{
 		parent = panel_pilot_stats;
+		--x = "66%",
 		y = "66%",
 		width = "100%",
 		height = '33%',
@@ -671,7 +776,7 @@ function widget:MousePress(x,y,button)
 	local alt, ctrl, meta, shift = Spring.GetModKeyState()
 	
 	if alt then
-		local type, data = Spring.TraceScreenRay(x, y)
+		local type, data = Spring.TraceScreenRay(x, y, false, false, false, true)
 		if (type == 'unit') then
 			local unitID = data
 			local unitDefID = (Spring.GetUnitDefID(unitID))
@@ -703,7 +808,9 @@ function widget:Initialize()
 	Control = Chili.Control
 	screen0 = Chili.Screen0
 	
-	InfoLabel = Label:Inherit{}
+	InfoLabel = Label:Inherit{
+		drawcontrolv2 = true,
+	}
 	function InfoLabel:HitTest(x,y) return self end
 	
 	vsx,vsy = Spring.GetWindowGeometry()

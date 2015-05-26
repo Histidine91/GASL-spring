@@ -490,7 +490,7 @@ function gadget:UnitCreated(unitID, unitDefID, team)
 			Spring.MoveCtrl.Enable(unitID)
 			Spring.MoveCtrl.SetPosition(unitID,x,0,z)
 			--Spring.MoveCtrl.SetPosition(unitID,x,math.random(-100, 200),z)
-			Spring.MoveCtrl.SetPosition(unitID,x, unitDefID == UnitDefNames.placeholdersior.id and 1000 or 0,z)
+			--Spring.MoveCtrl.SetPosition(unitID,x, unitDefID == UnitDefNames.placeholdersior.id and 1000 or 0,z)
 			Script.SetWatchUnit(unitID, true)
 		end
 	end
@@ -567,7 +567,7 @@ function gadget:GameFrame(f)
 			local fresh = data.fresh
 			if fresh then	-- fix for units instantly pointing south on first turn
 				--pitch = math.pi	-- debug
-				local pitch = math.rad(-80)
+				--local pitch = math.rad(-80)
 				Spring.MoveCtrl.SetRotation(unitID,pitch,heading,data.roll)
 			end
 			data.fresh = nil
@@ -927,7 +927,7 @@ function gadget:GameFrame(f)
 			data.roll = roll
 			data.velocity = {vx, vy, vz}
 			--Spring.SetUnitVelocity(unitID, vx, vy, vz)
-			--Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
+			Spring.MoveCtrl.SetVelocity(unitID, vx, vy, vz)
 			
 			Spring.SetUnitRulesParam(unitID, "heading", heading)
 			Spring.SetUnitRulesParam(unitID, "pitch", pitch)

@@ -78,12 +78,15 @@ for unitName, data in pairs(tbl) do
     local opts = fx.options
     if opts.length then
       opts.baseLength = opts.length
+      opts.length = 0
     end
     if opts.width then
       opts.baseWidth = opts.width
+      opts.width = 0
     end
     if opts.size then
       opts.baseSize = opts.size
+      opts.size = 0
     end
   end
   

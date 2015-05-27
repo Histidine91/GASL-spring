@@ -1,10 +1,11 @@
+--TODO investigate Chili-Error in `Chili Selections & CursorTip`:2435 : [string "LuaUI/Widgets/chili/controls/control.lua"]:897: attempt to index field 'parent' (a nil value). (This bug is many months old. This TODO is written on 18 October 2013). See end of file for longer stacktrace.
 --------------------------------------------------------------------------------
 function widget:GetInfo()
   return {
     name      = "Chili Selections & CursorTip",
-    desc      = "v0.084 Chili Selection Window and Cursor Tooltip.",
+    desc      = "v0.097 Chili Selection Window and Cursor Tooltip.",
     author    = "CarRepairer, jK",
-    date      = "2009-06-02", --21 September 2013
+    date      = "2009-06-02", --22 December 2013
     license   = "GNU GPL, v2 or later",
     layer     = 0,
     experimental = false,
@@ -19,7 +20,7 @@ local spGetCurrentTooltip		= Spring.GetCurrentTooltip
 local spGetUnitDefID			= Spring.GetUnitDefID
 local spGetFeatureDefID			= Spring.GetFeatureDefID
 local spGetFeatureTeam			= Spring.GetFeatureTeam
-local spGetUnitAllyTeam			= Spring.GetUnitAllyTeam
+--local spGetUnitAllyTeam			= Spring.GetUnitAllyTeam
 local spGetUnitTeam				= Spring.GetUnitTeam
 local spGetUnitHealth			= Spring.GetUnitHealth
 local spGetUnitResources		= Spring.GetUnitResources
@@ -42,6 +43,7 @@ local spGetUnitRulesParam 				= Spring.GetUnitRulesParam
 local spSelectUnitArray 				= Spring.SelectUnitArray
 local spGetUnitPosition 			= Spring.GetUnitPosition
 local spGetGameRulesParam 			= Spring.GetGameRulesParam
+local spGetGroundHeight			= Spring.GetGroundHeight
 
 local echo = Spring.Echo
 
@@ -51,16 +53,18 @@ local glTexture 	= gl.Texture
 local glTexRect 	= gl.TexRect
 
 
-local abs						= math.abs
+--local abs						= math.abs
 local strFormat 				= string.format
 
-
 include("keysym.h.lua")
+VFS.Include("LuaRules/Configs/customcmds.h.lua")
+VFS.Include("LuaRules/Utilities/numberfunctions.lua")
 
+local transkey = include("Configs/transkey.lua")
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-local reverseCompat = (Game.version:find('91.') or (Game.version:find('94') and Game.version:find('94.1.1')== nil)) and 1 or 0
+local reverseCompat = (Game.version:find('91.0') == 1) and 1 or 0
 
 local Chili
 local Button
@@ -69,9 +73,7 @@ local Window
 local StackPanel
 local Panel
 local Grid
-local TextBox
 local Image
-local Multiprogressbar
 local Progressbar
 local LayoutPanel
 local Grid
@@ -82,7 +84,12 @@ local screen0
 --------------------------------------------------------------------------------
 
 local icon_size = 20
+local unitIcon_size = 50
 local stillCursorTime = 0
+
+local makeTooltipGap = 0
+local oldObjectID = 0
+local sameObjectIDTime = 0
 
 local scrH, scrW = 0,0
 local old_ttstr, old_data
@@ -99,19 +106,24 @@ local controls = {}
 local controls_icons = {}
 
 local stack_main, stack_leftbar
-local globalitems = {}
+local globalitems = {} --remember reference to various chili element that need to be accessed/updated globally.
 
 local ttFontSize = 10
 
 local green = '\255\1\255\1'
+local red = '\255\255\1\1'
 local cyan = '\255\1\255\255'
 local white = '\255\255\255\255'
 local yellow = '\255\255\255\1'
 
 local windMin = 0
 local windMax = 2.5
+local windGroundMin = 0
+local windGroundExtreme = 1
+local windGroundSlope = 1
+local windTidalThreashold = -10
 
-local updateFrequency = 0.1
+local updateFrequency = 0.25
 local updateFrequency2 = 1.0 --//update frequency for checking unit's command, for showing unit status in its picture.
 
 local timer = 0
@@ -128,21 +140,29 @@ local selectionSortOrder = {}
 
 local secondPerGameFrame = 1/30 --this constant is used for calculating weapon reload time.
 
-local color = {}
-
 local cursor_size = 24	-- pencil and eraser
 local iconFormat = ''
 
 local iconTypesPath = LUAUI_DIRNAME.."Configs/icontypes.lua"
 local icontypes = VFS.FileExists(iconTypesPath) and VFS.Include(iconTypesPath)
 
-local tildepressed, drawing, erasing, addingPoint
+local drawing, erasing, addingPoint
+local drawHotkeyBytes = {}
+local drawHotkeyBytesCount = 0
+local drawtoolKeyPressed
 
 local windTooltips = {
 	["armwin"] = true,
 }
 
 local mexDefID = UnitDefNames["cormex"] and UnitDefNames["cormex"].id or ''
+local windgenDefID = UnitDefNames["armwin"] and UnitDefNames["armwin"].id or ''
+
+local energyStructureDefs = {
+}
+
+local metalStructureDefs = {
+}
 
 local terraCmds = {
 	Ramp=1,
@@ -155,48 +175,113 @@ local terraTips = {}
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+-- Multiple units selected controls and data
+
+local multiSelect = {
+	barGrid = nil,
+	unitSquare = {data = {}, count = 0},
+	healthbarByUnitID = {},
+	healthbarByDefID = {},
+}
+--[[
+multiSelect = {
+	barGrid = layout panel which is the parent of the structure
+	unitSquare = {
+		data = {
+			[1] = {
+				defid
+			    unitid
+			    unitids
+				panel
+				image
+				label
+				labelIsChild
+				healthbar
+				isChild
+			}
+			...
+		},
+		count
+	},
+	healthbarByUnitID = {},
+	healthbarByDefID = {},
+}
+--]]
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- group info
 
 local numSelectedUnits = 0
-local maxPicFit = 12
+local maxPicFit = 10
 
-local gi_count = 0
-local gi_cost = 0
-local gi_finishedcost = 0
-local gi_hp = 0
-local gi_maxhp = 0
-local gi_metalincome = 0
-local gi_metaldrain = 0
-local gi_energyincome = 0
-local gi_energydrain = 0
-local gi_usedbp = 0
-local gi_totalbp = 0
+local unitInfoSum = {
+	count = 0,
+	cost = 0,
+	finishedcost = 0,
+	hp = 0,
+	maxhp = 0,
+	metalincome = 0,
+	metaldrain = 0,
+	energyincome = 0,
+	energydrain = 0,
+	usedbp = 0,
+	totalbp = 0,
+}
 
-local gi_str	--group info string
-local gi_label	--group info Chili label
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- UI elements
+
+local label_unitInfo
 
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
 options_path = 'Settings/HUD Panels/Tooltip'
-options_order = { 'tooltip_delay', 'hpshort', 'featurehp', 'hide_for_unreclaimable', 'showdrawtooltip','showterratooltip','showDrawTools',
-  'groupalways', 'showgroupinfo', 'squarepics','unitCommand', 'manualWeaponReloadBar', 'alwaysShowSelectionWin', 'color_background', 
+options_order = {
+	--tooltip
+	'tooltip_delay', 'independant_world_tooltip_delay', 'hpshort', 'featurehp', 
+	'show_for_units', 'show_for_wreckage', 'show_for_unreclaimable', 'show_position', 'show_unit_text', 'showdrawtooltip','showterratooltip',
+	
+	--mouse
+	'showDrawTools',
+	
+	--selected units
+	'selection_opacity', 'groupalways', 'showgroupinfo', 'squarepics','uniticon_size','unitCommand', 'manualWeaponReloadBar', 'alwaysShowSelectionWin',
 }
 
 local function option_Deselect()
-  -- unselect to prevent errors
-  Spring.SelectUnitMap({}, false)
-  window_height = options.squarepics.value and 140 or 115
+	-- unselect to prevent errors
+	Spring.SelectUnitMap({}, false)
+	window_height = options.squarepics.value and 140 or 115
+	multiSelect = {
+		barGrid = nil,
+		unitSquare = {data = {}, count = 0},
+		indexByUnitID = {},
+		healthbarByDefID = {},
+	}
 end
-local selPath = 'Settings/HUD Panels/Selected Units Window'
+
+local function Show(param) end
+
+local selPath = 'Settings/HUD Panels/Selected Units Panel'
 options = {
 	tooltip_delay = {
 		name = 'Tooltip display delay (0 - 4s)',
 		desc = 'Determines how long you can leave the mouse idle until the tooltip is displayed.',
 		type = 'number',
-		min=0,max=4,step=0.1,
+		min=0,max=4,step=0.05,
 		value = 0,
+	},
+	independant_world_tooltip_delay = {
+		name = 'Unit and Feature tooltip delay (0 - 4s)',
+		--desc = 'Determines how long you can leave the mouse over a unit or feature until the tooltip is displayed.',
+		type = 'number',
+		min=0,max=4,step=0.05,
+		value = 0.2,
 	},
 	--[[ This is causing it so playername is not always visible, too difficult to maintain.
 	fontsize = {
@@ -209,10 +294,10 @@ options = {
 	},
 	--]]
 	hpshort = {
-		name = "HP Short Notation",
+		name = "Short Number Notation",
 		type = 'bool',
 		value = false,
-		desc = 'Shows short number for HP.',
+		desc = 'Shows short number notation for HP and other values.',
 	},
 	featurehp = {
 		name = "Show HP on Features",
@@ -221,17 +306,52 @@ options = {
 		value = false,
 		desc = 'Shows healthbar for features.',
 		OnChange = function() 
-			--fixme: dispose?
-			controls['feature']=nil; 
-			controls['corpse']=nil; 
+			if controls['feature2'] then
+				for _,controls in pairs(controls['feature2']) do
+					controls:Dispose();
+				end
+			end
+			if controls['corpse2'] then
+				for _,controls in pairs(controls['corpse2']) do
+					controls:Dispose();
+				end
+			end
+			controls['feature2']=nil; 
+			controls['corpse2']=nil; 
 		end,
 	},
-	hide_for_unreclaimable = {
-		name = "Hide Tooltip for Unreclaimables",
+	show_for_units = {
+		name = "Show Tooltip for Units",
+		type = 'bool',
+		value = true,
+		desc = 'Show the tooltip for units.',
+	},
+	show_for_wreckage = {
+		name = "Show Tooltip for Wreckage",
+		type = 'bool',
+		value = true,
+		desc = 'Show the tooltip for wreckage and map features.',
+	},
+	show_for_unreclaimable = {
+		name = "Show Tooltip for Unreclaimables",
+		type = 'bool',
+		advanced = true,
+		value = false,
+		desc = 'Show the tooltip for unreclaimable features.',
+	},
+	show_position = {
+		name = "Show Position Tooltip",
 		type = 'bool',
 		advanced = true,
 		value = true,
-		desc = 'Don\'t show the tooltip for unreclaimable features.',
+		desc = 'Show the position tooltip, even when showing extended tooltips.',
+	},
+	show_unit_text = {
+		name = "Show Unit Text Tooltips",
+		type = 'bool',
+		advanced = true,
+		value = true,
+		desc = 'Show the text-only tooltips for units selected but not pointed at, even when showing extended tooltips.',
 	},
 	showdrawtooltip = {
 		name = "Show Map-drawing Tooltip",
@@ -239,6 +359,14 @@ options = {
 		value = true,
 		desc = 'Show map-drawing tooltip when holding down the tilde (~).',
 	},
+
+	showterratooltip = {
+		name = "Show Terraform Tooltip",
+		type = 'bool',
+		value = true,
+		desc = 'Show terraform tooltip when performing terraform commands.',
+	},
+	
 	showDrawTools = {
 		name = "Show Drawing Tools When Drawing",
 		type = 'bool',
@@ -249,13 +377,17 @@ options = {
 			widget:UpdateCallIns(self.value)
 		end
 	},
-	showterratooltip = {
-		name = "Show Terraform Tooltip",
-		type = 'bool',
-		value = true,
-		desc = 'Show terraform tooltip when performing terraform commands.',
-	},
 
+	selection_opacity = {
+		name = "Opacity",
+		type = "number",
+		value = 0.8, min = 0, max = 1, step = 0.01,
+		OnChange = function(self)
+			window_corner.backgroundColor = {1,1,1,self.value}
+			window_corner:Invalidate()
+		end,
+		path = selPath,
+	},
 	groupalways = {name='Always Group Units', type='bool', value=false, OnChange = option_Deselect,
 		path = selPath,
 	},
@@ -272,22 +404,25 @@ options = {
 		desc = "Display current command on unit's icon (only for ungrouped unit selection)",
 		path = selPath,
 	},
+	uniticon_size = {
+		name = 'Icon size on selection list',
+		--desc = 'Determines how small the icon in selection list need to be.',
+		type = 'number',
+		OnChange = function(self) 
+			option_Deselect()
+			unitIcon_size = math.modf(self.value)
+		end,
+		min=30,max=50,step=1,
+		value = 50,
+		path = selPath,
+	},
 	manualWeaponReloadBar = {
 		name="Show Unit's DGun Status",
 		type='bool',
 		value= true,
 		desc = "Show reload progress for weapon that use manual trigger (only for ungrouped unit selection)",
 		path = selPath,
-	},
-	color_background = {
-		name = "Background color",
-		type = "colors",
-		value = { 0, 0, 0, 0},
-		path = selPath,
-		OnChange = function(self) 
-			real_window_corner.color = self.value
-			real_window_corner:Invalidate()
-		end,
+		OnChange = option_Deselect,
 	},
 	alwaysShowSelectionWin = {
 		name="Always Show Selection Window",
@@ -295,8 +430,15 @@ options = {
 		value= false,
 		desc = "Always show the selection window even if nothing is selected.",
 		path = selPath,
+		OnChange = function(self)
+			if self.value and real_window_corner then
+				Show(real_window_corner)
+			end
+			widget:SelectionChanged(Spring.GetSelectedUnits())
+		end,
 	},
 }
+
 
 --[[
 local function FontChanged() 
@@ -326,6 +468,7 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+--helper functions
 
 function round(num, idp)
   if (not idp) then
@@ -336,64 +479,54 @@ function round(num, idp)
   end
 end
 
---from rooms widget by quantum
-local function ToSI(num)
-  if type(num) ~= 'number' then
-	return 'Tooltip wacky error #55'
-  end
-  if (num == 0) then
-    return "0"
-  else
-    local absNum = abs(num)
-    if (absNum < 0.001) then
-      return strFormat("%.1fu", 1000000 * num)
-    elseif (absNum < 1) then
-      return strFormat("%.1f", num)
-    elseif (absNum < 1000) then
-	  return strFormat("%.0f", num)
-    elseif (absNum < 1000000) then
-      return strFormat("%.1fk", 0.001 * num)
-    else
-      return strFormat("%.1fM", 0.000001 * num)
-    end
-  end
-end
-local function ToSIPrec(num) -- more presise
-  if type(num) ~= 'number' then
-	return 'Tooltip wacky error #56'
-  end
-  if not options.hpshort.value then 
-	return num
-  end 
-  if (num == 0) then
-    return "0"
-  else
-    local absNum = abs(num)
-    if (absNum < 0.001) then
-      return strFormat("%.2fu", 1000000 * num)
-    elseif (absNum < 1) then
-      return strFormat("%.2f", num)
-    elseif (absNum < 1000) then
-      return strFormat("%.1f", num)
-    elseif (absNum < 1000000) then
-      return strFormat("%.2fk", 0.001 * num)
-    else
-      return strFormat("%.2fM", 0.000001 * num)
-    end
-  end
+
+local function numformat(num, displaySign)
+	return options.hpshort.value and ToSI(num, displaySign) or numformat2(num, displaySign)
 end
 
+function numformat2(amount, displaySign)
+	local formatted
 
-local function numformat(num, displayPlusMinus)
-	return comma_value(ToSIPrec(num), displayPlusMinus)
+	if type(amount) == "number" then
+		if (amount ==0) then formatted = "0" else 
+			if (amount < 20 and (amount * 10)%10 ~=0) then 
+				if displaySign then formatted = strFormat("%+.1f", amount)
+				else formatted = strFormat("%.1f", amount) end 
+			else 
+				if displaySign then formatted = strFormat("%+d", amount)
+				else formatted = strFormat("%d", amount) end 
+			end 
+		end
+	else
+		formatted = amount .. ""
+	end
+	return formatted
 end
 
+--[[
+function comma_value(amount, displaySign)
+	local formatted
+
+	local k
+	while true do  
+		formatted, k = formatted:gsub("^(-?%d+)(%d%d%d)", '%1,%2')
+		if (k==0) then
+			break
+		end
+	end
+	
+  	return formatted
+end
+--]]
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+--functions
 
 local function DrawScreenDrawTools()
-	if not tildepressed then return end
+	
+	if not drawtoolKeyPressed then return end
+	
 	local x, y, lmb, mmb, rmb = Spring.GetMouseState()
 	drawing = lmb
 	erasing = rmb
@@ -419,19 +552,6 @@ local function DrawScreenDrawTools()
 	end
 end
 
---ToggleDrawTools = function(enable)
-function widget:UpdateCallIns(enable)
-	if enable then
-		self.DrawScreen = DrawScreenDrawTools
-	else
-		self.DrawScreen = function() end
-	end
-	
-	widgetHandler:UpdateCallIn("DrawScreen")
-	widgetHandler:UpdateCallIn("DrawScreen")
-end
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
 --get reload status for selected weapon
 local function GetWeaponReloadStatus(unitID, weapNum)
 	local unitDefID = spGetUnitDefID(unitID)
@@ -440,77 +560,83 @@ local function GetWeaponReloadStatus(unitID, weapNum)
 	if (weaponNoX ~= nil) and WeaponDefs[weaponNoX.weaponDef].manualFire then
 		local reloadTime = WeaponDefs[weaponNoX.weaponDef].reload
 		local _, _, weaponReloadFrame, _, _ = spGetUnitWeaponState(unitID, weapNum-reverseCompat) --select weapon no.X
-		local currentFrame, _ = spGetGameFrame() 
-		local remainingTime = (weaponReloadFrame - currentFrame)*secondPerGameFrame
-		local reloadFraction =1 - remainingTime/reloadTime
-		return reloadFraction, remainingTime
+		if weaponReloadFrame then
+			local currentFrame, _ = spGetGameFrame() 
+			local remainingTime = (weaponReloadFrame - currentFrame)*secondPerGameFrame
+			local reloadFraction =1 - remainingTime/reloadTime
+			return reloadFraction, remainingTime
+		end
 	end
 	return nil --Note: this mean unit doesn't have weapon number 'weapNum'
 end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
--- group selection
+-- group selection functions
 
 --updates cost, HP, and resourcing info for group info
 local function UpdateDynamicGroupInfo()
-	gi_cost = 0
-	gi_hp = 0
-	gi_metalincome = 0
-	gi_metaldrain = 0
-	gi_energyincome = 0
-	gi_energydrain = 0
-	gi_usedbp = 0
+	local total_cost = 0
+	local total_hp = 0
+	local total_metalincome = 0
+	local total_metaldrain = 0
+	local total_energyincome = 0
+	local total_energydrain = 0
+	local total_usedbp = 0
 	
+	local id,defID,ud --micro optimization, avoiding repeated localization.
+	local name,hp,paradam,cap,build,mm,mu,em,eu
+	local stunned_or_inbuld
+	local tooltip,baseMetal,s,od
 	for i = 1, numSelectedUnits do
-		local id = selectedUnits[i][1]
-		local defID = selectedUnits[i][2]
-		local ud = UnitDefs[defID]
+		id = selectedUnits[i][1]
+		defID = selectedUnits[i][2]
+		ud = UnitDefs[defID]
 		if ud then
-			local name = ud.name 
-			local hp, _, paradam, cap, build = spGetUnitHealth(id)
-			local mm,mu,em,eu = spGetUnitResources(id)
+			name = ud.name 
+			hp, _, paradam, cap, build = spGetUnitHealth(id)
+			mm,mu,em,eu = spGetUnitResources(id)
 		
 			if name ~= "terraunit" then
 				if mm then--failsafe when switching spectator view.
-					gi_cost = gi_cost + ud.metalCost*build
-					gi_hp = gi_hp + hp
+					total_cost = total_cost + ud.metalCost*build
+					total_hp = total_hp + hp
 				end
 				
-				local stunned_or_inbuld = spGetUnitIsStunned(id)
+				stunned_or_inbuld = spGetUnitIsStunned(id)
 				if not stunned_or_inbuld then 
 					if name == 'armmex' or name =='cormex' then -- mex case
-						local tooltip = spGetUnitTooltip(id) or '' --Note:spGetUnitTooltip(id) become NIL if spectator select enemy team's unit while Spectating allied team with limited LOS.
+						tooltip = spGetUnitTooltip(id) or '' --Note:spGetUnitTooltip(id) become NIL if spectator select enemy team's unit while Spectating allied team with limited LOS.
 						
-						local baseMetal = 0
-						local s = tooltip:match("Makes: ([^ ]+)")
+						baseMetal = 0
+						s = tooltip:match("Makes: ([^ ]+)")
 						if s ~= nil then 
 							baseMetal = tonumber(s) 
 						end 
 										
 						s = tooltip:match("Overdrive: %+([0-9]+)")
-						local od = 0
+						od = 0
 						if s ~= nil then 
 							od = tonumber(s) 
 						end
 						
-						gi_metalincome = gi_metalincome + baseMetal + baseMetal * od / 100
+						total_metalincome = total_metalincome + baseMetal + baseMetal * od / 100
 							
 						s = tooltip:match("Energy: ([^ ]+)")
 						if s ~= nil then 
-							gi_energydrain = gi_energydrain - (tonumber(s) or 0)
+							total_energydrain = total_energydrain - (tonumber(s) or 0)
 						end 
 					else
 						if mm then --failsafe when switching spectator view.
-							gi_metalincome = gi_metalincome + mm
-							gi_metaldrain = gi_metaldrain + mu
-							gi_energyincome = gi_energyincome + em
-							gi_energydrain = gi_energydrain + eu
+							total_metalincome = total_metalincome + mm
+							total_metaldrain = total_metaldrain + mu
+							total_energyincome = total_energyincome + em
+							total_energydrain = total_energydrain + eu
 						end
 					end
 					
 					if ud.buildSpeed ~= 0 and mm then
-						gi_usedbp = gi_usedbp + mu
+						total_usedbp = total_usedbp + mu
 					end
 				end
 			end
@@ -518,100 +644,124 @@ local function UpdateDynamicGroupInfo()
 		
 	end
 	
-	gi_cost = numformat(gi_cost)
-	gi_hp = numformat(gi_hp)
-	gi_metalincome = numformat(gi_metalincome)
-	gi_metaldrain = numformat(gi_metaldrain)
-	gi_energyincome = numformat(gi_energyincome)
-	gi_energydrain = numformat(gi_energydrain)
-	gi_usedbp = numformat(gi_usedbp)
+	unitInfoSum.count = numSelectedUnits
+	unitInfoSum.cost = total_cost
+	unitInfoSum.hp = total_hp
+	unitInfoSum.metalincome = total_metalincome
+	unitInfoSum.metaldrain = total_metaldrain
+	unitInfoSum.energyincome = total_energyincome
+	unitInfoSum.energydrain = total_energydrain
+	unitInfoSum.usedbp = total_usedbp
 end
 
 --updates values that don't change over time for group info
 local function UpdateStaticGroupInfo()
-	gi_count = numSelectedUnits
-	gi_finishedcost = 0
-	gi_totalbp = 0
-	gi_maxhp = 0
+	local total_count = numSelectedUnits
+	local total_finishedcost = 0
+	local total_totalbp = 0
+	local total_maxhp = 0
 	
+	local defID, ud
 	for i = 1, numSelectedUnits do
-		local defID = selectedUnits[i][2]
-		local ud = UnitDefs[defID]
+		defID = selectedUnits[i][2]
+		ud = UnitDefs[defID]
 		if ud then
-			local name = ud.name 
-			if name ~= "terraunit" then
-				gi_totalbp = gi_totalbp + ud.buildSpeed
-				gi_maxhp = gi_maxhp + ud.health
-				gi_finishedcost = gi_finishedcost + ud.metalCost
+			if ud.name ~= "terraunit" then
+				total_totalbp = total_totalbp + ud.buildSpeed
+				total_maxhp = total_maxhp + ud.health
+				total_finishedcost = total_finishedcost + ud.metalCost
 			end
 		end
 	end
-	gi_finishedcost = numformat(gi_finishedcost)
-	gi_totalbp = numformat(gi_totalbp)
-	gi_maxhp = numformat(gi_maxhp)
+	unitInfoSum.finishedcost = total_finishedcost
+	unitInfoSum.totalbp = total_totalbp
+	unitInfoSum.maxhp = total_maxhp
 end
-
-
 
 --this is a separate function to allow group info to be regenerated without reloading the whole tooltip
 local function WriteGroupInfo()
+	if label_unitInfo then
+		label_unitInfo:Dispose(); --delete chili element
+		label_unitInfo=nil;
+	end
+	
 	if not options.showgroupinfo.value or numSelectedUnits==0 then
 		return 
 	end
-
-	if gi_label then
-		window_corner:RemoveChild(gi_label)
-	end
+	
 	local dgunStatus = ''
 	if stt_unitID and numSelectedUnits == 1 and options.manualWeaponReloadBar.value then
 		local reloadFraction, remainingTime = GetWeaponReloadStatus(stt_unitID,3)  --select weapon no.3 (slot 3 is by ZK convention is usually used for user controlled weapon)
 		if reloadFraction then
 			if reloadFraction < 0.99 then
 				remainingTime = math.floor(remainingTime)
-				dgunStatus = "\nDGun\255\255\90\90 Reloading\255\255\255\255(" .. remainingTime .. "s)"  --red and white
+				if remainingTime > 1000 then
+					remainingTime = "Never"
+				else
+					remainingTime = remainingTime .. "s"
+				end
+				dgunStatus = "\nDGun\255\255\90\90 Reloading\255\255\255\255(" .. remainingTime .. ")"  --red and white
 			else
 				dgunStatus = "\nDGun\255\90\255\90 Ready\255\255\255\255"
 			end
 		end
 	end
-	local metal = (tonumber(gi_metalincome)>0 or tonumber(gi_metaldrain)>0) and ("\nMetal \255\0\255\0+" .. gi_metalincome .. "\255\255\255\255 / \255\255\0\0-" ..  gi_metaldrain  .. "\255\255\255\255") or '' --have metal or ''
-	local energy = (tonumber(gi_energyincome)>0 or tonumber(gi_energydrain)>0) and ("\nEnergy \255\0\255\0+" .. gi_energyincome .. "\255\255\255\255 / \255\255\0\0-" .. gi_energydrain .. "\255\255\255\255") or '' --have energy or ''
-	local buildpower = (tonumber(gi_totalbp)>0) and ("\nBuild Power " .. gi_usedbp .. " / " ..  gi_totalbp) or ''  --have buildpower or ''
-	gi_str = 
-		"Selected Units " .. gi_count ..
-		"\nHealth " .. gi_hp .. " / " ..  gi_maxhp ..
-		"\nCost " .. gi_cost .. " / " ..  gi_finishedcost ..
+	local metal = (tonumber(unitInfoSum.metalincome)>0 or tonumber(unitInfoSum.metaldrain)>0) and ("\nMetal \255\0\255\0" .. numformat(unitInfoSum.metalincome, true) .. "\255\255\255\255 / \255\255\0\0" ..  numformat(-unitInfoSum.metaldrain, true)  .. "\255\255\255\255") or '' --have metal or ''
+	local energy = (tonumber(unitInfoSum.energyincome)>0 or tonumber(unitInfoSum.energydrain)>0) and ("\nEnergy \255\0\255\0" .. numformat(unitInfoSum.energyincome, true) .. "\255\255\255\255 / \255\255\0\0" .. numformat(-unitInfoSum.energydrain, true) .. "\255\255\255\255") or '' --have energy or ''
+	local buildpower = (tonumber(unitInfoSum.totalbp)>0) and ("\nBuild Power " .. numformat(unitInfoSum.usedbp) .. " / " ..  numformat(unitInfoSum.totalbp)) or ''  --have buildpower or ''
+	local unitInfoString = 
+		"Selected Units " .. numformat(unitInfoSum.count) ..
+		"\nHealth " .. numformat(unitInfoSum.hp) .. " / " ..  numformat(unitInfoSum.maxhp) ..
+		"\nCost " .. numformat(unitInfoSum.cost) .. " / " ..  numformat(unitInfoSum.finishedcost) ..
 		metal .. energy ..	buildpower .. dgunStatus
-		
-	gi_label = Label:New{
+	
+	label_unitInfo = Label:New{ --recreate chili element (rather than just updating caption) to avoid color bug
 		parent = window_corner;
 		y=5,
 		right=5,
 		x=window_corner.width-150,
 		height  = '100%';
 		width = 120,
-		caption = gi_str;
+		caption = unitInfoString;
 		valign  = 'top';
 		fontSize = 12;
 		fontShadow = true;
 	}
+	
 end
 
-
+-- group selection functions
 ----------------------------------------------------------------
 ----------------------------------------------------------------
 
-local function Show(obj)
+Show = function(obj)
 	if (not obj:IsDescendantOf(screen0)) then
 		screen0:AddChild(obj)
 	end
 end
 
+local function DisposeSelectionDisplay()
+	local windowCornerData = globalitems["window_corner_direct_child"]
+	if windowCornerData then
+		if windowCornerData.disposable then
+			windowCornerData[1]:Dispose()
+			if windowCornerData[2] then
+				windowCornerData[2]:Dispose()
+			end
+		else
+			window_corner:RemoveChild(windowCornerData[1])
+			if windowCornerData[2] then
+				window_corner:RemoveChild(windowCornerData[2])
+			end
+		end
+		globalitems["window_corner_direct_child"]=nil
+	end
+end
 
 local function GetUnitDesc(unitID, ud)
 	if not (unitID or ud) then return '' end
 	
-	local lang = WG.lang or 'en'
+	local lang = (WG.lang and WG.lang()) or 'en'
 	local font = WG.langFont
 	
 	
@@ -619,9 +769,9 @@ local function GetUnitDesc(unitID, ud)
 		if unitID then
 			local tooltip = spGetUnitTooltip(unitID)
 			if windTooltips[ud.name] and not spGetUnitRulesParam(unitID,"NotWindmill") and spGetUnitRulesParam(unitID,"minWind") then
-				tooltip = tooltip .. "\nWind Range " .. string.format("%.1f", spGetUnitRulesParam(unitID,"minWind")) .. " - " .. string.format("%.1f", spGetGameRulesParam("WindMax") )
+				tooltip = tooltip .. "\nWind Range " .. string.format("%.1f", spGetUnitRulesParam(unitID,"minWind")) .. " - " .. string.format("%.1f", windMax )
 			end
-			tooltip = tooltip:gsub( '^' .. ud.humanName .. ' %- ', '' )
+			tooltip = tooltip:gsub( '^' .. ud.humanName .. ' %- ', '' ) -- remove name from desc
 			return tooltip
 		end
 		return ud.tooltip
@@ -640,9 +790,8 @@ local function GetUnitDesc(unitID, ud)
 	
 	if unitID then
 		local endesc = ud.tooltip
-		
-		local tooltip = spGetUnitTooltip(unitID):gsub(endesc, desc)
-		if windTooltips[ud.name] and not spGetUnitRulesParam(unitID,"NotWindmill") then
+		local tooltip = spGetUnitTooltip(unitID):gsub(endesc, desc):gsub( '^' .. ud.humanName .. ' %- ', '' ) -- permutation description-> description_FR for example
+		if windTooltips[ud.name] and not spGetUnitRulesParam(unitID,"NotWindmill") and spGetUnitRulesParam(unitID,"minWind") then
 			tooltip = tooltip .. "\nWind Range " .. string.format("%.1f", spGetUnitRulesParam(unitID,"minWind")) .. " - " .. spGetGameRulesParam("WindMax")
 		end
 		return tooltip
@@ -650,308 +799,345 @@ local function GetUnitDesc(unitID, ud)
 	return desc
 end
 
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-local function AddSelectionIcon(barGrid,unitid,defid,unitids,counts)
+local function AddSelectionIcon(index,unitid,defid,unitids,counts)
+	counts = counts or 1
 	local ud = UnitDefs[defid]
-	local item = LayoutPanel:New{
-		name    = unitid or defid;
-		parent  = barGrid;
-		width   = 50;
-		height  = 62;
-		columns = 1;
-		padding     = {0,0,0,0};
-		itemPadding = {0,0,0,0};
-		itemMargin  = {0,0,0,1};
-		resizeItems = false;
-		centerItems = false;
-		autosize    = true;		
-	}
-	local img = Image:New{
-		name = "selImage";
-		parent  = item;
-		tooltip = ud.humanName .. " - " .. ud.tooltip.. "\n\255\0\255\0Click: Select \nRightclick: Deselect \nAlt+Click: Select One \nCtrl+click: Select Type \nMiddle-click: Goto";
-		file2   = (WG.GetBuildIconFrame)and(WG.GetBuildIconFrame(UnitDefs[defid]));
-		file    = "#" .. defid;
-		keepAspect = false;
-		height  = 50 * (options.squarepics.value and 1 or (4/5));
-		--height  = 50;
-		width   = 50;
-		padding = {0,0,0,0}; --FIXME something overrides the default in image.lua!!!!
-		OnClick = {function(_,_,_,button)
-			
-			local alt, ctrl, meta, shift = spGetModKeyState()
-			
-			if (button==3) then
-				if (unitid and not ctrl) then
-					--// deselect a single unit
-					for i=1,numSelectedUnits do
-						if (selectedUnits[i][1]==unitid) then
-							table.remove(selectedUnits,i)
-							break
+	
+	if multiSelect.unitSquare.data[index] then
+		local squareData = multiSelect.unitSquare.data[index]
+		squareData.defid = defid
+		squareData.unitid = unitid
+		squareData.unitids = unitids
+		
+		squareData.image.tooltip = ud.humanName .. " - " .. ud.tooltip.. "\n\255\0\255\0Left Click: Select \nRight Click: Deselect \nShift+Left Click: Select Type\nShift+Right Click: Deselect Type \nMiddle-click: Goto"
+		squareData.image.file2 = (WG.GetBuildIconFrame)and(WG.GetBuildIconFrame(UnitDefs[defid]))
+		squareData.image.file = "#" .. defid
+		
+		if counts > 1 then
+			if squareData.label then
+				if not squareData.labelIsChild then
+					squareData.image:AddChild(squareData.label)
+					squareData.labelIsChild = true
+				end
+				squareData.label:SetCaption(counts)
+			else
+				squareData.labelIsChild = true
+				squareData.label = Label:New{
+					name = "selLabel";
+					parent = squareData.image;
+					align  = "right";
+					valign = "top";
+					x =  unitIcon_size*0.16;
+					--y = 30;
+					y = unitIcon_size*0.4;
+					width = unitIcon_size*0.8;
+					fontsize   = 20;
+					fontshadow = true;
+					fontOutline = true;
+					caption    = counts;
+				};
+			end
+		else
+			if squareData.label and squareData.labelIsChild then
+				squareData.image:RemoveChild(squareData.label)
+				squareData.labelIsChild = false
+			end
+		end
+		
+		if unitid then
+			multiSelect.indexByUnitID[unitid] = index
+		end
+		if defid then
+			multiSelect.healthbarByDefID[defid] = squareData.healthbar
+		end
+		
+		if squareData.reloadbarIsChild then
+			squareData.panel:RemoveChild(squareData.reloadbar)
+			squareData.reloadbarIsChild = false
+		end
+		
+		squareData.image:Invalidate()
+	else
+		multiSelect.unitSquare.count = multiSelect.unitSquare.count + 1
+		multiSelect.unitSquare.data[index] = {
+			defid = defid,
+			unitid = unitid,
+			unitids = unitids,
+			isChild = true,
+		}
+		local squareData = multiSelect.unitSquare.data[index]
+		
+		squareData.panel = LayoutPanel:New{
+			name    = index;
+			parent  = multiSelect.barGrid;
+			width   = unitIcon_size;
+			height  = unitIcon_size*1.24;
+			columns = 1;
+			padding     = {0,0,0,0};
+			itemPadding = {0,0,0,0};
+			itemMargin  = {0,0,0,1};
+			resizeItems = false;
+			centerItems = false;
+			autosize    = true;		
+		}
+		squareData.image = Image:New{
+			name = "selImage";
+			parent  = squareData.panel;
+			tooltip = ud.humanName .. " - " .. ud.tooltip.. "\n\255\0\255\0Left Click: Select \nRight Click: Deselect \nShift+Left Click: Select Type\nShift+Right Click: Deselect Type \nMiddle-click: Goto";
+			file2   = (WG.GetBuildIconFrame)and(WG.GetBuildIconFrame(UnitDefs[defid]));
+			file    = "#" .. defid;
+			keepAspect = false;
+			height  = unitIcon_size * (options.squarepics.value and 1 or (4/5));
+			--height  = 50;
+			width   = unitIcon_size;
+			padding = {0,0,0,0}; --FIXME something overrides the default in image.lua!!!!
+			OnClick = {function(_,_,_,button)
+				
+				local alt, ctrl, meta, shift = spGetModKeyState()
+				
+				if (button==3) then
+					if shift then
+						--// deselect a whole unitdef block
+						for i = numSelectedUnits,1,-1 do
+							if (selectedUnits[i][2] == squareData.defid) then
+								table.remove(selectedUnits,i)
+								if not shift then
+									break
+								end
+							end
 						end
-					end
-				else
-					--// deselect a whole unitdef block
-					for i=numSelectedUnits,1,-1 do
-						if (selectedUnits[i][2]==defid) then
-							table.remove(selectedUnits,i)
-							if (alt) then
-								break
+					else
+						--// deselect a single unit
+						local removed = false
+						if squareData.unitid then
+							for i = 1, numSelectedUnits do
+								if (selectedUnits[i][1] == squareData.unitid) then
+									table.remove(selectedUnits,i)
+									removed = true
+									break
+								end
+							end
+						end
+						if not removed then
+							for i = 1, numSelectedUnits do
+								if (selectedUnits[i][2] == squareData.defid) then
+									table.remove(selectedUnits,i)
+									break
+								end
 							end
 						end
 					end
-				end
-				local selectedIds = {}
-				for i = 1, #selectedUnits do
-					selectedIds[i] = selectedUnits[i][1]
-				end
-				spSelectUnitArray(selectedIds)
-				--update selected units right now
-				local sel = spGetSelectedUnits()
-				widget:SelectionChanged(sel)
-			elseif button == 1 then
-				if not ctrl then 
-					if (alt) then
-						spSelectUnitArray({ selectedUnitsByDef[defid][1] })  -- only 1	
-					else
-						spSelectUnitArray(unitids) -- no modifier - select all
+					local selectedIds = {}
+					for i = 1, #selectedUnits do
+						selectedIds[i] = selectedUnits[i][1]
 					end
-				else
-					-- select all units of the icon type
-					spSelectUnitArray(selectedUnitsByDef[defid])
-					
-					--local sorted = Spring.GetTeamUnitsSorted(Spring.GetMyTeamID())						
-					--local units = sorted[defid]
-					--if units then Spring.SelectUnitArray(units) end
+					spSelectUnitArray(selectedIds)
+					--update selected units right now
+					local sel = spGetSelectedUnits()
+					widget:SelectionChanged(sel)
+				elseif button == 1 then
+					if shift then
+						spSelectUnitArray(selectedUnitsByDef[squareData.defid]) -- select all
+					else
+						if squareData.unitid then
+							spSelectUnitArray({squareData.unitid})
+						else						
+							spSelectUnitArray({ selectedUnitsByDef[squareData.defid][1] })  -- only 1	
+						end
+					end
+				else --button2 (middle)
+					local x,y,z = spGetUnitPosition( squareData.unitids[1] )
+					Spring.SetCameraTarget(x,y,z, 1)
 				end
-			else --button2 (middle)
-				local x,y,z = spGetUnitPosition( unitids[1] )
-				Spring.SetCameraTarget(x,y,z, 1)
-			end
-		end}
-	};
-	if ((counts or 1)>1) then --//add unit count when units are grouped.
-		Label:New{
-			name = "selLabel";
-			parent = img;
-			align  = "right";
-			valign = "top";
-			x =  8;
-			--y = 30;
-			y = 20;
-			width = 40;
-			fontsize   = 20;
-			fontshadow = true;
-			fontOutline = true;
-			caption    = counts;
+			end}
 		};
+		if counts > 1 then
+			squareData.labelIsChild = true
+			squareData.label = Label:New{
+				name = "selLabel";
+				parent = squareData.image;
+				align  = "right";
+				valign = "top";
+				x =  unitIcon_size*0.16;
+				--y = 30;
+				y = unitIcon_size*0.4;
+				width = unitIcon_size*0.8;
+				fontsize   = 20;
+				fontshadow = true;
+				fontOutline = true;
+				caption    = counts;
+			};
+		end
+		squareData.healthbar = Progressbar:New{
+			parent  = squareData.panel;
+			name    = 'health';
+			width   = unitIcon_size;
+			height  = unitIcon_size*0.2;
+			max     = 1;
+			color   = {0.0,0.99,0.0,1};
+		};
+		
+		if unitid then
+			multiSelect.indexByUnitID[unitid] = index
+		end
+		if defid then
+			multiSelect.healthbarByDefID[defid] = squareData.healthbar
+		end
+		
+		if squareData.reloadbarIsChild then
+			squareData.panel:RemoveChild(squareData.reloadbar)
+			squareData.reloadbarIsChild = false
+		end
 	end
-	Progressbar:New{
-		parent  = item;
-		name    = 'health';
-		width   = 50;
-		height  = 10;
-		max     = 1;
-		color   = {0.0,0.99,0.0,1};
-	};
 end
 
 local function MakeUnitGroupSelectionToolTip()
-	window_corner:ClearChildren();
-	
-	--IDEA: add scrollpanel as parent to barGrid (like playerlist)? but IMO selection bar is a reflex UI and thus only need only visible element and not hidden rows. 
-	local barGrid = LayoutPanel:New{
-		name     = 'Bars';
-		resizeItems = false;
-		centerItems = false;
-		parent  = window_corner;
-		height  = "100%";
-		x=0,
-		--width   = "100%";
-		right=options.showgroupinfo.value and 120 or 0, --expand to right
-		--columns = 5;
-		itemPadding = {0,0,0,0};
-		itemMargin  = {0,0,2,2};
-		tooltip = "Left Click: Select unit(s)\nRight Click: Deselect unit(s)\nMid Click: Focus camera to unit";
-	}
-	do --check how many picture can fit into the selection grid (estimated!)
-		local maxRight, maxBottom = barGrid:GetMinimumExtents()
-		maxRight = maxRight - (options.showgroupinfo.value and 120 or 0)
-		local horizontalFit = maxRight/50
-		local verticalFit = maxBottom/50
-		maxPicFit = horizontalFit*verticalFit --Note: maxPicFit not need to round to nearest integer.
+	local infoSection_size = 131
+	if not multiSelect.barGrid then
+		multiSelect.barGrid = LayoutPanel:New{
+			name     = 'Bars';
+			resizeItems = false;
+			centerItems = false;
+			height  = "100%";
+			x=0,
+			--width   = "100%";
+			right = options.showgroupinfo.value and infoSection_size or 0, --expand to right
+			--columns = 5;
+			itemPadding = {0,0,0,0};
+			itemMargin  = {0,0,2,2};
+			tooltip = "Left Click: Select unit(s)\nRight Click: Deselect unit(s)\nMid Click: Focus camera to unit";
+		}
 	end
-	--if check is done in target function
-	--if options.showgroupinfo.value then
-		WriteGroupInfo()
-	--end
-
+	
+	--estimate how many picture can fit into the selection grid
+	local maxRight = window_corner.width - (options.showgroupinfo.value and infoSection_size or 0) - 20
+	local horizontalFit =  math.modf(maxRight/(unitIcon_size+2))
+	local verticalFit = math.modf((window_corner.height  - 20)/(unitIcon_size+2))
+	maxPicFit = horizontalFit*verticalFit
 	local pictureWithinCapacity = (numSelectedUnits <= maxPicFit)
 
-	local gi_groupingbutton = Button:New{ --add a button that allow you to change alwaysgroup value on the interface directly
-		name = 'AlwaysGroupButton';
-		parent = window_corner;
-		bottom= 1,
-		right = 110,
-		minHeight = 18,
-		width = 18,
-		backgroundColor = {0,0,0,0.1},
-		fontSize = 9,
-		caption = pictureWithinCapacity and (options.groupalways.value and "[---]" or "---") or "#", 
-		OnMouseDown = {pictureWithinCapacity and function(self) 
-			options.groupalways.value = not options.groupalways.value
-			local selUnits = spGetSelectedUnits()
-			widget:SelectionChanged(selUnits) --this will recreate all buttons
-			end or function() end},
-		textColor = {1,1,1,0.75}, 
-		tooltip = pictureWithinCapacity and (options.groupalways.value and  "Unit group based on type" or "Unit not grouped") or "Bar is full, unit group based on type",
-	}
+	WriteGroupInfo() --write selection summary text on right side of the panel
+
+	local index = 1
+	multiSelect.indexByUnitID = {}
+	multiSelect.healthbarByDefID = {}
 	
-
 	if ( pictureWithinCapacity and (not options.groupalways.value)) then
-		for i=1,numSelectedUnits do
-			local unitid = selectedUnits[i][1]
-			local defid  = selectedUnits[i][2]
-			local unitids = {unitid}
+		local unitid,defid,unitids
+		while index <= numSelectedUnits do
+			unitid = selectedUnits[index][1]
+			defid  = selectedUnits[index][2]
+			unitids = {unitid}
 
-			AddSelectionIcon(barGrid,unitid,defid,unitids)
+			AddSelectionIcon(index,unitid,defid,unitids)
+			local squareData = multiSelect.unitSquare.data[index]
+			if not squareData.isChild then
+				multiSelect.barGrid:AddChild(squareData.panel)
+				squareData.isChild = true
+			end
+			index = index + 1
 		end
 	else
-		for i=1,#selectionSortOrder do
-			local defid   = selectionSortOrder[i]
-			local unitids = selectedUnitsByDef[defid]
-			local counts  = selectedUnitsByDefCounts[defid]
-
-			AddSelectionIcon(barGrid,nil,defid,unitids,counts)
+		local defid,unitids,counts
+		maxPicFit = math.min(#selectionSortOrder,maxPicFit)
+		while index <= maxPicFit do
+			defid   = selectionSortOrder[index]
+			unitids = selectedUnitsByDef[defid]
+			counts  = selectedUnitsByDefCounts[defid]
+			AddSelectionIcon(index,nil,defid,unitids,counts)
+			local squareData = multiSelect.unitSquare.data[index]
+			if not squareData.isChild then
+				multiSelect.barGrid:AddChild(squareData.panel)
+				squareData.isChild = true
+			end
+			index = index + 1
 		end
 	end
+	
+	-- Remove the unneeded children
+	while index <= multiSelect.unitSquare.count do
+		local squareData = multiSelect.unitSquare.data[index]
+		if squareData.isChild then
+			multiSelect.barGrid:RemoveChild(squareData.panel)
+			squareData.isChild = false
+		end
+		index = index + 1
+	end
+	
+	return multiSelect.barGrid
 end
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
 
 
 local function UpdateSelectedUnitsTooltip()
 	if (numSelectedUnits>1) then
-			local barsContainer = window_corner.childrenByName['Bars']
+		local barsContainer = window_corner.childrenByName['Bars']
 
-			if ((numSelectedUnits <= maxPicFit) and (not options.groupalways.value)) then
-				for i=1,numSelectedUnits do
-					local unitid = selectedUnits[i][1]
-					--Spring.Echo(unitid)
-					local unitIcon = barsContainer.childrenByName[unitid]
-					local healthbar = unitIcon.childrenByName['health']
-					local health, maxhealth = spGetUnitHealth(unitid)
-					if (health) then --safety against spectating in limited LOS
-						healthbar.tooltip = numformat(health) .. ' / ' .. numformat(maxhealth)
-						healthbar.color = GetHealthColor(health/maxhealth)
-						healthbar:SetValue(health/maxhealth) --update the healthbar value
-					
-						--RELOAD_BAR: start-- , by msafwan. Function: show tiny reload bar for clickable weapon in unit selection list
-						if options.manualWeaponReloadBar.value then
-							local reloadFraction,remainingTime = GetWeaponReloadStatus(unitid, 3)
-							if reloadFraction then
-								local reloadMiniBar = unitIcon.childrenByName['reloadMiniBar']
-								if reloadMiniBar and reloadFraction < 0.99 then --update value IF already have the miniBar & is reloading weapon
-									reloadMiniBar:SetValue(reloadFraction)
-									miniReloadBarPresent = true
-								elseif reloadMiniBar then --remove the minibar IF not reloading weapon
-									unitIcon:RemoveChild(reloadMiniBar) --ref: chili/Controls/object.lua by jK & quantum.
-									unitIcon:RemoveChild(healthbar) --delete modified healthbar 
-									Progressbar:New{ --recreate original healthbar 
-										parent  = unitIcon;
-										name    = 'health';
-										width   = 50;
-										height  = 10;
-										max     = 1;
-										value 	= (health/maxhealth);
-										color   = {0.0,0.99,0.0,1};
-									};
-								elseif reloadFraction < 0.99 then --create the minibar IF doesn't have the minibar & is reloading weapon
-										unitIcon:RemoveChild(healthbar) --delete original healthbar 
-										Progressbar:New{ --recreate new healthbar (this is to solve issue of bar not resizing when we just changed the "height" & do 'healthbar:Invalidate()').
-											parent  = unitIcon;
-											name    = 'health';
-											width   = 50;
-											height  = 8;
-											minHeight = 8;
-											max     = 1;
-											value 	= (health/maxhealth);
-											color   = {0.0,0.99,0.0,1};
-										};
-										Progressbar:New{ --create mini reload bar
-											parent  = unitIcon;
-											name    = 'reloadMiniBar';
-											width   = 49;
-											height  = 2;
-											minHeight = 2;
-											max     = 1;
-											value = reloadFraction;
-											color   = {013, 245, 243,1}; --? color. 
-										};
-								end
+		if ((numSelectedUnits <= maxPicFit) and (not options.groupalways.value)) then
+			for i=1,numSelectedUnits do
+				local unitid = selectedUnits[i][1]
+				--Spring.Echo(unitid)
+				local index = multiSelect.indexByUnitID[unitid]
+				local squareData = multiSelect.unitSquare.data[index]
+				local healthbar = squareData.healthbar
+				local health, maxhealth = spGetUnitHealth(unitid)
+				if health and healthbar then --safety against spectating in limited LOS
+					healthbar.tooltip = numformat(health) .. ' / ' .. numformat(maxhealth)
+					healthbar.color = GetHealthColor(health/maxhealth)
+					healthbar:SetValue(health/maxhealth) --update the healthbar value
+				end
+				
+				if options.manualWeaponReloadBar.value then
+					local reloadFraction,remainingTime = GetWeaponReloadStatus(unitid, 3)
+					if squareData.reloadbar then
+						if reloadFraction and reloadFraction < 0.99 then
+							if not squareData.reloadbarIsChild then
+								squareData.panel:AddChild(squareData.reloadbar)
+								squareData.reloadbarIsChild = true
 							end
+							squareData.reloadbar:SetValue(reloadFraction)
+						else
+							if squareData.reloadbarIsChild then
+								squareData.panel:RemoveChild(squareData.reloadbar)
+								squareData.reloadbarIsChild = false
+							end
+						end	
+					else
+						if reloadFraction and reloadFraction < 0.99 then
+							squareData.reloadbarIsChild = true
+							squareData.reloadbar = Progressbar:New{
+								parent  = squareData.panel;
+								name    = 'reloadMiniBar';
+								width   = unitIcon_size*0.98;
+								height  = unitIcon_size*0.04;
+								minHeight = unitIcon_size*0.04;
+								max     = 1;
+								value = reloadFraction;
+								color   = {013, 245, 243,1}; --? 
+							};
 						end
-						--RELOAD_BAR: end--	
 					end
 				end
-			else
-				for defid,unitids in pairs(selectedUnitsByDef) do --when grouped by unitDef
-					local health = 0
-					local maxhealth = 0
-					for i=1,#unitids do
-						local uhealth, umaxhealth = spGetUnitHealth(unitids[i])
+			end
+		else
+			for defid,unitids in pairs(selectedUnitsByDef) do --when grouped by unitDef
+				local health = 0
+				local maxhealth = 0
+				for i=1,#unitids do
+					local uhealth, umaxhealth = spGetUnitHealth(unitids[i])
+					if (health) then
 						health = health + (uhealth or 0)
 						maxhealth = maxhealth + (umaxhealth or 0)
 					end
-
-					local unitGroup = barsContainer.childrenByName[defid]
-					if unitGroup then --failsafe when spectating and selecting enemy units without LOS
-						local healthbar = unitGroup.childrenByName['health']
-						healthbar.tooltip = numformat(health) .. ' / ' .. numformat(maxhealth)
-						healthbar.color = GetHealthColor(health/maxhealth)
-						healthbar:SetValue(health/maxhealth)
-					end
+				end
+				local healthbar = multiSelect.healthbarByDefID[defid]
+				if healthbar then
+					healthbar.tooltip = numformat(health) .. ' / ' .. numformat(maxhealth)
+					healthbar.color = GetHealthColor(health/maxhealth)
+					healthbar:SetValue(health/maxhealth)
 				end
 			end
-
-		
-	end
-end
-
-
-
-function comma_value(amount, displayPlusMinus)
-	local formatted
-
-	-- amount is a string when ToSI is used before calling this function
-	if type(amount) == "number" then
-		if (amount ==0) then formatted = "0" else 
-			if (amount < 20 and (amount * 10)%10 ~=0) then 
-				if displayPlusMinus then formatted = strFormat("%+.1f", amount)
-				else formatted = strFormat("%.1f", amount) end 
-			else 
-				if displayPlusMinus then formatted = strFormat("%+d", amount)
-				else formatted = strFormat("%d", amount) end 
-			end 
 		end
-	else
-		formatted = amount .. ""
 	end
-
-	if options.hpshort.value then 
-		local k
-		while true do  
-			formatted, k = formatted:gsub("^(-?%d+)(%d%d%d)", '%1,%2')
-			if (k==0) then
-				break
-			end
-		end
-	end 
-  	return formatted
 end
 
 local function AdjustWindow(window)
@@ -984,10 +1170,9 @@ local function AdjustWindow(window)
 	
 end
 
-
-
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+--tooltip functions
 
 local UnitDefByHumanName_cache = {}
 local function GetUnitDefByHumanName(humanName)
@@ -1069,20 +1254,19 @@ local function tooltipBreakdown(tooltip)
 	}
 end
 
+--tooltip functions
 ----------------------------------------------------------------
 
 local function SetHealthbar(tt_healthbar,health, maxhealth)
 	if health then
-		
 		tt_health_fraction = health/maxhealth
+		tt_healthbar.color = GetHealthColor(tt_health_fraction)
 		tt_healthbar:SetValue(tt_health_fraction)
 		if options.hpshort.value then
 			tt_healthbar:SetCaption(numformat(health) .. ' / ' .. numformat(maxhealth))
 		else
 			tt_healthbar:SetCaption(math.ceil(health) .. ' / ' .. math.ceil(maxhealth))
 		end
-		
-		tt_healthbar.color = GetHealthColor(tt_health_fraction)
 		
 	else
 		tt_healthbar.color = {0,0,0.5, 1}
@@ -1123,30 +1307,24 @@ local function SetHealthbars()
 	end
 end
 
-
 local function KillTooltip(force)
 	old_ttstr = ''
 	tt_unitID = nil
 	
-	if window_tooltip2 and window_tooltip2:IsDescendantOf(screen0) then
+	if window_tooltip2 then --and window_tooltip2:IsDescendantOf(screen0) then --does IsDescendantOf() check needed? doesn't appear to have visual difference.
 		screen0:RemoveChild(window_tooltip2)
 	end
 end
 
-local function UpdateResourceStack(tooltip_type, unitID, ud, tooltip)
 
-	local stack_children = {}
-
+local function GetResources(tooltip_type, unitID, ud, tooltip)
 	local metal, energy = 0,0
-	local color_m = {1,1,1,1}
-	local color_e = {1,1,1,1}
-	
-	local resource_tt_name = 'resources_' .. tooltip_type
+	local color_m = white
+	local color_e = white
 	
 	if tooltip_type == 'feature' or tooltip_type == 'corpse' then
 		metal = ud.metal
 		energy = ud.energy
-		
 		if unitID then
 			local m, _, e, _, _ = Spring.GetFeatureResources(unitID)
 			metal = m or metal
@@ -1183,65 +1361,26 @@ local function UpdateResourceStack(tooltip_type, unitID, ud, tooltip)
 	end
 	
 	--Skip metal/energy rendering for unit selection bar when unit has no metal and energy
-	if tooltip_type == 'selunit' and metal==0 and energy==0 then
-		if globalitems['resources_selunit'] then
-			globalitems['resources_selunit'] = nil
-		end
-		return
+	--if tooltip_type == 'selunit' and metal==0 and energy==0 then
+	if metal==0 and energy==0 then
+		return '',''
 	end	
 	
-	if tooltip_type == 'feature' or tooltip_type == 'corpse' then
-		color_m = {1,1,1,1}
-		color_e = {1,1,1,1}
-	else
+	if tooltip_type ~= 'feature' and tooltip_type ~= 'corpse' then
 		if metal > 0 then
-			color_m = {0,1,0,1}
+			color_m = green
 		elseif metal < 0 then
-			color_m = {1,0,0,1}
+			color_m = red
 		end
 		if energy > 0 then
-			color_e = {0,1,0,1}
+			color_e = green
 		elseif energy < 0 then
-			color_e = {1,0,0,1}
+			color_e = red
 		end
 	end
 	local displayPlusMinus = tooltip_type ~= 'feature' and tooltip_type ~= 'corpse' 
 	
-	if globalitems[resource_tt_name] then
-		local metalcontrol 	= globalitems[resource_tt_name]:GetChildByName('metal')
-		local energycontrol = globalitems[resource_tt_name]:GetChildByName('energy')
-		
-		metalcontrol.font:SetColor(color_m)
-		energycontrol.font:SetColor(color_e)
-		
-		metalcontrol:SetCaption( numformat(metal, displayPlusMinus) )
-		energycontrol:SetCaption( numformat(energy, displayPlusMinus) )
-		return
-	end
-	
-	local lbl_metal2 = Label:New{ name='metal', caption = numformat(metal, displayPlusMinus), autosize=true, fontSize=ttFontSize, valign='center' }
-	local lbl_energy2 = Label:New{ name='energy', caption = numformat(energy, displayPlusMinus), autosize=true, fontSize=ttFontSize, valign='center'  }
-	
-	local lbl_empty = Label:New{ name='blank', caption = '  ', autosize=true, fontSize=ttFontSize, valign='center'  }
-	
-	globalitems[resource_tt_name] = StackPanel:New{
-		centerItems = false,
-		autoArrangeV = true,
-		orientation='horizontal',
-		resizeItems=false,
-		width = '100%',
-		height = icon_size+1,
-		padding = {0,0,0,0},
-		itemPadding = {0,0,0,0},
-		itemMargin = {5,0,0,0},
-		children = {
-			Image:New{file='LuaUI/images/ibeam.png',height= icon_size,width= icon_size, fontSize=ttFontSize,},
-			lbl_metal2,
-			lbl_empty,
-			Image:New{file='LuaUI/images/energy.png',height= icon_size,width= icon_size, fontSize=ttFontSize,},
-			lbl_energy2,
-		},
-	}
+	return color_m .. numformat(metal, displayPlusMinus), color_e .. numformat(energy, displayPlusMinus)	
 end
 
 local function PlaceToolTipWindow2(x,y)
@@ -1282,25 +1421,21 @@ local function UpdateMorphControl(morph_data)
 		globalitems.morphs:GetChildByName('cost'):SetCaption(morph_cost)
 		globalitems.morphs:GetChildByName('prereq'):SetCaption(morph_prereq and ('Need Unit: '..morph_prereq) or '')
 		
-		--[[
-		globalitems.morphs:GetChildByName('time').height=height
-		globalitems.morphs:GetChildByName('time'):Invalidate()
-		globalitems.morphs:Invalidate()
-		globalitems.morphs:UpdateLayout()
-		--]]
 		return
 	end
 	height = icon_size+1
 	
-	morph_controls[#morph_controls + 1] = Label:New{ caption = 'Morph: ', height= icon_size, valign='center', textColor=color.tooltip_info, autosize=false, width=45, fontSize=ttFontSize,}
+	local cyan = {0,1,1,1}
+	
+	morph_controls[#morph_controls + 1] = Label:New{ caption = 'Morph: ', height= icon_size, valign='center', textColor=cyan , autosize=false, width=45, fontSize=ttFontSize,}
 	morph_controls[#morph_controls + 1] = Image:New{file='LuaUI/images/clock.png',height= icon_size,width= icon_size, fontSize=ttFontSize,}
-	morph_controls[#morph_controls + 1] = Label:New{ name='time', caption = morph_time, valign='center', textColor=color.tooltip_info, autosize=false, width=25, fontSize=ttFontSize,}
+	morph_controls[#morph_controls + 1] = Label:New{ name='time', caption = morph_time, valign='center', textColor=cyan , autosize=false, width=25, fontSize=ttFontSize,}
 	morph_controls[#morph_controls + 1] = Image:New{file='LuaUI/images/ibeam.png',height= icon_size,width= icon_size, fontSize=ttFontSize,}
-	morph_controls[#morph_controls + 1] = Label:New{ name='cost', caption = morph_cost, valign='center', textColor=color.tooltip_info, autosize=false, width=25, fontSize=ttFontSize,}
+	morph_controls[#morph_controls + 1] = Label:New{ name='cost', caption = morph_cost, valign='center', textColor=cyan , autosize=false, width=25, fontSize=ttFontSize,}
 	
 	--if morph_prereq then
-		--morph_controls[#morph_controls + 1] = Label:New{ 'prereq' caption = 'Need Unit: '..morph_prereq, valign='center', textColor=color.tooltip_info, autosize=false, width=180, fontSize=ttFontSize,}
-		morph_controls[#morph_controls + 1] = Label:New{ name='prereq', caption = morph_prereq and ('Need Unit: '..morph_prereq) or '', valign='center', textColor=color.tooltip_info, autosize=false, width=80, fontSize=ttFontSize,}
+		--morph_controls[#morph_controls + 1] = Label:New{ 'prereq' caption = 'Need Unit: '..morph_prereq, valign='center', textColor=cyan , autosize=false, width=180, fontSize=ttFontSize,}
+		morph_controls[#morph_controls + 1] = Label:New{ name='prereq', caption = morph_prereq and ('Need Unit: '..morph_prereq) or '', valign='center', textColor=cyan , autosize=false, width=80, fontSize=ttFontSize,}
 	--end
 	
 	
@@ -1346,7 +1481,7 @@ local function GetHelpText(tooltip_type)
 	else
 		sc_caption = 'Space+click: Show unit stats'
 	end
-	--return TextBox:New{ text = sc_caption, textColor=color.tooltip_help, width=250, fontSize=ttFontSize,  }
+	
 	return sc_caption
 	
 end
@@ -1373,7 +1508,13 @@ local function MakeStack(ttname, ttstackdata, leftbar)
 			local stackchildren = {}
 
 			if item.icon then
-				controls_icons[ttname][item.name] = Image:New{ file = item.icon, height= icon_size,width= icon_size, fontSize=curFontSize,}
+				controls_icons[ttname][item.name] = Image:New{ 
+					file = item.icon,
+					height = icon_size+6,
+					width= icon_size, 
+					fontSize = curFontSize,
+					valign='center',
+				}
 				stack_children[#stack_children+1] = controls_icons[ttname][item.name]
 			end
 			
@@ -1390,22 +1531,34 @@ local function MakeStack(ttname, ttstackdata, leftbar)
 				}
 				stack_children[#stack_children+1] = controls[ttname][item.name]
 			else
-				local rightmargin = item.icon and icon_size or 0
-				local width = (leftbar and 50 or 230) - rightmargin
+				if item.description then
+					local font = WG.langFont and { font= WG.langFont } or { size=curFontSize } --setting size breaks with cyrillic font
+					controls[ttname][item.name] = Label:New{
+						name=item.name, 				
+						autosize=false,
+						caption = itemtext , 
+						width='100%',
+						valign="ascender", 
+						font= font,
+						--fontShadow=true,
+					}
+				else
+					controls[ttname][item.name] = Label:New{
+						margin = {(leftbar and 1) or 4, 1, 1, 1},
+						fontShadow=true,
+						defaultHeight=0,
+						autosize=false,
+						name=item.name,
+						caption = itemtext,
+						fontSize=curFontSize,
+						align= item.center and 'center' or 'left',
+						valign='center',
+						height=icon_size+6,
+						x=icon_size+50,
+						right=1,
+					}
 				
-				--controls[ttname][item.name] = Label:New{ autosize=false, name=item.name, caption = itemtext, fontSize=curFontSize, valign='center', height=icon_size+5, width = width }
-				controls[ttname][item.name] = Label:New{
-					fontShadow=true,
-					defaultHeight=0,
-					autosize=false,
-					name=item.name,
-					caption = itemtext,
-					fontSize=curFontSize,
-					valign='center',
-					height=icon_size+5,
-					x=icon_size+5,
-					right=1,
-				}
+				end
 				stack_children[#stack_children+1] = controls[ttname][item.name]
 			end
 			
@@ -1426,9 +1579,11 @@ local function MakeStack(ttname, ttstackdata, leftbar)
 				resizeItems=false,
 				width = '100%',
 				autosize=true,
-				padding = {1,1,1,1},
-				itemPadding = {1,1,0,0},
-				itemMargin = {4,0,0,0},
+				--padding = {1,1,1,1},
+				padding = {0,0,0,0},
+				--itemPadding = {1,1,0,0},
+				itemPadding = {0,0,0,0},
+				itemMargin = {0,0,0,0},
 				children = stack_children,
 			}
 		end
@@ -1521,10 +1676,11 @@ local function BuildTooltip2(ttname, ttdata, sel)
 			y = 0,
 			orientation='vertical',
 			centerItems = false,
-			width = 220,
+			width = 230,
 			padding = {0,0,0,0},
-			itemPadding = {1,0,0,0},
+			itemPadding = {0,0,0,0},
 			itemMargin = {0,0,0,0},
+			--itemMargin = {1,1,1,1},
 			resizeItems=false,
 			children = children_main,
 		}
@@ -1537,7 +1693,6 @@ local function BuildTooltip2(ttname, ttdata, sel)
 				draggable = false,
 				autosize  = true,
 				--tweakDraggable = true,
-				backgroundColor = color.tooltip_bg, 
 				children = { stack_leftbar_temp, stack_main_temp, },
 				savespace = true
 			}
@@ -1599,6 +1754,14 @@ local function UpdateBuildpic( ud, globalitem_name, unitID )
 	globalitems[globalitem_name]:Invalidate()
 end
 
+local function SecondsToMinutesSeconds(seconds)
+	if seconds%60 < 10 then
+		return math.floor(seconds/60) ..":0" .. math.floor(seconds%60)
+	else
+		return math.floor(seconds/60) ..":" .. math.floor(seconds%60)
+	end
+end
+
 local function MakeToolTip_UD(tt_table)
 	
 	local helptext = GetHelpText(tt_table.buildType)
@@ -1607,12 +1770,86 @@ local function MakeToolTip_UD(tt_table)
 	local extraText = ""
 	if mexDefID == tt_table.unitDef.id then
 		extraText = ", Income +" .. strFormat("%.2f", WG.mouseoverMexIncome)
+		if WG.mouseoverMexIncome > 0 then
+			local cost = metalStructureDefs[tt_table.unitDef.id].cost
+			extraText = extraText .. "\nBase Payback: " .. SecondsToMinutesSeconds(cost/WG.mouseoverMexIncome)
+		else
+			extraText = extraText .. "\nBase Payback: Never"
+		end
 	end
+	if energyStructureDefs[tt_table.unitDef.id] then
+		local income = energyStructureDefs[tt_table.unitDef.id].income
+		local cost = energyStructureDefs[tt_table.unitDef.id].cost
+		if windgenDefID == tt_table.unitDef.id and mx and my then
+			local _, pos = spTraceScreenRay(mx,my, true)
+			if pos and pos[1] and pos[3] then
+				local x,z = math.floor(pos[1]/16)*16,  math.floor(pos[3]/16)*16
+				local y = spGetGroundHeight(x,z)
 
-	local unitName = tt_table.unitDef.humanName
-	if tt_table.unitDef.customParams.shortname then
-		unitName = tt._table.unitDef.customParams.shortname
-	end	
+				if y then
+					if y <= windTidalThreashold then
+						extraText = ", Tidal Income +1.2"
+						income = 1.2
+					else
+						local minWindIncome = windMin+(windMax-windMin)*windGroundSlope*(y - windGroundMin)/windGroundExtreme
+						extraText = ", Wind Range " .. string.format("%.1f", minWindIncome ) .. " - " .. string.format("%.1f", windMax )
+						income = (minWindIncome+2.5)/2
+					end
+				end
+			end
+		end
+		
+		local metalOD = WG.metalFromOverdrive
+		local energyOD = WG.energyForOverdrive
+		
+		if metalOD and metalOD > 0 and energyOD and energyOD > 0 then 
+			-- Best case payback assumes that extra energy will make
+			-- metal at the current energy:metal ratio. Note that if
+			-- grids are linked better then better payback may be
+			-- achieved.
+			--local bestCasePayback = cost/(income*metalOD/energyOD)
+			
+			-- Uniform case payback assumes that all mexes are being
+			-- overdriven equally and figures out their multiplier
+			-- from the base mex income. It then figures out how many
+			-- mexes there are and adds a portion of the new enginer to
+			-- them.
+			--local totalMexIncome = WG.mexIncome
+			--if not totalMexIncome then
+			--	local singleMexMult = math.sqrt(energyOD)/4
+			--	totalMexIncome = metalOD/singleMexMult
+			--end
+			--local overdriveMult = metalOD/totalMexIncome
+			--local energyPerMex = 16*overdriveMult^2
+			--local mexCount = energyOD/energyPerMex
+			--local incomePerMex = income/mexCount
+			--local overdrivePerMex = metalOD/mexCount
+			--local extraMetalPerMex = totalMexIncome/mexCount*math.sqrt(energyPerMex+incomePerMex)/4 - overdrivePerMex
+			--local extraMetal = extraMetalPerMex*mexCount
+			--local unitformCasePayback = cost/extraMetal
+			
+			-- Worst case payback assumes that all your OD metal is from
+			-- a single mex and you are going to link your new energy to it.
+			-- It seems to be equal to Uniform case payback and quite accurate.
+			local singleMexMult = math.sqrt(energyOD)/4
+			local mexIncome = metalOD/singleMexMult
+			local worstCasePayback = cost/(mexIncome*math.sqrt(energyOD+income)/4 - metalOD)
+			
+			--extraText = extraText 
+			--.. "\n overdriveMult: " .. overdriveMult 
+			--.. "\n energyPerMex: " .. energyPerMex 
+			--.. "\n mexCount: " .. mexCount 
+			--.. "\n incomePerMex: " .. incomePerMex 
+			--.. "\n overdrivePerMex: " .. overdrivePerMex 
+			--.. "\n extraMetalPerMex: " .. extraMetalPerMex
+			--.. "\n extraMetal: " .. extraMetalza
+			--.. "\n unitformCasePayback: " .. unitformCasePayback 
+			--.. "\n worstCasePayback: " .. worstCasePayback 
+			extraText = extraText .. "\nOverdrive Payback: " .. SecondsToMinutesSeconds(worstCasePayback)
+		else
+			extraText = extraText .. "\nOverdrive Payback: Unknown"
+		end
+	end
 		
 	local tt_structure = {
 		leftbar = {
@@ -1622,9 +1859,9 @@ local function MakeToolTip_UD(tt_table)
 			{ name = 'cost', icon = 'LuaUI/images/ibeam.png', text = cyan .. numformat(tt_table.unitDef.metalCost), },
 		},
 		main = {
-			{ name = 'udname', icon = iconPath, text = unitName .. extraText, fontSize=2 },
-			{ name = 'tt', text = tt_table.unitDef.tooltip, wrap=true },
-			{ name='health', icon = 'LuaUI/images/commands/Bold/health.png',  text = numformat(tt_table.unitDef.health), },
+			{ name = 'udname', icon = iconPath, text = tt_table.unitDef.humanName, fontSize=6 },
+			{ name = 'tt', text = tt_table.unitDef.tooltip .. extraText, wrap=true },
+			{ name='health', icon = 'LuaUI/images/commands/Bold/health.png',  text = numformat(tt_table.unitDef.health),  fontSize=4, },
 			--[[
 			{ name = 'requires', text = tt_table.requires and ('REQUIRES' .. tt_table.requires) or '', },
 			{ name = 'provides', text = tt_table.provides and ('PROVIDES' .. tt_table.provides) or '', },
@@ -1650,16 +1887,15 @@ end
 
 
 local function MakeToolTip_Unit(data, tooltip)
+	
+	
 	local unitID = data
-	local team, shortname
+	local team, fullname
 	tt_unitID = unitID
 	team = spGetUnitTeam(tt_unitID) 
 	tt_ud = UnitDefs[ spGetUnitDefID(tt_unitID) or -1]
 	
-	shortname = ((tt_ud and tt_ud.humanName) or "")
-	if tt_ud.customParams.shortname then
-		shortname = tt_ud.customParams.shortname
-	end
+	fullname = ((tt_ud and tt_ud.humanName) or "")	
 		
 	if not (tt_ud) then
 		--fixme
@@ -1678,23 +1914,25 @@ local function MakeToolTip_Unit(data, tooltip)
 	end
 
 	local teamColor		= Chili.color2incolor(spGetTeamColor(team))
-	---local unittooltip	= tt_unitID and spGetUnitTooltip(tt_unitID) or (tt_ud and tt_ud.tooltip) or ""
 	local unittooltip	= GetUnitDesc(tt_unitID, tt_ud)
 	local iconPath		= GetUnitIcon(tt_ud)
 	
-	UpdateResourceStack( 'unit', unitID, tt_ud, tooltip )
+	local m, e = GetResources( 'unit', unitID, tt_ud, tooltip )
 	
 	local tt_structure = {
 		leftbar = {
 			{ name= 'bp', directcontrol = 'buildpic_unit' },
 			{ name= 'cost', icon = 'LuaUI/images/ibeam.png', text = cyan .. numformat((tt_ud and tt_ud.metalCost) or '0') },
+			
+			{ name='res_m', icon = 'LuaUI/images/metalplus.png', text = m },
+			{ name='res_e', icon = 'LuaUI/images/energy.png', text = e },
 		},
 		main = {
-			{ name='uname', icon = iconPath, text = shortname .. '\n(' .. teamColor .. playerName .. white ..')', fontSize=2, },
-			{ name='utt', text = unittooltip, wrap=true },
+			{ name='uname', icon = iconPath, text = fullname, fontSize=4, },
+			{ name='utt', text = unittooltip .. '\n', wrap=true },
 			{ name='hp', directcontrol = 'hp_unit', },
-			{ name='res', directcontrol = 'resources_unit' },
-			{ name='help', text = green .. 'Alt+click: Show unit stats', },
+			{ name='ttplayer', text = 'Player: ' .. teamColor .. playerName .. white ..'', fontSize=2, center=false },
+			{ name='help', text = green .. 'Space+click: Show unit stats', },
 		},
 	}
 	
@@ -1720,29 +1958,29 @@ local function MakeToolTip_SelUnit(data, tooltip)
 		return false
 	end
 
-	local shortname = ((stt_ud and stt_ud.humanName) or "")
-	if stt_ud and stt_ud.customParams.shortname then
-		shortname = stt_ud.customParams.shortname
-	end	
+	local fullname = (stt_ud.humanName or "")	
 	
 	local unittooltip	= GetUnitDesc(stt_unitID, stt_ud)
+	
 	local iconPath		= GetUnitIcon(stt_ud)
 	
-	UpdateResourceStack( 'selunit', unitID, stt_ud, tooltip)
-	
-	
+	local m, e = GetResources( 'selunit', unitID, stt_ud, tooltip)
 	
 	local tt_structure = {
 		leftbar = {
 			{ name= 'bp', directcontrol = 'buildpic_selunit' },
 			{ name= 'cost', icon = 'LuaUI/images/ibeam.png', text = cyan .. numformat((stt_ud and stt_ud.metalCost) or '0') },
+			
+			{ name='res_m', icon = 'LuaUI/images/metalplus.png', text = m },
+			{ name='res_e', icon = 'LuaUI/images/energy.png', text = e },
 		},
 		main = {
-			{ name='uname', icon = iconPath, text = shortname, fontSize=2, },
-			{ name='utt', text = unittooltip, wrap=true },
+			{ name='uname', icon = iconPath, text = fullname, fontSize=4, }, --name in window
+			{ name='utt', text = unittooltip .. '\n', wrap=false, description = true },
+			stt_ud.shieldWeaponDef and { name='shield', directcontrol = 'shield_selunit', } or {},
 			{ name='hp', directcontrol = 'hp_selunit', },
 			stt_ud.isBuilder and { name='bp', directcontrol = 'bp_selunit', } or {},
-			{ name='res', directcontrol = 'resources_selunit' },
+			
 		},
 	}
 	
@@ -1766,7 +2004,7 @@ local function MakeToolTip_Feature(data, tooltip)
 	if tt_fd and tt_fd.customParams and tt_fd.customParams.unit then
 		live_name = tt_fd.customParams.unit
 	else
-		live_name = feature_name:gsub('([^_]*).*', '%1')
+		live_name = feature_name:gsub('(.*)_.*', '%1') --filter out _dead or _dead2 or _anything
 	end
 	
 	local desc = ''
@@ -1783,7 +2021,7 @@ local function MakeToolTip_Feature(data, tooltip)
 		return false
 	end
 	
-	if options.hide_for_unreclaimable.value and not tt_fd.reclaimable then
+	if (not options.show_for_unreclaimable.value) and (not tt_fd.reclaimable) then
 		return false
 	end
 	
@@ -1791,31 +2029,38 @@ local function MakeToolTip_Feature(data, tooltip)
 	local _, player		= spGetTeamInfo(team)
 	local playerName	= player and spGetPlayerInfo(player) or 'noname'
 	local teamColor		= Chili.color2incolor(spGetTeamColor(team))
-	---local unittooltip	= tt_unitID and spGetUnitTooltip(tt_unitID) or (tt_ud and tt_ud.tooltip) or ""
 	local unittooltip	= GetUnitDesc(tt_unitID, tt_ud)
 	local iconPath		= GetUnitIcon(tt_ud)
 	
-	UpdateResourceStack( tt_ud and 'corpse' or 'feature', featureID, tt_ud or tt_fd, tooltip )
+	local m,e = GetResources( tt_ud and 'corpse' or 'feature', featureID, tt_ud or tt_fd, tooltip )
+	
+	local leftbar = tt_ud and {
+		{ name= 'bp', directcontrol = 'buildpic_feature' },
+		{ name='cost', icon = 'LuaUI/images/ibeam.png', text = cyan .. numformat((tt_ud and tt_ud.metalCost) or '0'), },
+		
+		{ name='res_m', icon = 'LuaUI/images/metalplus.png', text = m },
+		{ name='res_e', icon = 'LuaUI/images/energy.png', text = e },
+	}
+	or {
+		
+		{ name='res_1', icon = 'LuaUI/images/metalplus.png', text = m },
+		{ name='res_2', icon = 'LuaUI/images/energy.png', text = e },
+	}
 	
 	local tt_structure = {
-		leftbar =
-			tt_ud and
-			{
-				{ name= 'bp', directcontrol = 'buildpic_feature' },
-				{ name='cost', icon = 'LuaUI/images/ibeam.png', text = cyan .. numformat((tt_ud and tt_ud.metalCost) or '0'), },
-			}
-			or nil,
+		leftbar = leftbar,
+			
 		main = {
-			{ name='uname', icon = iconPath, text = fullname .. ' (' .. teamColor .. playerName .. white ..')', fontSize=2, },
-			{ name='utt', text = unittooltip, wrap=true },
+			{ name='uname', icon = iconPath, text = fullname, fontSize=6, },
+			{ name='utt', text = unittooltip .. '\n', wrap=true },
 			(	options.featurehp.value
 					and { name='hp', directcontrol = (tt_ud and 'hp_corpse' or 'hp_feature'), } 
 					or {}),
-			{ name='res', directcontrol = tt_ud and 'resources_corpse' or 'resources_feature' },
-			{ name='help', text = tt_ud and (green .. 'Alt+click: Show unit stats') or '', },
+			
+			{ name='ttplayer', text = 'Player: ' .. teamColor .. playerName .. white ..'', fontSize=2, center=false, },
+			{ name='help', text = tt_ud and (green .. 'Space+click: Show unit stats') or '', },
 		},
 	}
-	
 	
 	if tt_ud then
 		UpdateBuildpic( tt_ud, 'buildpic_feature' )
@@ -1826,26 +2071,7 @@ local function MakeToolTip_Feature(data, tooltip)
 	return true
 end
 
-
-
 local function CreateHpBar(name)
-	--[[
-	globalitems[name] = Progressbar:New {
-		name = name,
-		width = '100%',
-		height = icon_size+2,
-		itemMargin    = {0,0,0,0},
-		itemPadding   = {0,0,0,0},	
-		padding = {0,0,0,0},
-		color = {0,1,0,1},
-		max=1,
-		caption = 'a',
-
-		children = {
-			Image:New{file='LuaUI/images/commands/bold/health.png',height= icon_size,width= icon_size,  x=0,y=0},
-		},
-	}
-	--]]
 	globalitems[name] = Panel:New {
 		orientation='horizontal',
 		name = name,
@@ -1869,33 +2095,14 @@ local function CreateHpBar(name)
 				padding = {0,0,0,0},
 				color = {0,1,0,1},
 				max=1,
-				caption = 'a',
+				caption = '',
 			},
-
-			
 		},
 	}
 	
 end
 
 local function CreateBpBar(name)
-	--[[
-	globalitems[name] = Progressbar:New {
-		name = name,
-		width = '100%',
-		height = icon_size+2,
-		itemMargin    = {0,0,0,0},
-		itemPadding   = {0,0,0,0},	
-		padding = {0,0,0,0},
-		color = {0.8,0.8,0.2,1};
-		max=1,
-		caption = 'a',
-
-		children = {
-			Image:New{file='LuaUI/Images/commands/Bold/buildsmall.png',height= icon_size,width= icon_size,  x=0,y=0},
-		},
-	}
-	--]]
 	globalitems[name] = Panel:New {
 		orientation='horizontal',
 		name = name,
@@ -1919,14 +2126,41 @@ local function CreateBpBar(name)
 				padding = {0,0,0,0},
 				color = {0.8,0.8,0.2,1};
 				max=1,
-				caption = 'a',
+				caption = '',
 			},
-
-			
 		},
 	}
 end
 
+local function CreateShieldBar(name)
+	globalitems[name] = Panel:New {
+		orientation='horizontal',
+		name = name,
+		width = '100%',
+		height = icon_size+2,
+		itemMargin    = {0,0,0,0},
+		itemPadding   = {0,0,0,0},	
+		padding = {0,0,0,0},
+		backgroundColor = {0,0,0,0},
+		
+		children = {
+			Image:New{file='LuaUI/Images/commands/Bold/guard.png',height= icon_size,width= icon_size,  x=0,y=0},
+			Progressbar:New {
+				name = 'bar',
+				x=icon_size,
+				right=0,
+				--width = '100%',
+				height = icon_size+2,
+				itemMargin    = {0,0,0,0},
+				itemPadding   = {0,0,0,0},	
+				padding = {0,0,0,0},
+				color = {0.3,0,0.9,1};
+				max=1,
+				caption = '',
+			},
+		},
+	}
+end
 
 local function MakeToolTip_Draw()
 	local tt_structure = {
@@ -1953,8 +2187,8 @@ local function MakeToolTip_Terra(cmdName)
 	BuildTooltip2('terra', tt_structure)
 end
 
-local function MakeTooltip()
-	if options.showdrawtooltip.value and tildepressed and not (drawing or erasing) then
+local function MakeTooltip(dt)
+	if options.showdrawtooltip.value and drawtoolKeyPressed and not (drawing or erasing) then
 		MakeToolTip_Draw()
 		return
 	end
@@ -1981,7 +2215,7 @@ local function MakeTooltip()
 	end
 	----------
 	local cur_ttstr = screen0.currentTooltip or groundTooltip or spGetCurrentTooltip()
-	local type, data = spTraceScreenRay(mx, my, false, false, true, true)
+	local type, data = spTraceScreenRay(mx, my)
 	if (not changeNow) and cur_ttstr ~= '' and old_ttstr == cur_ttstr and old_data == data then
 		PlaceToolTipWindow2(mx+20,my-20)
 		return
@@ -2027,21 +2261,43 @@ local function MakeTooltip()
 	local unit_tooltip = tooltip:find('Experience %d+.%d+ Cost ')  --shows on your units, not enemy's
 		or tooltip:find('TechLevel %d') --shows on units
 		or tooltip:find('Metal.*Energy') --shows on features
+		
+	local alt,_,meta,_ = spGetModKeyState()
 	
 	--unit(s) selected/pointed at
 	if unit_tooltip then
+		if oldObjectID ~= data then
+			sameObjectIDTime = 0
+			oldObjectID = data
+		else
+			sameObjectIDTime = sameObjectIDTime + dt
+		end
+		
 		-- pointing at unit/feature
 		if type == 'unit' then
-			MakeToolTip_Unit(data, tooltip)
+			if options.show_for_units.value and 
+					(meta or options.independant_world_tooltip_delay.value == 0 or 
+					sameObjectIDTime > options.independant_world_tooltip_delay.value) then
+				MakeToolTip_Unit(data, tooltip)
+			else
+				KillTooltip()
+			end
 			return
 		elseif type == 'feature' then
-			if MakeToolTip_Feature(data, tooltip) then
+			if options.show_for_wreckage.value and
+					(meta or options.independant_world_tooltip_delay.value == 0 or 
+					sameObjectIDTime > options.independant_world_tooltip_delay.value) then
+				if MakeToolTip_Feature(data, tooltip) then
+					return
+				end
+			else
+				KillTooltip()
 				return
 			end
 		end
 	
 		--holding meta or static tip
-		if (showExtendedTip) then
+		if (showExtendedTip and options.show_unit_text.value) then
 			MakeToolTip_Text(tooltip)
 		else
 			KillTooltip()
@@ -2053,13 +2309,15 @@ local function MakeTooltip()
 		end
 		
 		return
+	else
+		oldObjectID = 0
 	end
 	
 	--tooltip that shows position
 	local pos_tooltip = tooltip:sub(1,4) == 'Pos '
 	
 	-- default tooltip
-	if not pos_tooltip or showExtendedTip then
+	if not pos_tooltip or (showExtendedTip and options.show_position.value) then
 		MakeToolTip_Text(tooltip)
 		return
 	end
@@ -2075,9 +2333,7 @@ local function MakeTooltip()
 end --function MakeTooltip
 
 local function SetupTerraTips()
-	terraTips = {
-	
-	}
+	terraTips = {}
 	
 	for cmdName, _ in pairs( terraCmds ) do
 		terraTips[cmdName] =
@@ -2108,7 +2364,6 @@ local function SetupTerraTips()
 		green.. 'Red'..white..': Only all-terrain / spiders can traverse. \n'..
 		''
 		
-	
 	terraTips.Level = terraTips.Level ..
 		yellow..'[During Terraform Draw]\n'..
 		green.. 'Ctrl'..white..': Draw straight line segment. \n'..
@@ -2135,12 +2390,11 @@ local function SetupTerraTips()
 		yellow..'[Any Time]\n'..
 		green.. 'Space'..white..': Limit to only raise/lower \n'..
 		''
-		
 end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-
+--callins
 
 function widget:Update(dt)
 	if widgetHandler:InTweakMode() then
@@ -2153,6 +2407,16 @@ function widget:Update(dt)
 	
 	timer = timer + dt
 	if timer >= updateFrequency  then
+		
+		local hotkeys = WG.crude.GetHotkeys("drawinmap")
+		drawHotkeyBytes = {}
+		drawHotkeyBytesCount = 0
+		for k,v in pairs(hotkeys) do
+			drawHotkeyBytes[v:byte(-1)] = true
+			drawHotkeyBytesCount = drawHotkeyBytesCount+1
+		end
+		
+		
 		UpdateSelectedUnitsTooltip() --this has numSelectedUnits check. Will only run with numSelectedUnits > 1
 		UpdateDynamicGroupInfo()
 		WriteGroupInfo()
@@ -2161,7 +2425,14 @@ function widget:Update(dt)
 		if stt_unitID then
 			local tt_table = tooltipBreakdown( spGetCurrentTooltip() )
 			local tooltip, unitDef  = tt_table.tooltip, tt_table.unitDef
-			UpdateResourceStack( 'selunit', stt_unitID, stt_ud, tooltip)
+			
+			local ctrlm = controls['selunit2']['res_m']
+			if ctrlm then
+				local ctrle = controls['selunit2']['res_e']
+				local m, e = GetResources( 'selunit', stt_unitID, stt_ud, tooltip)
+				ctrlm:SetCaption(m)
+				ctrle:SetCaption(e)
+			end
 			
 			local nanobar_stack = globalitems['bp_selunit']
 			local nanobar = nanobar_stack:GetChildByName('bar')
@@ -2176,29 +2447,50 @@ function widget:Update(dt)
 					nanobar:SetCaption('??? / ' .. numformat(stt_ud.buildSpeed))
 				end
 			end
-			
+
+			local shieldbar_stack = globalitems['shield_selunit']
+			local shieldbar = shieldbar_stack:GetChildByName('bar')
+			if shieldbar then
+				local shieldEnabled, shieldCurrentPower = Spring.GetUnitShieldState(stt_unitID)
+				
+				shieldbar:SetValue((shieldCurrentPower or 0) / stt_ud.shieldPower,true)
+				if shieldEnabled then
+					shieldbar:SetCaption(round(shieldCurrentPower) .. ' / ' .. stt_ud.shieldPower)
+				else
+					shieldbar:SetCaption('Shield offline')
+				end
+			end
 		end
 		changeNow = true
 		timer = 0
 	end
+	
+	drawtoolKeyPressed = false
+	if drawHotkeyBytesCount ~= 0 then
+		for k,v in pairs(drawHotkeyBytes) do
+			if Spring.GetKeyState(k) then
+				drawtoolKeyPressed = true
+				break
+			end
+		end
+	end
+	
+	
 	--UNIT.STATUS start (by msafwan), function: add/show units task whenever individual pic is shown.
 	timer2 = timer2 + dt
 	if timer2 >= updateFrequency2  then
-		if options.unitCommand.value == true and ((numSelectedUnits <= maxPicFit) and (not options.groupalways.value)) then
+		if options.unitCommand.value and numSelectedUnits >= 2 then
+			local barGrid = window_corner.childrenByName['Bars'] --//find chili element that we want to modify. REFERENCE: gui_chili_facbar.lua, by CarRepairer
 			for i=1,numSelectedUnits do --//iterate over all selected unit *this variable is updated by 'widget:SelectionChanged()'
 				local unitID = selectedUnits[i][1]
 				local barGridItem = nil
 				local itemImg =nil
-				local picLabel = 1
-				local barGrid = window_corner.childrenByName['Bars'] --//find chili element that we want to modify. REFERENCE: gui_chili_facbar.lua, by CarRepairer
-				if barGrid then	barGridItem = barGrid.childrenByName[unitID] end
-				if barGridItem then	itemImg = barGridItem.childrenByName['selImage'] end
-				if itemImg then picLabel = itemImg.childrenByName['selLabel'] end  
-				if picLabel == nil then --//if picture has no label then insert our own label *if picture is non-grouped it doesn't have label, but when grouped it have numbers as label. 
-					window_corner.childrenByName['Bars'].childrenByName[unitID].childrenByName['selImage']:ClearChildren(); --delete old label (if any exist) so we can create new label with new value
+				if barGrid then	barGridItem = barGrid.childrenByName[unitID] end --only ungrouped icon will be named by unitID & thus return barGridItem
+				if barGridItem then itemImg = barGridItem.childrenByName['selImage'] end
+				if itemImg then
 					local cQueue = spGetCommandQueue(unitID, 1)
-					local commandName = ""
-					local color = nil
+					local commandName
+					local color = {1,1,1,1}
 					if cQueue and cQueue[1] ~= nil then
 						local commandID = cQueue[1].id				
 						commandName = ":" .. commandID --"unrecognized" 
@@ -2214,15 +2506,17 @@ function widget:Update(dt)
 													{{CMD.GUARD}, "Guard", {0.2,0,0.8,1}},
 													{{CMD.REPAIR}, "Repair",{0.2,0.8,1,1}},
 													--{{CMD.SELFD},  "Suicide"},
-													{{CMD.LOAD_UNITS},  "Load",{0,0.6,0.6,1}},
+													{{CMD.LOAD_UNITS, CMD_EXTENDED_LOAD},  "Load",{0,0.6,0.6,1}},
 													{{CMD.LOAD_ONTO}, "Load",{0,0.6,0.6,1}},
 													{{CMD.UNLOAD_UNITS, CMD.UNLOAD_UNIT}, "Unload", {0.6,0.6,0,1}},
 													{{CMD.RECLAIM}, "Reclaim",{0.6,0,0.4,1}},
 													{{CMD.RESURRECT},"Resurrect",{0.2,0,0.8,1}},
-													{{38521},"Jump",{0,0.8,0,1}},
-													{{32768},"Re-Arm",{0.2,0.8,1,1}},
-													{{35170},"Bridge",{0.6,0.6,0,1}},
-													{{35171},"Teleport",{0,0.6,0.6,1}},
+													{{CMD.MANUALFIRE},"DGun",{1,1,1,1}},
+													{{CMD_ONECLICK_WEAPON},"Special",{0.8,0.6,0.0,1}},
+													{{CMD_JUMP},"Jump",{0,0.8,0,1}},
+													{{CMD_REARM},"Re-Arm",{0.2,0.8,1,1}},
+													{{CMD_PLACE_BEACON},"Bridge",{0.6,0.6,0,1}},
+													{{CMD_WAIT_AT_BEACON},"Teleport",{0,0.6,0.6,1}},
 												}										
 							for i=1, #commandList, 1 do --iterate over the commandList so we could find a match with unit's current command.
 								if #commandList[i][1] == 1 then --if commandList don't have sub-table at first row
@@ -2241,17 +2535,24 @@ function widget:Update(dt)
 							end
 						end
 					end
-					Label:New{ --create new chili element
-						parent = itemImg;
-						name = "commandLabel";
-						align  = "left";
-						valign = "top";
-						fontsize   = 14;
-						fontshadow = true;
-						fontOutline = true;
-						textColor = color or {1,1,1,1}; --//Reference: gui_chili_crudeplayerlist.lua by KingRaptor
-						caption    = commandName;
-					};
+					local cmdLabel = itemImg.childrenByName['commandLabel']
+					if cmdLabel and cmdLabel.caption ~= commandName then --is differing label?
+						cmdLabel:Dispose(); --remove existing label and recreate chili element (to eliminate color bug)
+						cmdLabel = nil;
+					end
+					if not cmdLabel and commandName then
+						Label:New{ --create new chili element
+							parent = itemImg;
+							name = "commandLabel";
+							align  = "left";
+							valign = "top";
+							fontsize   = 14;
+							fontshadow = true;
+							fontOutline = true;
+							textColor = color; --//Reference: gui_chili_crudeplayerlist.lua by KingRaptor
+							caption    = commandName;
+						};
+					end
 				end
 			end
 		end
@@ -2272,13 +2573,13 @@ function widget:Update(dt)
 		showExtendedTip = true
 	
 	else
-		if (options.tooltip_delay.value > 0) and not tildepressed then
+		if not drawtoolKeyPressed then
 			if not mousemoved then
 				stillCursorTime = stillCursorTime + dt
 			else
 				stillCursorTime = 0 
 			end
-			show_cursortip = stillCursorTime > options.tooltip_delay.value
+			show_cursortip = (options.tooltip_delay.value == 0 or stillCursorTime > options.tooltip_delay.value)
 		end
 		
 		if showExtendedTip then 
@@ -2289,12 +2590,15 @@ function widget:Update(dt)
 	end
 
 	if mousemoved or changeNow then
-		if not show_cursortip and not tildepressed then
+		if not show_cursortip and not drawtoolKeyPressed then
 			KillTooltip()
 			return
 		end
-		MakeTooltip()
+		MakeTooltip(makeTooltipGap)
 		changeNow = false
+		makeTooltipGap = dt
+	else
+		makeTooltipGap = makeTooltipGap + dt
 	end
 	--TOOLTIP end
 end
@@ -2318,9 +2622,7 @@ function widget:Initialize()
 	
 	local VFSMODE      = VFS.RAW_FIRST
 	_, iconFormat = VFS.Include(LUAUI_DIRNAME .. "Configs/chilitip_conf.lua" , nil, VFSMODE)
-	local confdata = VFS.Include(LUAUI_DIRNAME .. "Configs/epicmenu_conf.lua", nil, VFSMODE)
-	color = confdata.color
-
+	
 	-- setup Chili
 	Chili = WG.Chili
 	Button = Chili.Button
@@ -2331,7 +2633,6 @@ function widget:Initialize()
 	Grid = Chili.Grid
 	TextBox = Chili.TextBox
 	Image = Chili.Image
-	Multiprogressbar = Chili.Multiprogressbar
 	Progressbar = Chili.Progressbar
 	LayoutPanel = Chili.LayoutPanel
 	screen0 = Chili.Screen0
@@ -2344,6 +2645,9 @@ function widget:Initialize()
 	CreateHpBar('hp_corpse')
 	
 	CreateBpBar('bp_selunit')
+
+	CreateShieldBar('shield_unit')
+	CreateShieldBar('shield_selunit')
 	
 	stack_main = StackPanel:New{
 		width=300, -- needed for initial tooltip
@@ -2353,12 +2657,10 @@ function widget:Initialize()
 	}
 	
 	window_tooltip2 = Window:New{
-		--skinName = 'default',
 		useDList = false,
 		resizable = false,
 		draggable = false,
 		autosize  = true,
-		backgroundColor = color.tooltip_bg, 
 		children = { stack_leftbar, stack_main, },
 		minHeight = 32,
 		minWidth = 32,
@@ -2367,26 +2669,28 @@ function widget:Initialize()
 	--FontChanged()
 	spSendCommands({"tooltip 0"})
 	
+	-- Set the size for the default settings.
+	local screenWidth, screenHeight = Spring.GetWindowGeometry()
+	local integralWidth = math.max(350, math.min(450, screenWidth*screenHeight*0.0004))
+	local integralHeight = math.min(screenHeight/4.5, 200*integralWidth/450)
+	local x = integralWidth
+	local height = integralHeight*0.84
 	
-	local screenWidth,screenHeight = Spring.GetWindowGeometry()
-	local y = tostring(math.floor(screenWidth/screenHeight*0.35*0.35*100 - window_height)) .. "%"
-
     real_window_corner = Window:New{
-		name   = 'real_window_corner';
-		color = options.color_background.value,
-		right = 450; 
-		bottom = 180;
-        width = 450;
-		height = 130;
-		dockable = true;
+		name  = 'selections',
+		color = {0, 0, 0, 0},
+		x = x,
+		y = screenHeight-height,
+        width = 450,
+		height = height,
+		dockable = true,
 		draggable = false,
 		resizable = false,
 		tweakDraggable = true,
 		tweakResizable = true,
 		padding = {0, 0, 0, 0},
         minWidth = 450, 
-		minHeight = 130,
-		
+		minHeight = 120,
 	}
     
 	window_corner = Panel:New{
@@ -2394,7 +2698,7 @@ function widget:Initialize()
         name   = 'unitinfo2';
 		x = 0,
 		y = 0,
-		--backgroundColor = {0,0,0,1},
+		backgroundColor = {1, 1, 1, options.selection_opacity.value},
 		width = "100%";
 		height = "100%";
 		dockable = false,
@@ -2409,8 +2713,11 @@ function widget:Initialize()
 		end },
 	}
 
-	windMin = Spring.GetGameRulesParam("WindMin")
-	windMax = Spring.GetGameRulesParam("WindMax")
+	windMin = spGetGameRulesParam("WindMin")
+	windMax = spGetGameRulesParam("WindMax")
+	windGroundMin = spGetGameRulesParam("WindGroundMin")
+	windGroundExtreme = spGetGameRulesParam("WindGroundExtreme")
+	windGroundSlope = spGetGameRulesParam("WindSlope")
 
 	for i=1,#UnitDefs do
 		local ud = UnitDefs[i]
@@ -2419,12 +2726,12 @@ function widget:Initialize()
 		then
 			ud.chili_selections_useStaticTooltip = true
 		end
+
+		local shieldDefID = ud.shieldWeaponDef
+		ud.shieldPower = ((shieldDefID)and(WeaponDefs[shieldDefID].shieldPower))or(-1)
 	end
 	
 	option_Deselect()
-	
-	Show(real_window_corner)
-
 end
 
 function widget:Shutdown()
@@ -2435,43 +2742,20 @@ function widget:Shutdown()
 	Spring.SetDrawSelectionInfo(true)
 end
 
-
-
-function widget:KeyPress(key, modifier, isRepeat)
-	if key == KEYSYMS.BACKQUOTE then
-		if not tildepressed then
-			changeNow = true
-		end	
-		tildepressed = true
-	end
-end
-function widget:KeyRelease(key)
-	if key == KEYSYMS.BACKQUOTE then
-		if tildepressed then
-			changeNow = true
-		end
-		tildepressed = false
-	end
-end
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
 --lags like a brick due to being spammed constantly for unknown reason, moved all its behavior to SelectionChanged
 --function widget:CommandsChanged()
 --end
 --
-
-
 function widget:SelectionChanged(newSelection)
 	selectedUnits = {}
 	numSelectedUnits = 0
-	--store selected unitID list in a table with unitDefID
+	--store selected unitID list in a table with unitDefID. This prevent NIL error if selecting using limited LOS spectator
 	if (spGetSelectedUnitsCount() > 0) then 
 		local count = 0
+		local unitID, defID
 		for i=1, #newSelection do
-			local unitID = newSelection[i]
-			local defID = spGetUnitDefID(unitID)
+			unitID = newSelection[i]
+			defID = spGetUnitDefID(unitID)
 			if defID then --in LOS/not enemy
 				count = count+1
 				selectedUnits[count] = {unitID,defID}
@@ -2493,11 +2777,14 @@ function widget:SelectionChanged(newSelection)
 		--// else the sort order would change each time we select a new unit or deselect one!
 		selectionSortOrder = {}
 		local alreadyInList = {}
+		local defid
+		local count = 1
 		for i=1,#selectedUnits do
-			local defid = selectedUnits[i][2]
+			defid = selectedUnits[i][2]
 			if (not alreadyInList[defid]) then
 				alreadyInList[defid] = true
-				selectionSortOrder[#selectionSortOrder+1] = defid
+				selectionSortOrder[count] = defid
+				count = count + 1
 			end
 		end
 
@@ -2507,27 +2794,44 @@ function widget:SelectionChanged(newSelection)
 			
 			local cur1, cur2 = MakeToolTip_SelUnit(selectedUnits[1][1], tooltip) --healthbar/resource consumption/ect chili element
 			if cur1 then
-				window_corner:ClearChildren()
+				DisposeSelectionDisplay()
 				window_corner:AddChild(cur1)
 				window_corner:AddChild(cur2)
+				globalitems["window_corner_direct_child"]= {cur1,cur2, disposable = true}
 			end
 		else
 			stt_unitID = nil
-			MakeUnitGroupSelectionToolTip()
+			DisposeSelectionDisplay()
+			local cur1 = MakeUnitGroupSelectionToolTip()
+			globalitems["window_corner_direct_child"]= {cur1}
+			window_corner:AddChild(cur1)
 		end
+		real_window_corner.caption = nil
+		real_window_corner:Invalidate()
 		Show(real_window_corner)
 	else
 		stt_unitID = nil
-		window_corner:ClearChildren()
+		DisposeSelectionDisplay()
 		if not options.alwaysShowSelectionWin.value then
 			screen0:RemoveChild(real_window_corner)
+		else
+			--real_window_corner.caption = 'No Units Selected'
+			real_window_corner:Invalidate()
 		end
 	end
 end
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
 
 
-function widget:Shutdown()
-	Spring.SetDrawSelectionInfo(true) 
+--ToggleDrawTools = function(enable)
+function widget:UpdateCallIns(enable)
+	if enable then
+		self.DrawScreen = DrawScreenDrawTools
+	else
+		self.DrawScreen = function() end
+	end
+	
+	widgetHandler:UpdateCallIn("DrawScreen")
+	widgetHandler:UpdateCallIn("DrawScreen")
 end
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------

@@ -1,25 +1,5 @@
 --//=============================================================================
 
---- Object module
-
---- Object fields.
--- @table Object
--- @bool[opt=true] visible control is displayed
--- @tparam {Object1,Object2,...} children table of visible children objects (default {})
--- @tparam {Object1,Object2,...} children_hidden table of invisible children objects (default {})
--- @tparam {"obj1Name"=Object1,"obj2Name"=Object2,...} childrenByName table mapping name->child
--- @tparam {func1,func2,...} OnDispose  function listeners for object disposal, (default {})
--- @tparam {func1,func2,...} OnClick  function listeners for mouse click, (default {})
--- @tparam {func1,func2,...} OnDblClick  function listeners for mouse double click, (default {})
--- @tparam {func1,func2,...} OnMouseDown  function listeners for mouse press, (default {})
--- @tparam {func1,func2,...} OnMouseUp  function listeners for mouse release, (default {})
--- @tparam {func1,func2,...} OnMouseMove  function listeners for mouse movement, (default {})
--- @tparam {func1,func2,...} OnMouseWheel  function listeners for mouse scrolling, (default {})
--- @tparam {func1,func2,...} OnMouseOver  function listeners for mouse over...?, (default {})
--- @tparam {func1,func2,...} OnMouseOut  function listeners for mouse leaving the object, (default {})
--- @tparam {func1,func2,...} OnKeyPress  function listeners for key press, (default {})
--- @tparam {func1,func2,...} OnFocusUpdate  function listeners for focus change, (default {})
--- @bool[opt=false] disableChildrenHitTest if set childrens are not clickable/draggable etc - their mouse events are not processed
 Object = {
   classname = 'object',
   --x         = 0,
@@ -48,11 +28,10 @@ Object = {
   OnMouseOver     = {},
   OnMouseOut      = {},
   OnKeyPress      = {},
-  OnTextInput     = {},
   OnFocusUpdate   = {},
 
   disableChildrenHitTest = false, --// if set childrens are not clickable/draggable etc - their mouse events are not processed
-} 
+}
 
 do
   local __lowerkeys = {}
@@ -79,8 +58,6 @@ end
 
 --//=============================================================================
 
---- Object constructor
--- @tparam Object obj the object table
 function Object:New(obj)
   obj = obj or {}
 
@@ -149,10 +126,9 @@ function Object:New(obj)
 end
 
 
---- Disposes of the object.
--- Calling this releases unmanaged resources like display lists and disposes of the object.
--- Children are disposed too.
--- TODO: use scream, in case the user forgets.
+-- calling this releases unmanaged resources like display lists and disposes of the object
+-- children are disposed too
+-- todo: use scream, in case the user forgets
 -- nil -> nil
 function Object:Dispose(_internal)
   if (not self.disposed) then
@@ -220,19 +196,11 @@ function Object:Inherit(class)
 
   --setmetatable(class,{__index=self})
 
-  --// backward compability with old DrawControl gl state (change was done with v2.1)
-  local w = DebugHandler.GetWidgetOrigin()
-  if (w ~= widget)and(w ~= Chili) then
-	class._hasCustomDrawControl = true
-  end
-
   return class
 end
 
 --//=============================================================================
 
---- Sets the parent object
--- @tparam Object obj parent object
 function Object:SetParent(obj)
   obj = UnlinkSafe(obj)
   local typ = type(obj)
@@ -247,9 +215,8 @@ function Object:SetParent(obj)
   self:Invalidate()
 end
 
---- Adds the child object
--- @tparam Object obj child object to be added
-function Object:AddChild(obj, dontUpdate)
+
+function Object:AddChild(obj, dontUpdate, index)
   local objDirect = UnlinkSafe(obj)
 
   if (self.children[objDirect]) then
@@ -273,16 +240,23 @@ function Object:AddChild(obj, dontUpdate)
   obj:SetParent(self)
 
   local children = self.children
-  local i = #children+1
-  children[i] = objDirect
-  children[hobj] = i
-  children[objDirect] = i
-  self:Invalidate()
+  if index and (index <= #children) then
+    for i,v in pairs(children) do -- remap hardlinks and objects
+      if type(v) == "number" and v >= index then
+        children[i] = v + 1
+      end
+    end
+    table.insert(children, index, objDirect)
+  else
+    local i = #children+1
+    children[i] = objDirect
+    children[hobj] = i
+    children[objDirect] = i
+  end
+    self:Invalidate()
 end
 
 
---- Removes the child object
--- @tparam Object child child object to be removed
 function Object:RemoveChild(child)
   if not isindexable(child) then
     return child
@@ -338,7 +312,7 @@ function Object:RemoveChild(child)
   return false
 end
 
---- Removes all children
+
 function Object:ClearChildren()
   --// make it faster
   local old = self.preserveChildrenOrder
@@ -357,16 +331,13 @@ function Object:ClearChildren()
   self.preserveChildrenOrder = old
 end
 
---- Specifies whether the object has any visible children
--- @treturn bool
+
 function Object:IsEmpty()
   return (not self.children[1])
 end
 
 --//=============================================================================
 
---- Hides a specific child
--- @tparam Object obj child to be hidden
 function Object:HideChild(obj)
   --FIXME cause of performance reasons it would be usefull to use the direct object, but then we need to cache the link somewhere to avoid the auto calling of dispose
   local objDirect = UnlinkSafe(obj)
@@ -402,8 +373,7 @@ function Object:HideChild(obj)
   obj.parent = self
 end
 
---- Makes a specific child visible
--- @tparam Object obj child to be made visible
+
 function Object:ShowChild(obj)
   --FIXME cause of performance reasons it would be usefull to use the direct object, but then we need to cache the link somewhere to avoid the auto calling of dispose
   local objDirect = UnlinkSafe(obj)
@@ -443,8 +413,7 @@ function Object:ShowChild(obj)
   return true
 end
 
---- Sets the visibility of the object
--- @bool visible visibility status
+
 function Object:SetVisibility(visible)
   if (visible) then
     self.parent:ShowChild(self)
@@ -455,17 +424,17 @@ function Object:SetVisibility(visible)
   self.hidden  = not visible
 end
 
---- Hides the objects
+
 function Object:Hide()
   self:SetVisibility(false)
 end
 
---- Makes the object visible
+
 function Object:Show()
   self:SetVisibility(true)
 end
 
---- Toggles object visibility
+
 function Object:ToggleVisibility()
   self:SetVisibility(not self.visible)
 end
@@ -515,9 +484,6 @@ end
 
 --//=============================================================================
 
---- Returns a child by name
--- @string name child name
--- @treturn Object child
 function Object:GetChildByName(name)
   local cn = self.children
   for i=1,#cn do
@@ -537,9 +503,7 @@ end
 Object.GetChild = Object.GetChildByName
 
 
---- Resursive search to find an object by its name
--- @string name name of the object
--- @treturn Object
+--// Resursive search to find an object by its name
 function Object:GetObjectByName(name)
   local r = self.childrenByName[name]
   if r then return r end
@@ -926,15 +890,6 @@ end
 
 function Object:KeyPress(...)
   if (self:CallListeners(self.OnKeyPress, ...)) then
-    return self
-  end
-
-  return false
-end
-
-
-function Object:TextInput(...)
-  if (self:CallListeners(self.OnTextInput, ...)) then
     return self
   end
 

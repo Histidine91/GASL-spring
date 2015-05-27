@@ -1,16 +1,5 @@
 --//=============================================================================
 
---- Trackbar module
-
---- Trackbar fields.
--- Inherits from Control.
--- @see control.Control
--- @table Trackbar
--- @int[opt=0] min minimum value of the Trackbar
--- @int[opt=100] max maximum value of the Trackbar
--- @int[opt=50] value value of the Trackbar
--- @int[opt=50] step step value
--- @tparam {func1,fun2,...} OnChange function listeners for value change (default {})
 Trackbar = Control:Inherit{
   classname = "trackbar",
   value     = 50,
@@ -54,7 +43,7 @@ end
 function Trackbar:New(obj)
   obj = inherited.New(self,obj)
 
-  if ((not obj.tooltip) or (obj.tooltip == '')) and (obj.useValueTooltip ~= false) then
+  if ((not obj.tooltip) or (obj.tooltip == '')) and (useValueTooltip ~= false) then
     obj.useValueTooltip = true
   end
 
@@ -106,9 +95,6 @@ end
 
 --//=============================================================================
 
---- Sets the minimum and maximum value of the track bar
--- @int[opt=0] min minimum value
--- @int[opt=1] max maximum value (why is 1 the default?)
 function Trackbar:SetMinMax(min,max)
   self.min = tonumber(min) or 0
   self.max = tonumber(max) or 1
@@ -116,13 +102,7 @@ function Trackbar:SetMinMax(min,max)
 end
 
 
---- Sets the value of the track bar
--- @int v value of the track abr
 function Trackbar:SetValue(v)
-  if type(v) ~= "number" then
-    Spring.Echo("Chili: wrong param to Trackbar:SetValue(number v)")
-    return
-  end
   local r = v % self.step
   if (r > 0.5*self.step) then
     v = v + self.step - r
@@ -133,7 +113,7 @@ function Trackbar:SetValue(v)
   local oldvalue = self.value
   self.value = v
   if self.useValueTooltip then
-    self.tooltip = "Current: "..FormatNum(self.value)
+    self.tooltip = "Current: "..FormatNum(v)
   end
   self:CallListeners(self.OnChange,v,oldvalue)
   self:Invalidate()

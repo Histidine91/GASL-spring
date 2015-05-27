@@ -1,16 +1,3 @@
---- Screen module
-
---- Screen fields.
--- Inherits from Object.
--- @see object.Object
--- @table Screen
--- @int[opt=0] x x position
--- @int[opt=0] y y position
--- @int[opt=0] width width
--- @int[opt=0] height height
--- @tparam control.Control activeControl active control
--- @tparam control.Control focusedControl focused control
--- @tparam control.Control hoveredControl hovered control
 Screen = Object:Inherit{
 --Screen = Control:Inherit{
   classname = 'screen',
@@ -56,19 +43,19 @@ end
 
 
 function Screen:OnGlobalDispose(obj)
-  if CompareLinks(self.activeControl, obj) then
+  if (UnlinkSafe(self.activeControl) == obj) then
     self.activeControl = nil
   end
 
-  if CompareLinks(self.hoveredControl, obj) then
+  if (UnlinkSafe(self.hoveredControl) == obj) then
     self.hoveredControl = nil
   end
 
-  if CompareLinks(self._lastHoveredControl, obj) then
+  if (UnlinkSafe(self._lastHoveredControl) == obj) then
     self._lastHoveredControl = nil
   end
 
-  if CompareLinks(self.focusedControl, obj) then
+  if (UnlinkSafe(self.focusedControl) == obj) then
     self.focusedControl = nil
   end
 end
@@ -151,7 +138,7 @@ function Screen:IsAbove(x,y,...)
   local hoveredControl = inherited.IsAbove(self,x,y,...)
 
   --// tooltip
-  if not CompareLinks(hoveredControl, self._lastHoveredControl) then
+  if (UnlinkSafe(hoveredControl) ~= UnlinkSafe(self._lastHoveredControl)) then
     if self._lastHoveredControl then
       self._lastHoveredControl:MouseOut()
     end
@@ -276,7 +263,6 @@ function Screen:MouseWheel(x,y,...)
   return (not not inherited.MouseWheel(self,x,y,...))
 end
 
-
 function Screen:KeyPress(...)
 	local focusedControl = UnlinkSafe(self.focusedControl)
 	if focusedControl then
@@ -284,15 +270,5 @@ function Screen:KeyPress(...)
 	end
 	return (not not inherited:KeyPress(...))
 end
-
-
-function Screen:TextInput(...)
-        local focusedControl = UnlinkSafe(self.focusedControl)
-        if focusedControl then
-                return (not not focusedControl:TextInput(...))
-        end
-        return (not not inherited:TextInput(...))
-end
-
 
 --//=============================================================================
